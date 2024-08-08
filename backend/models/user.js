@@ -1,70 +1,14 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema;
-
-const bcrypt = require('bcrypt')
-
-var uniqueValidator = require('mongoose-unique-validator')
-
-const UserSchema = new Schema({
-    
-    username: {
-        type: String,
-        required: [true, 'Please provide username'],
-        unique: true
-    },
-    phoneUnc: {
-        type: String,
-        required: [true, 'Please provide password'],
-    },
-    activated: {
-        type: Boolean,
-        default: false
-    },
-    verificationToken: {
-        token: { type: String },
-        expires: { type: Date }
-    },
-   
-    userType: {
-        type: String,
-        required: true,
-        enum: ['Admin', 'Client', 'Driver'],
-    }
-},
-    {
-        timestamps: true
-    });
-
-UserSchema.plugin(uniqueValidator, { message: '{PATH} must be unique' })
-
-//hashing password
-UserSchema.pre('save', function (next) {
-    const user = this
-
-    bcrypt.hash(user.password, 10, (error, hash) => {
-        user.password = hash
-        next()
-    })
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  phone_number: { type: String, required: true },
+  is_approved: { type: Boolean, default: false },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-
-UserSchema.pre('updateOne', function (next) {
-    const password = this.getUpdate().$set.password;
-    if (!password) {
-      return next();
-    }
-    bcrypt.hash(password, 10, (err, hash) => {
-      if (err) {
-        return next(err);
-      }
-      this.getUpdate().$set.password = hash;
-      next();
-    });
-  });
-  
-  
-
-const User = mongoose.model('User', UserSchema);
-
+const User = mongoose.model('User', userSchema);
 module.exports = User;

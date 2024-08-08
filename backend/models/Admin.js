@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const User = require('./User'); // Assuming User model is in the same directory
 
-const clientSchema = new mongoose.Schema({
+const adminSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  additional_client_info: String
+  additional_admin_info: String
 });
 
-const Client = mongoose.model('Client', clientSchema);
-module.exports = Client;
+const Admin = mongoose.model('Admin', adminSchema);
+module.exports = Admin;

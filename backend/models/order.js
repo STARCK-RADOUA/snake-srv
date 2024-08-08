@@ -1,47 +1,17 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema;
+const orderSchema = new mongoose.Schema({
+  client_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
+  courier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Courier', required: false },
+  address_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true },
+  status: { type: String, enum: ['pending', 'approved', 'in_progress', 'delivered', 'cancelled'], required: true },
+  total_price: { type: Number, required: true },
+  payment_method: { type: String, enum: ['cash', 'card'], required: true },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+});
 
-const bcrypt = require('bcrypt')
-
-var uniqueValidator = require('mongoose-unique-validator')
-
-const OrderSchema = new Schema({
-
-  OrderDate: {
-    type: Date,
-    required: [true, 'Please provide Order date']
-  },
-  OrderTime: {
-    type: String,
-    required: [true, 'Please provide Order time']
-  },
-  OrderType: {
-    type: String,
-    required: [true, 'Please provide Order type']
-  },
-  isTimeSlotAvailable: {
-    type: Boolean,
-    default: true
-  },
-  ClientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Client"
-  },
-  DriverId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Driver"
-  },
-  completed: {
-    type: Boolean,
-    default: 0
-  }
-},
-  {
-    timestamps: true
-  });
-
-
-const Order = mongoose.model('Order', OrderSchema);
-
+const Order = mongoose.model('Order', orderSchema);
 module.exports = Order;

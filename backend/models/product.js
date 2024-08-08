@@ -1,41 +1,17 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const Schema = mongoose.Schema;
+const productSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: String,
+  price: { type: Number, required: true },
+  image_url: String,
+  service_type: { type: String, enum: ['courier', 'food', 'pleasure', 'gift', 'market'], required: true },
+  is_active: { type: Boolean, default: true },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now }
+}, {
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+});
 
-const bcrypt = require('bcrypt')
-
-var uniqueValidator = require('mongoose-unique-validator')
-
-const ProductSchema = new Schema({
-	OrderId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: "Order"
-	},
-	productElements: [{
-		medicineId: {
-			type: mongoose.Schema.Types.ObjectId,
-			ref: "Medicine"
-		},
-		dosage: {
-			type: String
-		},
-		qty: {
-			type: Number
-		}
-	}],
-	remarks: {
-		type: String
-	},
-	paid: {
-		type: Boolean,
-		default: 0
-	}
-},
-{
-	timestamps: true
-}
-);
-
-const Precription = mongoose.model('Product', ProductSchema);
-
-module.exports = Precription;
+const Product = mongoose.model('Product', productSchema);
+module.exports = Product;
