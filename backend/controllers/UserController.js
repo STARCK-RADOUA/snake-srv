@@ -36,7 +36,7 @@ const isUserValid = (newUser) => {
     let errorList = [];
     if (!newUser.firstName) errorList.push("Please enter first name");
     if (!newUser.lastName) errorList.push("Please enter last name");
-    if (!newUser.email) errorList.push("Please enter email");
+    if (!newUser.phone) errorList.push("Please enter phone");
     if (!newUser.password) errorList.push("Please enter password");
     if (!newUser.confirmPassword) errorList.push("Please re-enter password in Confirm Password field");
     if (!newUser.UserType) errorList.push("Please enter User Type");
@@ -55,7 +55,7 @@ const saveUser = async (req, res) => {
 
     try {
         const UserDetails = await User.create({
-            email: newUser.email,
+            phone: newUser.phone,
             Username: newUser.Username,
             firstName: newUser.firstName,
             lastName: newUser.lastName,
@@ -69,14 +69,14 @@ const saveUser = async (req, res) => {
                 User_id: UserDetails._id,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
-                email: newUser.email
+                phone: newUser.phone
             });
         } else if (newUser.UserType === "Client") {
             await Client.create({
                 User_id: UserDetails._id,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
-                email: newUser.email
+                phone: newUser.phone
             });
         }
         res.status(201).json({ message: "success" });

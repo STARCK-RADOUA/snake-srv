@@ -4,15 +4,15 @@ const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 
-const isLoginValid = (email, password) => {
+const isLoginValid = (phone, password) => {
     const errorList = [];
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
-    if (!email) {
-        errorList.push("Please enter email");
-    } else if (!emailRegex.test(email)) {
-        errorList.push("Invalid email format");
+    if (!phone) {
+        errorList.push("Please enter phone");
+    } else if (!phoneRegex.test(phone)) {
+        errorList.push("Invalid phone format");
     }
 
     if (!password) {
@@ -32,13 +32,13 @@ const isLoginValid = (email, password) => {
 };
 
 const loginUser = (req, res) => {
-    const { email, password } = req.body;
+    const { phone, password } = req.body;
 
-    const loginValidStatus = isLoginValid(email, password);
+    const loginValidStatus = isLoginValid(phone, password);
     if (!loginValidStatus.status) {
         res.status(400).json({ message: "error", errors: loginValidStatus.errors });
     } else {
-        User.findOne({ email: email }, (error, User) => {
+        User.findOne({ phone: phone }, (error, User) => {
             if (error) {
                 res.status(400).json({ message: "error", errors: [error.message] });
             } else if (!User) {
@@ -51,7 +51,7 @@ const loginUser = (req, res) => {
                         res.status(401).json({ message: "error", errors: ["Invalid password"] });
                     } 
                      else if(User.activated == false){
-                         res.status(401).json({ message: "error", errors: ["Please verify your account. A verification email has been sent to your email."] });
+                         res.status(401).json({ message: "error", errors: ["Please verify your account. A verification phone has been sent to your phone."] });
                      } 
                     else {
                         const currentUser = {

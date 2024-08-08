@@ -14,12 +14,12 @@ const getClients = async (req, res) => {
         } else {
             Clients = await Client.find().populate({
                 path: 'User_id',
-                select: 'firstName lastName email Username',
+                select: 'firstName lastName phone',
                 match: {
                     $or: [
                         { firstName: { $regex: searchClient } },
                         { lastName: { $regex: searchClient } },
-                        { email: { $regex: searchClient } }
+                        { phone: { $regex: searchClient } }
                     ]
                 }
             }).then((Clients) => Clients.filter((Client => Client.User_id != null)));
@@ -49,18 +49,11 @@ const isClientValid = (newClient) => {
     if (!newClient.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newClient.email) {
-        errorList[errorList.length] = "Please enter email";
+    if (!newClient.phone) {
+        errorList[errorList.length] = "Please enter phone";
     }
-    if (!newClient.password) {
-        errorList[errorList.length] = "Please enter password";
-    }
-    if (!newClient.confirmPassword) {
-        errorList[errorList.length] = "Please re-enter password in Confirm Password field";
-    }
-    if (!(newClient.password == newClient.confirmPassword)) {
-        errorList[errorList.length] = "Password and Confirm Password did not match";
-    }
+   
+  
     if (!newClient.phone) {
         errorList[errorList.length] = "Please enter phone";
     }
@@ -91,13 +84,13 @@ const saveClient = async (req, res) => {
         //const Client = new Client(req.body);
         User.create(
             {
-                email: newClient.email,
-                Username: newClient.Username,
+                phone: newClient.phone,
+               
                 firstName: newClient.firstName,
                 lastName: newClient.lastName,
-                password: newClient.password,
+               
                 UserType: 'Client',
-                activated: 1,
+                activated: 0,
             },
             (error, UserDetails) => {
                 if (error) {
@@ -133,7 +126,7 @@ const updateClient = async (req, res) => {
         try {
             const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender, "dob": req.body.dob } });
 
-            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "Username": req.body.Username, "password": req.body.password } });
+            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "phone": req.body.phone, "Username": req.body.Username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {

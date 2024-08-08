@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 const DepartementRoute = require("./routes/DepartementRoute");
-const nodemailer = require("nodemailer");
+const nodphoneer = require("nodphoneer");
 
 const getAllClients = require("./routes/api/getAllClients");
 const getClientByID = require("./routes/api/getClientByID");

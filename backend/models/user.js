@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
   
   activated: {
     type: Boolean,
@@ -11,6 +12,11 @@ UserType: {
   type: String,
   required: true,
   enum: ['Admin', 'Client', 'Driver'],
+},
+phone: {
+  type: number,
+  required: true,
+  
 },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }

@@ -4,12 +4,12 @@ const Client = require("../models/Client");
 
 
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const nodphoneer = require('nodphoneer');
 
 const isUserValid = (newUser) => {
     const errorList = [];
     const nameRegex = /^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
     if (!newUser.firstName) {
@@ -23,10 +23,10 @@ const isUserValid = (newUser) => {
         errorList.push('Last name is invalid');
     }
 
-    if (!newUser.email) {
-        errorList.push("Please enter email");
-    } else if (!emailRegex.test(newUser.email)) {
-        errorList.push("Invalid email format");
+    if (!newUser.phone) {
+        errorList.push("Please enter phone");
+    } else if (!phoneRegex.test(newUser.phone)) {
+        errorList.push("Invalid phone format");
     }
 
     if (!newUser.password) {
@@ -72,9 +72,9 @@ const generateVerificationToken = () => {
     return verificationToken;
 };
 
-// Send an email with a verification link
-const sendVerificationEmail = async (email, firstName, lastName, token) => {
-    const transporter = nodemailer.createTransport({
+// Send an phone with a verification link
+const sendVerificationphone = async (phone, firstName, lastName, token) => {
+    const transporter = nodphoneer.createTransport({
         service: 'gmail',
         auth: {
             User: "alrahma.hopitale@gmail.com",
@@ -84,22 +84,22 @@ const sendVerificationEmail = async (email, firstName, lastName, token) => {
 
     const mailOptions = {
         from: "AL Rahma Health Center",
-        to: email,
-        subject: 'Please Verify Your Email Address',
+        to: phone,
+        subject: 'Please Verify Your phone Address',
         text: `Dear ${firstName} ${lastName},
     
-We are pleased to have you as part of the AL Rahma Health Center community. To complete your registration, please verify your email address by clicking the link below:
+We are pleased to have you as part of the AL Rahma Health Center community. To complete your registration, please verify your phone address by clicking the link below:
     
 http://localhost:3001/verify/${token}
     
-If you did not create an account with us, please disregard this email.
+If you did not create an account with us, please disregard this phone.
     
 Thank you,
 AL Rahma Health Center`,
         html: `<p>Dear ${firstName} ${lastName},</p>
-               <p>We are pleased to have you as part of the AL Rahma Health Center community. To complete your registration, please verify your email address by clicking the link below:</p>
-               <p><a href="http://localhost:3001/verify/${token}">Verify your email address</a></p>
-               <p>If you did not create an account with us, please disregard this email.</p>
+               <p>We are pleased to have you as part of the AL Rahma Health Center community. To complete your registration, please verify your phone address by clicking the link below:</p>
+               <p><a href="http://localhost:3001/verify/${token}">Verify your phone address</a></p>
+               <p>If you did not create an account with us, please disregard this phone.</p>
                <p>Thank you,<br>AL Rahma Health Center</p>`,
     };
 
@@ -117,8 +117,8 @@ const signUp = (req, res) => {
     } else {
         User.create(
             {
-                email: newUser.email,
-                Username: newUser.email,
+                phone: newUser.phone,
+                Username: newUser.phone,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 password: newUser.password,
@@ -137,8 +137,8 @@ const signUp = (req, res) => {
                                 User_id: UserDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
-                                email: newUser.email,
-                                Username: newUser.email
+                                phone: newUser.phone,
+                                Username: newUser.phone
                             },
                             (error2, DriverDetails) => {
                                 if (error2) {
@@ -156,7 +156,7 @@ const signUp = (req, res) => {
                                 User_id: UserDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
-                                email: newUser.email,
+                                phone: newUser.phone,
                                 Username: newUser.firstName + " " + newUser.lastName
                             },
                             (error2, ClientDetails) => {
@@ -164,7 +164,7 @@ const signUp = (req, res) => {
                                     User.deleteOne({ _id: UserDetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
-                                    sendVerificationEmail(UserDetails.email, newUser.firstName, newUser.lastName, verificationToken.token);
+                                    sendVerificationphone(UserDetails.phone, newUser.firstName, newUser.lastName, verificationToken.token);
                                     res.json({ message: "success" });
                                 }
                             }
@@ -178,7 +178,7 @@ const signUp = (req, res) => {
 
 const verifyUser = (req, res) => {
     const token = req.params.id;
-    const verifyEmail = async (token) => {
+    const verifyphone = async (token) => {
         const User = await User.findOneAndUpdate({
             'verificationToken.token': token,
             'verificationToken.expires': { $gt: Date.now() } // Check that the token has not expired
@@ -188,15 +188,15 @@ const verifyUser = (req, res) => {
         });
 
         if (!User) {
-            console.log("Email could not be verified");
+            console.log("phone could not be verified");
             res.status(500).json({ message: 'Error verifying account' });
         }
         else {
-            console.log("Email verified");
-            res.send("Email verified");
+            console.log("phone verified");
+            res.send("phone verified");
         }
     };
-    verifyEmail(token);
+    verifyphone(token);
 }
 
 module.exports = {
@@ -204,7 +204,7 @@ module.exports = {
     isUserValid,
     generateVerificationToken,
     saveVerificationToken,
-    sendVerificationEmail,
+    sendVerificationphone,
     verifyUser
 }
 

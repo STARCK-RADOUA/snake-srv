@@ -15,17 +15,17 @@ const getDrivers = async (req, res) => {
         if (searchDriver) {
             Drivers = await Driver.find().populate({
                 path: 'User_id',
-                select: 'firstName lastName email Username activated',
+                select: 'firstName lastName phone Username activated',
                 match: {
                     $or: [
                         { firstName: { $regex: searchDriver } },
                         { lastName: { $regex: searchDriver } },
-                        { email: { $regex: searchDriver } }
+                        { phone: { $regex: searchDriver } }
                     ]
                 }
             }).then(Drivers => Drivers.filter(Driver => Driver.User_id != null));
         } else {
-            Drivers = await Driver.find({}).populate('User_id', 'firstName lastName email Username activated');
+            Drivers = await Driver.find({}).populate('User_id', 'firstName lastName phone Username activated');
         }
 
         // Ajout de la propriété activated à chaque médecin
@@ -64,8 +64,8 @@ const isDriverValid = (newDriver) => {
     if (!newDriver.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newDriver.email) {
-        errorList[errorList.length] = "Please enter email";
+    if (!newDriver.phone) {
+        errorList[errorList.length] = "Please enter phone";
     }
     if (!newDriver.password) {
         errorList[errorList.length] = "Please enter password";
@@ -132,7 +132,7 @@ const saveDriver = async (req, res) => {
 
         User.create(
             {
-                email: newDriver.email,
+                phone: newDriver.phone,
                 Username: newDriver.Username,
                 firstName: newDriver.firstName,
                 lastName: newDriver.lastName,
@@ -155,8 +155,8 @@ const saveDriver = async (req, res) => {
                                 User_id: UserDetails._id,
                                 firstName: newDriver.firstName,
                                 lastName: newDriver.lastName,
-                                email: newDriver.email,
-                                Username: newDriver.email,
+                                phone: newDriver.phone,
+                                Username: newDriver.phone,
                                 department: newDriver.department,
                                 phone: newDriver.phone ,
                                 imageUrls : newDriver.imageUrls ,
@@ -203,7 +203,7 @@ const updateDriver = async (req, res) => {
 
             const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "department": req.body.department } });
 
-            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "Username": req.body.Username, "password": req.body.password } });
+            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "phone": req.body.phone, "Username": req.body.Username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
