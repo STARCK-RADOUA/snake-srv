@@ -12,10 +12,10 @@ const {
 
 
 
-router.get('/users', adminAuth, getUsers);
-router.get('/users/:id', adminAuth, getUserById);
-router.post('/users', adminAuth, saveUser);
-router.patch('/users/:id', adminAuth, updateUser);
-router.delete('/users/:id', adminAuth, deleteUser);
+router.get('/Users', adminAuth, getUsers);
+router.get('/Users/:id', adminAuth, getUserById);
+router.post('/Users', adminAuth, saveUser);
+router.patch('/Users/:id', adminAuth, updateUser);
+router.delete('/Users/:id', adminAuth, deleteUser);
 
 module.exports = router

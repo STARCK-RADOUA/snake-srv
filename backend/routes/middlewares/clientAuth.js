@@ -14,7 +14,7 @@ function clientAuth(req, res, next) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         console.log("adminAuth ", payload);
-        if (payload.userType == "Client") {
+        if (payload.UserType == "Client") {
             next();
         }
         else {

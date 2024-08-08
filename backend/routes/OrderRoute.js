@@ -12,7 +12,7 @@ const {
     deleteOrder,
     updateOrderById
 } = require('../controllers/OrderController.js');
-const userAuth = require("./middlewares/userAuth");
+const UserAuth = require("./middlewares/UserAuth");
 
 
 //gets list of all departments
@@ -22,7 +22,7 @@ router.get('/departments', getDepartments);
 router.get('/Orders/:id', getOrderById);
 
 //get all Orders based on body params
-router.post('/Orders', userAuth, getOrders);
+router.post('/Orders', UserAuth, getOrders);
 
 //create an empty slot 
 router.post('/Orders/add', createOrderSlot);

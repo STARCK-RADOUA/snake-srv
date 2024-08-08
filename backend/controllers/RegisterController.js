@@ -1,4 +1,4 @@
-const User = require("../models/user");
+const User = require("../models/User");
 const Driver = require("../models/Driver");
 const Client = require("../models/Client");
 
@@ -42,7 +42,7 @@ const isUserValid = (newUser) => {
         errorList.push("Please re-enter password in Confirm Password field");
     }
 
-    if (!newUser.userType) {
+    if (!newUser.UserType) {
         errorList.push("Please enter User Type");
     }
 
@@ -57,8 +57,8 @@ const isUserValid = (newUser) => {
     }
 };
 
-const saveVerificationToken = async (user_id, verificationToken) => {
-    await User.findOneAndUpdate({ _id: user_id }, { "verificationToken": verificationToken });
+const saveVerificationToken = async (User_id, verificationToken) => {
+    await User.findOneAndUpdate({ _id: User_id }, { "verificationToken": verificationToken });
     return;
 }
 
@@ -77,7 +77,7 @@ const sendVerificationEmail = async (email, firstName, lastName, token) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: "alrahma.hopitale@gmail.com",
+            User: "alrahma.hopitale@gmail.com",
             pass: "jgrstcabltioqzxg"
         }
     });
@@ -111,38 +111,38 @@ AL Rahma Health Center`,
 const signUp = (req, res) => {
     const newUser = req.body;
 
-    const userValidStatus = isUserValid(newUser);
-    if (!userValidStatus.status) {
-        res.json({ message: "error", errors: userValidStatus.errors });
+    const UserValidStatus = isUserValid(newUser);
+    if (!UserValidStatus.status) {
+        res.json({ message: "error", errors: UserValidStatus.errors });
     } else {
         User.create(
             {
                 email: newUser.email,
-                username: newUser.email,
+                Username: newUser.email,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 password: newUser.password,
-                userType: newUser.userType,
+                UserType: newUser.UserType,
             },
-            (error, userDetails) => {
+            (error, UserDetails) => {
                 if (error) {
                     res.json({ message: "error", errors: [error.message] });
                 } else {
                     let verificationToken = generateVerificationToken()
-                    saveVerificationToken(userDetails._id, verificationToken);
+                    saveVerificationToken(UserDetails._id, verificationToken);
 
-                    if (newUser.userType === "Driver") {
+                    if (newUser.UserType === "Driver") {
                         Driver.create(
                             {
-                                user_id: userDetails._id,
+                                User_id: UserDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
                                 email: newUser.email,
-                                username: newUser.email
+                                Username: newUser.email
                             },
                             (error2, DriverDetails) => {
                                 if (error2) {
-                                    User.deleteOne({ _id: userDetails });
+                                    User.deleteOne({ _id: UserDetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
                                     res.json({ message: "success" });
@@ -150,21 +150,21 @@ const signUp = (req, res) => {
                             }
                         );
                     }
-                    if (newUser.userType === "Client") {
+                    if (newUser.UserType === "Client") {
                         Client.create(
                             {
-                                user_id: userDetails._id,
+                                User_id: UserDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
                                 email: newUser.email,
-                                username: newUser.firstName + " " + newUser.lastName
+                                Username: newUser.firstName + " " + newUser.lastName
                             },
                             (error2, ClientDetails) => {
                                 if (error2) {
-                                    User.deleteOne({ _id: userDetails });
+                                    User.deleteOne({ _id: UserDetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
-                                    sendVerificationEmail(userDetails.email, newUser.firstName, newUser.lastName, verificationToken.token);
+                                    sendVerificationEmail(UserDetails.email, newUser.firstName, newUser.lastName, verificationToken.token);
                                     res.json({ message: "success" });
                                 }
                             }
@@ -179,7 +179,7 @@ const signUp = (req, res) => {
 const verifyUser = (req, res) => {
     const token = req.params.id;
     const verifyEmail = async (token) => {
-        const user = await User.findOneAndUpdate({
+        const User = await User.findOneAndUpdate({
             'verificationToken.token': token,
             'verificationToken.expires': { $gt: Date.now() } // Check that the token has not expired
         }, {
@@ -187,7 +187,7 @@ const verifyUser = (req, res) => {
             "verificationToken.token": null
         });
 
-        if (!user) {
+        if (!User) {
             console.log("Email could not be verified");
             res.status(500).json({ message: 'Error verifying account' });
         }

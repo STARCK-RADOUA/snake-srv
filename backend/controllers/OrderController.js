@@ -31,7 +31,7 @@ const getOrders = async (req, res) => {
                     'DriverId': mongoose.Types.ObjectId(docID)
                 });
             }
-            else if (req.sender.userType == "Driver") {
+            else if (req.sender.UserType == "Driver") {
                 Orders = await Order.find({
                     'isTimeSlotAvailable': isTimeSlotAvailable,
                     'OrderDate': OrderDate,
@@ -41,19 +41,19 @@ const getOrders = async (req, res) => {
                 }).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'user_id'
+                        path: 'User_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     });
             }
         } else if (isTimeSlotAvailable == false) {
             // console.log("here 2")
-            if (req.sender.userType == "Admin") {
+            if (req.sender.UserType == "Admin") {
                 Orders = await Order.find({
                     'isTimeSlotAvailable': false,
                     'completed': false,
@@ -64,17 +64,17 @@ const getOrders = async (req, res) => {
                 }).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'user_id'
+                        path: 'User_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     });
             }
-            else if (req.sender.userType == "Client") {
+            else if (req.sender.UserType == "Client") {
                 console.log("ClientId" , req.sender.ClientId);
                 let query = {
                     'isTimeSlotAvailable': false,
@@ -91,17 +91,17 @@ const getOrders = async (req, res) => {
                 Orders = await Order.find(query).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'user_id'
+                        path: 'User_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     });
             }
-            else if (req.sender.userType == "Driver") {
+            else if (req.sender.UserType == "Driver") {
                 Orders = await Order.find({
                     'isTimeSlotAvailable': false,
                     'completed': false,
@@ -112,13 +112,13 @@ const getOrders = async (req, res) => {
                 }).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'user_id'
+                        path: 'User_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     });
             }

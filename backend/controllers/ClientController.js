@@ -9,12 +9,12 @@ const getClients = async (req, res) => {
 
         let Clients = [];
         if (!searchClient) {
-            Clients = await Client.find({}).populate('user_id');
+            Clients = await Client.find({}).populate('User_id');
 
         } else {
             Clients = await Client.find().populate({
-                path: 'user_id',
-                select: 'firstName lastName email username',
+                path: 'User_id',
+                select: 'firstName lastName email Username',
                 match: {
                     $or: [
                         { firstName: { $regex: searchClient } },
@@ -22,7 +22,7 @@ const getClients = async (req, res) => {
                         { email: { $regex: searchClient } }
                     ]
                 }
-            }).then((Clients) => Clients.filter((Client => Client.user_id != null)));
+            }).then((Clients) => Clients.filter((Client => Client.User_id != null)));
         }
 
         res.json(Clients);
@@ -33,7 +33,7 @@ const getClients = async (req, res) => {
 
 const getClientById = async (req, res) => {
     try {
-        const Client = await Client.findById(req.params.id).populate('user_id');
+        const Client = await Client.findById(req.params.id).populate('User_id');
         res.json(Client);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -92,22 +92,22 @@ const saveClient = async (req, res) => {
         User.create(
             {
                 email: newClient.email,
-                username: newClient.username,
+                Username: newClient.Username,
                 firstName: newClient.firstName,
                 lastName: newClient.lastName,
                 password: newClient.password,
-                userType: 'Client',
+                UserType: 'Client',
                 activated: 1,
             },
-            (error, userDetails) => {
+            (error, UserDetails) => {
                 if (error) {
                     res.status(400).json({ message: "error", errors: [error.message] });
                 } else {
-                    newClient.user_id = userDetails._id,
+                    newClient.User_id = UserDetails._id,
                         Client.create(newClient,
                             (error2, ClientDetails) => {
                                 if (error2) {
-                                    User.deleteOne({ _id: userDetails });
+                                    User.deleteOne({ _id: UserDetails });
                                     res.status(400).json({ message: 'error', errors: [error2.message] });
                                 } else {
                                     res.status(201).json({ message: 'success' });
@@ -133,7 +133,7 @@ const updateClient = async (req, res) => {
         try {
             const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender, "dob": req.body.dob } });
 
-            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "Username": req.body.Username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -144,7 +144,7 @@ const updateClient = async (req, res) => {
 
 const deleteClient = async (req, res) => {
     try {
-        const Client = await Client.findById(req.params.id).populate('user_id');
+        const Client = await Client.findById(req.params.id).populate('User_id');
 
         if (!Client) {
             return res.status(404).json({ message: 'Client not found' });
@@ -152,7 +152,7 @@ const deleteClient = async (req, res) => {
 
         const deletedClient = await Client.deleteOne({ _id: req.params.id });
 
-        const deletedUser = await User.deleteOne({ _id: Client.user_id });
+        const deletedUser = await User.deleteOne({ _id: Client.User_id });
 
         res.status(200).json(deletedClient);
     } catch (error) {
@@ -172,13 +172,13 @@ const getClientHistory = async (req, res) => {
                 {
                     path: 'ClientId',
                     populate: {
-                        path: 'user_id'
+                        path: 'User_id'
                     }
                 },
                 {
                     path: 'DriverId',
                     populate: {
-                        path: 'user_id'
+                        path: 'User_id'
                     }
                 }
             ]

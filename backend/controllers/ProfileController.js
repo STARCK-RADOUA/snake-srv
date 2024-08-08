@@ -1,8 +1,8 @@
-const User = require("../models/user.js");
+const User = require("../models/User.js");
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 
-const getAdminByuser_id = async (req, res) => {
+const getAdminByUser_id = async (req, res) => {
     //console.log(req.params.id);
     try {
         const admin = await User.findOne({_id : req.params.id});
@@ -50,16 +50,16 @@ const isAdminValid = (newUser) => {
 const updateAdmin = async (req, res) => {
     console.log(req.body);
     let newUser = req.body;
-    let userValidStatus = isAdminValid(newUser);
-    if (!userValidStatus.status) {
+    let UserValidStatus = isAdminValid(newUser);
+    if (!UserValidStatus.status) {
         res.status(400).json({
             message: 'error',
-            errors: userValidStatus.errors
+            errors: UserValidStatus.errors
         });
     }
     else {
         try {
-            const updateduser = await User.updateOne({ _id: req.params.id }, { $set: req.body });
+            const updatedUser = await User.updateOne({ _id: req.params.id }, { $set: req.body });
             res.status(201).json({ message: 'success' });
         } catch (error) {
             res.status(400).json({ message: 'error', errors: [error.message] });
@@ -68,10 +68,10 @@ const updateAdmin = async (req, res) => {
 }
 
 
-const getDriverByuser_id = async (req, res) => {
+const getDriverByUser_id = async (req, res) => {
     //console.log(req.params.id);
     try {
-        const Driver = await Driver.findOne({user_id : req.params.id}).populate('user_id');
+        const Driver = await Driver.findOne({User_id : req.params.id}).populate('User_id');
         res.json(Driver);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -130,7 +130,7 @@ const updateDriver = async (req, res) => {
 
             const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "department": req.body.department } });
 
-            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "Username": req.body.Username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -139,9 +139,9 @@ const updateDriver = async (req, res) => {
     }
 }
 
-const getClientByuser_id = async (req, res) => {
+const getClientByUser_id = async (req, res) => {
     try {
-        const Client = await Client.findOne({user_id : req.params.id}).populate('user_id');
+        const Client = await Client.findOne({User_id : req.params.id}).populate('User_id');
         res.json(Client);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -200,7 +200,7 @@ const updateClient = async (req, res) => {
         try {
             const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender,"dob": req.body.dob } });
 
-            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "Username": req.body.Username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -211,10 +211,10 @@ const updateClient = async (req, res) => {
 
 
 module.exports = {
-    getAdminByuser_id,
+    getAdminByUser_id,
     updateAdmin,
-    getDriverByuser_id,
+    getDriverByUser_id,
     updateDriver,
-    getClientByuser_id,
+    getClientByUser_id,
     updateClient,
 }

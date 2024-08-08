@@ -14,7 +14,7 @@ function adminAuth(req, res, next) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
         // console.log("adminAuth ",payload);
-        if (payload.userType == "Admin") {
+        if (payload.UserType == "Admin") {
             next();
         }
         else {

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const userAuth = require('./middlewares/userAuth');
+const UserAuth = require('./middlewares/UserAuth');
 const driverAuth = require('./middlewares/driverAuth');
 
 
@@ -12,8 +12,8 @@ const {
 
 
 
-router.post('/count/users', userAuth, getUserCountByRole);
-router.get('/count/Orders', userAuth, getOrderCount);
+router.post('/count/Users', UserAuth, getUserCountByRole);
+router.get('/count/Orders', UserAuth, getOrderCount);
 router.get('/count/Clients/treated', driverAuth, getClientsTreatedCount)
 
 

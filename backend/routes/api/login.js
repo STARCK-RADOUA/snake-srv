@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../../models/user");
+const User = require("../../models/User");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 
@@ -38,27 +38,27 @@ const loginUser = (req, res) => {
     if (!loginValidStatus.status) {
         res.status(400).json({ message: "error", errors: loginValidStatus.errors });
     } else {
-        User.findOne({ email: email }, (error, user) => {
+        User.findOne({ email: email }, (error, User) => {
             if (error) {
                 res.status(400).json({ message: "error", errors: [error.message] });
-            } else if (!user) {
+            } else if (!User) {
                 res.status(401).json({ message: "error", errors: ["User not found"] });
             } else {
-                bcrypt.compare(password, user.password, (error2, result) => {
+                bcrypt.compare(password, User.password, (error2, result) => {
                     if (error2) {
                         res.status(401).json({ message: "error", errors: [error2.message] });
                     } else if (!result) {
                         res.status(401).json({ message: "error", errors: ["Invalid password"] });
                     } else {
                         const currentUser = {
-                            "firstName": user.firstName,
-                            "lastName": user.lastName,
-                            "userType": user.userType,
-                            "user_id": user._id
+                            "firstName": User.firstName,
+                            "lastName": User.lastName,
+                            "UserType": User.UserType,
+                            "User_id": User._id
                         };
 
-                        const token = jwt.sign({ id: user._id, userType: user.userType }, "ae2d8329d69cb40ef776f4d64c9b20ee67971cfd3df455f199d1f500712018fc", { expiresIn: "365d" });
-                        res.json({ message: "success", user: currentUser, token: token });
+                        const token = jwt.sign({ id: User._id, UserType: User.UserType }, "ae2d8329d69cb40ef776f4d64c9b20ee67971cfd3df455f199d1f500712018fc", { expiresIn: "365d" });
+                        res.json({ message: "success", User: currentUser, token: token });
                     }
                 });
             }

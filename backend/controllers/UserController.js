@@ -1,4 +1,4 @@
-const User = require("../models/user.js");
+const User = require("../models/User.js");
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 
@@ -12,12 +12,12 @@ const getUsers = async (req, res) => {
             conditions.push({ lastName: name });
         }
         if (role) {
-            conditions.push({ userType: role });
+            conditions.push({ UserType: role });
         }
 
-        const users = conditions.length === 0 ? await User.find({}) : await User.find({ $or: conditions });
+        const Users = conditions.length === 0 ? await User.find({}) : await User.find({ $or: conditions });
 
-        res.json(users);
+        res.json(Users);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -25,8 +25,8 @@ const getUsers = async (req, res) => {
 
 const getUserById = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
-        res.json(user);
+        const User = await User.findById(req.params.id);
+        res.json(User);
     } catch (error) {
         res.status(404).json({ message: error.message });
     }
@@ -39,7 +39,7 @@ const isUserValid = (newUser) => {
     if (!newUser.email) errorList.push("Please enter email");
     if (!newUser.password) errorList.push("Please enter password");
     if (!newUser.confirmPassword) errorList.push("Please re-enter password in Confirm Password field");
-    if (!newUser.userType) errorList.push("Please enter User Type");
+    if (!newUser.UserType) errorList.push("Please enter User Type");
     if (newUser.password !== newUser.confirmPassword) errorList.push("Password and Confirm Password did not match");
 
     return errorList.length > 0 ? { status: false, errors: errorList } : { status: true };
@@ -47,33 +47,33 @@ const isUserValid = (newUser) => {
 
 const saveUser = async (req, res) => {
     const newUser = req.body;
-    const userValidStatus = isUserValid(newUser);
+    const UserValidStatus = isUserValid(newUser);
 
-    if (!userValidStatus.status) {
-        return res.status(400).json({ message: 'error', errors: userValidStatus.errors });
+    if (!UserValidStatus.status) {
+        return res.status(400).json({ message: 'error', errors: UserValidStatus.errors });
     }
 
     try {
-        const userDetails = await User.create({
+        const UserDetails = await User.create({
             email: newUser.email,
-            username: newUser.username,
+            Username: newUser.Username,
             firstName: newUser.firstName,
             lastName: newUser.lastName,
             password: newUser.password,
-            userType: newUser.userType,
+            UserType: newUser.UserType,
             activated: true
         });
 
-        if (newUser.userType === "Driver") {
+        if (newUser.UserType === "Driver") {
             await Driver.create({
-                user_id: userDetails._id,
+                User_id: UserDetails._id,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 email: newUser.email
             });
-        } else if (newUser.userType === "Client") {
+        } else if (newUser.UserType === "Client") {
             await Client.create({
-                user_id: userDetails._id,
+                User_id: UserDetails._id,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 email: newUser.email
@@ -87,10 +87,10 @@ const saveUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
     const newUser = req.body;
-    const userValidStatus = isUserValid(newUser);
+    const UserValidStatus = isUserValid(newUser);
 
-    if (!userValidStatus.status) {
-        return res.status(400).json({ message: 'error', errors: userValidStatus.errors });
+    if (!UserValidStatus.status) {
+        return res.status(400).json({ message: 'error', errors: UserValidStatus.errors });
     }
 
     try {
@@ -103,12 +103,12 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const User = await User.findById(req.params.id);
 
-        if (user.userType === 'Driver') {
-            await Driver.deleteOne({ user_id: req.params.id });
-        } else if (user.userType === 'Client') {
-            await Client.deleteOne({ user_id: req.params.id });
+        if (User.UserType === 'Driver') {
+            await Driver.deleteOne({ User_id: req.params.id });
+        } else if (User.UserType === 'Client') {
+            await Client.deleteOne({ User_id: req.params.id });
         }
 
         await User.deleteOne({ _id: req.params.id });
@@ -118,25 +118,25 @@ const deleteUser = async (req, res) => {
     }
 }
 
-const getActivatedStatus = async (user_id) => {
+const getActivatedStatus = async (User_id) => {
     try {
-        const user = await User.findById(user_id);
-        if (!user) throw new Error("Utilisateur introuvable");
+        const User = await User.findById(User_id);
+        if (!User) throw new Error("Utilisateur introuvable");
 
-        return { activated: user.activated };
+        return { activated: User.activated };
     } catch (error) {
         throw error;
     }
 }
 
-const editActivatedStatus = async (user_id, newActivatedStatus) => {
+const editActivatedStatus = async (User_id, newActivatedStatus) => {
     try {
-        const user = await User.findById(user_id);
-        if (!user) throw new Error("Utilisateur introuvable");
+        const User = await User.findById(User_id);
+        if (!User) throw new Error("Utilisateur introuvable");
 
      
         const updatedDepartement = await User.findByIdAndUpdate(
-          user_id,
+          User_id,
           { activated: newActivatedStatus },
          
         );

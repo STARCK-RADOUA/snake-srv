@@ -1,4 +1,4 @@
-const User = require("../models/user.js");
+const User = require("../models/User.js");
 const Order = require("../models/Order.js");
 const Product = require("../models/Product.js");
 const mongoose = require("mongoose");
@@ -8,12 +8,12 @@ var moment = require('moment');
 const getUserCountByRole = async (req, res) => {
      console.log("api hit")
     try {
-        var userType = req.body.userType;
+        var UserType = req.body.UserType;
         console.log(req.body);
-        let users = [];
-        if (userType) {
-            users = await User.find({ "userType": userType });
-            res.json({ 'count': users.length });
+        let Users = [];
+        if (UserType) {
+            Users = await User.find({ "UserType": UserType });
+            res.json({ 'count': Users.length });
         }
         else {
             res.status(400).json({ errors: ["User type is missing in body"] })

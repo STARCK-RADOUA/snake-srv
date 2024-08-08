@@ -9,8 +9,8 @@ const getProducts = async (req, res) => {
         let searchDriver = req.sender.DriverId;
         
         let Products = [];
-        let userType = req.sender.userType;
-        if (userType == 'Client') {
+        let UserType = req.sender.UserType;
+        if (UserType == 'Client') {
             let ClientId = req.sender.ClientId;
             //console.log(ClientId);
             Products = await Product.find({}).populate({
@@ -22,20 +22,20 @@ const getProducts = async (req, res) => {
                     {
                         path: 'ClientId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         },
                     },
                     {
                         path: 'DriverId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     }
                 ]
             }).then((Products) => Products.filter((pre => pre.OrderId != null)));
             
 
-        } else if (userType == 'Driver') {
+        } else if (UserType == 'Driver') {
             let matchDriverClient = {};
             /*
             if(searchClient){
@@ -65,13 +65,13 @@ const getProducts = async (req, res) => {
                     {
                         path: 'ClientId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     },
                     {
                         path: 'DriverId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     }
                 ]
@@ -108,13 +108,13 @@ const getProducts = async (req, res) => {
                     {
                         path: 'ClientId',
                         populate: {
-                            path: 'user_id',
+                            path: 'User_id',
                         }
                     },
                     {
                         path: 'DriverId',
                         populate: {
-                            path: 'user_id'
+                            path: 'User_id'
                         }
                     }
                 ]

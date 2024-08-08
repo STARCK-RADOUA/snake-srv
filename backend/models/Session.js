@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const sessionSchema = new mongoose.Schema({
-  user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  User_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   device_id: { type: String, required: true },
   token: { type: String, required: true },
   expires_at: { type: Date, required: true },
