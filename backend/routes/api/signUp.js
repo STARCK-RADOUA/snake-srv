@@ -56,8 +56,8 @@ const isUserValid = (newUser) => {
     }
 };
 
-const saveVerificationToken = async (userId, verificationToken) => {
-    await User.findOneAndUpdate({ _id: userId }, { "verificationToken": verificationToken });
+const saveVerificationToken = async (user_id, verificationToken) => {
+    await User.findOneAndUpdate({ _id: user_id }, { "verificationToken": verificationToken });
     return;
 }
 
@@ -119,7 +119,7 @@ module.exports = (req, res) => {
                     if (newUser.userType === "Driver") {
                         Driver.create(
                             {
-                                userId: userDetails._id,
+                                user_id: userDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
                                 email: newUser.email,
@@ -139,7 +139,7 @@ module.exports = (req, res) => {
                     if (newUser.userType === "Client") {
                         Client.create(
                             {
-                                userId: userDetails._id,
+                                user_id: userDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
                                 email: newUser.email,

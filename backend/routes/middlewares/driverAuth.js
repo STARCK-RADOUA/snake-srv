@@ -22,7 +22,7 @@ function driverAuth(req, res, next) {
         // console.log("driverAuth ", payload);
         if (payload.userType == "Driver") {
             let Driver = await Driver.findOne({
-                'userId': mongoose.Types.ObjectId(req.sender.id)
+                'user_id': mongoose.Types.ObjectId(req.sender.id)
             })
             req.sender.DriverId = Driver._id;
             next();

@@ -6,7 +6,7 @@ const Product = require("../models/Product.js");
 const createInvoiceJSON = (Product) => {
     const invoice = {
         shipping: {
-            name: Product.OrderId.ClientId.userId.firstName + " " + Product.OrderId.ClientId.userId.lastName,
+            name: Product.OrderId.ClientId.user_id.firstName + " " + Product.OrderId.ClientId.user_id.lastName,
             address: Product.OrderId.ClientId.address,
             city: "Casablanca",
             state: "ON",
@@ -72,13 +72,13 @@ async function getInvoice(req, res) {
                 {
                     path: 'ClientId',
                     populate: {
-                        path: 'userId',
+                        path: 'user_id',
                     }
                 },
                 {
                     path: 'DriverId',
                     populate: {
-                        path: 'userId'
+                        path: 'user_id'
                     }
                 }
             ]

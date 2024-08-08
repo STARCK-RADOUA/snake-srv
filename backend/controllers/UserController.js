@@ -66,14 +66,14 @@ const saveUser = async (req, res) => {
 
         if (newUser.userType === "Driver") {
             await Driver.create({
-                userId: userDetails._id,
+                user_id: userDetails._id,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 email: newUser.email
             });
         } else if (newUser.userType === "Client") {
             await Client.create({
-                userId: userDetails._id,
+                user_id: userDetails._id,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 email: newUser.email
@@ -106,9 +106,9 @@ const deleteUser = async (req, res) => {
         const user = await User.findById(req.params.id);
 
         if (user.userType === 'Driver') {
-            await Driver.deleteOne({ userId: req.params.id });
+            await Driver.deleteOne({ user_id: req.params.id });
         } else if (user.userType === 'Client') {
-            await Client.deleteOne({ userId: req.params.id });
+            await Client.deleteOne({ user_id: req.params.id });
         }
 
         await User.deleteOne({ _id: req.params.id });
@@ -118,9 +118,9 @@ const deleteUser = async (req, res) => {
     }
 }
 
-const getActivatedStatus = async (userId) => {
+const getActivatedStatus = async (user_id) => {
     try {
-        const user = await User.findById(userId);
+        const user = await User.findById(user_id);
         if (!user) throw new Error("Utilisateur introuvable");
 
         return { activated: user.activated };
@@ -129,14 +129,14 @@ const getActivatedStatus = async (userId) => {
     }
 }
 
-const editActivatedStatus = async (userId, newActivatedStatus) => {
+const editActivatedStatus = async (user_id, newActivatedStatus) => {
     try {
-        const user = await User.findById(userId);
+        const user = await User.findById(user_id);
         if (!user) throw new Error("Utilisateur introuvable");
 
      
         const updatedDepartement = await User.findByIdAndUpdate(
-          userId,
+          user_id,
           { activated: newActivatedStatus },
          
         );

@@ -23,6 +23,6 @@ router.delete('/Drivers/:id', deleteDriver);
 
 
 // Route pour éditer l'état "activated" d'un utilisateur
-router.patch('/Drivers/:userId/activated', editDriverActivatedStatus);
+router.patch('/Drivers/:user_id/activated', editDriverActivatedStatus);
 
 module.exports = router;

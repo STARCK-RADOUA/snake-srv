@@ -14,7 +14,7 @@ const getDrivers = async (req, res) => {
         let Drivers;
         if (searchDriver) {
             Drivers = await Driver.find().populate({
-                path: 'userId',
+                path: 'user_id',
                 select: 'firstName lastName email username activated',
                 match: {
                     $or: [
@@ -23,18 +23,18 @@ const getDrivers = async (req, res) => {
                         { email: { $regex: searchDriver } }
                     ]
                 }
-            }).then(Drivers => Drivers.filter(Driver => Driver.userId != null));
+            }).then(Drivers => Drivers.filter(Driver => Driver.user_id != null));
         } else {
-            Drivers = await Driver.find({}).populate('userId', 'firstName lastName email username activated');
+            Drivers = await Driver.find({}).populate('user_id', 'firstName lastName email username activated');
         }
 
         // Ajout de la propriété activated à chaque médecin
         for (let Driver of Drivers) {
-            if (Driver.userId && Driver.userId.activated !== undefined) {
+            if (Driver.user_id && Driver.user_id.activated !== undefined) {
                 Driver = Driver.toObject();  // Convertir en objet JS standard pour ajouter la propriété
-                Driver.activated = Driver.userId.activated;
+                Driver.activated = Driver.user_id.activated;
             } else {
-                const { activated } = await getActivatedStatus(Driver.userId._id);
+                const { activated } = await getActivatedStatus(Driver.user_id._id);
                 Driver = Driver.toObject();  // Convertir en objet JS standard pour ajouter la propriété
                 Driver.activated = activated;
             }
@@ -48,7 +48,7 @@ const getDrivers = async (req, res) => {
 const getDriverById = async (req, res) => {
     //console.log(req.params.id);
     try {
-        const Driver = await Driver.findById(req.params.id).populate('userId');
+        const Driver = await Driver.findById(req.params.id).populate('user_id');
         res.json(Driver);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -89,8 +89,8 @@ const isDriverValid = (newDriver) => {
     }
 
 }
-const saveVerificationToken = async (userId, verificationToken) => {
-    await User.findOneAndUpdate({ _id: userId }, { "verificationToken": verificationToken });
+const saveVerificationToken = async (user_id, verificationToken) => {
+    await User.findOneAndUpdate({ _id: user_id }, { "verificationToken": verificationToken });
     return;
 }
 const generateVerificationToken = () => {
@@ -107,10 +107,10 @@ const editDriverActivatedStatus = async (req, res) => {
     try {
        
         const { activated } = req.body;
-        const Driver = await Driver.findById(req.params.userId).populate('userId');
+        const Driver = await Driver.findById(req.params.user_id).populate('user_id');
 
         // Modifier l'état "activated" de l'utilisateur
-        await editActivatedStatus(Driver.userId._id, activated);
+        await editActivatedStatus(Driver.user_id._id, activated);
 
         res.status(200).json({ message: "Statut 'activated' mis à jour avec succès" });
     } catch (error) {
@@ -152,7 +152,7 @@ const saveDriver = async (req, res) => {
                   
                         Driver.create(
                             {
-                                userId: userDetails._id,
+                                user_id: userDetails._id,
                                 firstName: newDriver.firstName,
                                 lastName: newDriver.lastName,
                                 email: newDriver.email,
@@ -203,7 +203,7 @@ const updateDriver = async (req, res) => {
 
             const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "department": req.body.department } });
 
-            const updateduser = await User.updateOne({ _id: req.body.userId }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -214,11 +214,11 @@ const updateDriver = async (req, res) => {
 
 const deleteDriver = async (req, res) => {
     try {
-        const Driver = await Driver.findById(req.params.id).populate('userId');
+        const Driver = await Driver.findById(req.params.id).populate('user_id');
 
         const deletedDriver = await Driver.deleteOne({ _id: req.params.id });
 
-        const deleteduser = await User.deleteOne({ _id: Driver.userId._id });
+        const deleteduser = await User.deleteOne({ _id: Driver.user_id._id });
         res.status(200).json();
     } catch (error) {
         res.status(400).json({ message: error.message });

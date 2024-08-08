@@ -2,7 +2,7 @@ const User = require("../models/user.js");
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 
-const getAdminByUserId = async (req, res) => {
+const getAdminByuser_id = async (req, res) => {
     //console.log(req.params.id);
     try {
         const admin = await User.findOne({_id : req.params.id});
@@ -68,10 +68,10 @@ const updateAdmin = async (req, res) => {
 }
 
 
-const getDriverByUserId = async (req, res) => {
+const getDriverByuser_id = async (req, res) => {
     //console.log(req.params.id);
     try {
-        const Driver = await Driver.findOne({userId : req.params.id}).populate('userId');
+        const Driver = await Driver.findOne({user_id : req.params.id}).populate('user_id');
         res.json(Driver);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -130,7 +130,7 @@ const updateDriver = async (req, res) => {
 
             const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "department": req.body.department } });
 
-            const updateduser = await User.updateOne({ _id: req.body.userId }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -139,9 +139,9 @@ const updateDriver = async (req, res) => {
     }
 }
 
-const getClientByUserId = async (req, res) => {
+const getClientByuser_id = async (req, res) => {
     try {
-        const Client = await Client.findOne({userId : req.params.id}).populate('userId');
+        const Client = await Client.findOne({user_id : req.params.id}).populate('user_id');
         res.json(Client);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -200,7 +200,7 @@ const updateClient = async (req, res) => {
         try {
             const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender,"dob": req.body.dob } });
 
-            const updateduser = await User.updateOne({ _id: req.body.userId }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -211,10 +211,10 @@ const updateClient = async (req, res) => {
 
 
 module.exports = {
-    getAdminByUserId,
+    getAdminByuser_id,
     updateAdmin,
-    getDriverByUserId,
+    getDriverByuser_id,
     updateDriver,
-    getClientByUserId,
+    getClientByuser_id,
     updateClient,
 }

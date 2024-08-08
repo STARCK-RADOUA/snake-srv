@@ -22,13 +22,13 @@ const getProducts = async (req, res) => {
                     {
                         path: 'ClientId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         },
                     },
                     {
                         path: 'DriverId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     }
                 ]
@@ -65,13 +65,13 @@ const getProducts = async (req, res) => {
                     {
                         path: 'ClientId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     },
                     {
                         path: 'DriverId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     }
                 ]
@@ -108,13 +108,13 @@ const getProducts = async (req, res) => {
                     {
                         path: 'ClientId',
                         populate: {
-                            path: 'userId',
+                            path: 'user_id',
                         }
                     },
                     {
                         path: 'DriverId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     }
                 ]

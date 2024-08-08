@@ -41,13 +41,13 @@ const getOrders = async (req, res) => {
                 }).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'userId'
+                        path: 'user_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     });
             }
@@ -64,13 +64,13 @@ const getOrders = async (req, res) => {
                 }).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'userId'
+                        path: 'user_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     });
             }
@@ -91,13 +91,13 @@ const getOrders = async (req, res) => {
                 Orders = await Order.find(query).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'userId'
+                        path: 'user_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     });
             }
@@ -112,13 +112,13 @@ const getOrders = async (req, res) => {
                 }).populate({
                     path: 'DriverId',
                     populate: {
-                        path: 'userId'
+                        path: 'user_id'
                     }
                 })
                     .populate({
                         path: 'ClientId',
                         populate: {
-                            path: 'userId'
+                            path: 'user_id'
                         }
                     });
             }

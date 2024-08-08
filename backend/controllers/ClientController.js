@@ -1,6 +1,6 @@
 const Client = require("../models/Client.js");
 const Product = require("../models/Product.js");
-const User = require("../models/user.js");
+const User = require("../models/User.js");
 
 const getClients = async (req, res) => {
 
@@ -9,11 +9,11 @@ const getClients = async (req, res) => {
 
         let Clients = [];
         if (!searchClient) {
-            Clients = await Client.find({}).populate('userId');
+            Clients = await Client.find({}).populate('user_id');
 
         } else {
             Clients = await Client.find().populate({
-                path: 'userId',
+                path: 'user_id',
                 select: 'firstName lastName email username',
                 match: {
                     $or: [
@@ -22,7 +22,7 @@ const getClients = async (req, res) => {
                         { email: { $regex: searchClient } }
                     ]
                 }
-            }).then((Clients) => Clients.filter((Client => Client.userId != null)));
+            }).then((Clients) => Clients.filter((Client => Client.user_id != null)));
         }
 
         res.json(Clients);
@@ -33,7 +33,7 @@ const getClients = async (req, res) => {
 
 const getClientById = async (req, res) => {
     try {
-        const Client = await Client.findById(req.params.id).populate('userId');
+        const Client = await Client.findById(req.params.id).populate('user_id');
         res.json(Client);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -103,7 +103,7 @@ const saveClient = async (req, res) => {
                 if (error) {
                     res.status(400).json({ message: "error", errors: [error.message] });
                 } else {
-                    newClient.userId = userDetails._id,
+                    newClient.user_id = userDetails._id,
                         Client.create(newClient,
                             (error2, ClientDetails) => {
                                 if (error2) {
@@ -133,7 +133,7 @@ const updateClient = async (req, res) => {
         try {
             const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender, "dob": req.body.dob } });
 
-            const updateduser = await User.updateOne({ _id: req.body.userId }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -144,7 +144,7 @@ const updateClient = async (req, res) => {
 
 const deleteClient = async (req, res) => {
     try {
-        const Client = await Client.findById(req.params.id).populate('userId');
+        const Client = await Client.findById(req.params.id).populate('user_id');
 
         if (!Client) {
             return res.status(404).json({ message: 'Client not found' });
@@ -152,7 +152,7 @@ const deleteClient = async (req, res) => {
 
         const deletedClient = await Client.deleteOne({ _id: req.params.id });
 
-        const deletedUser = await User.deleteOne({ _id: Client.userId });
+        const deletedUser = await User.deleteOne({ _id: Client.user_id });
 
         res.status(200).json(deletedClient);
     } catch (error) {
@@ -172,13 +172,13 @@ const getClientHistory = async (req, res) => {
                 {
                     path: 'ClientId',
                     populate: {
-                        path: 'userId'
+                        path: 'user_id'
                     }
                 },
                 {
                     path: 'DriverId',
                     populate: {
-                        path: 'userId'
+                        path: 'user_id'
                     }
                 }
             ]

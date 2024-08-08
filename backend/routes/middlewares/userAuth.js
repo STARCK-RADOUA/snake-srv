@@ -30,14 +30,14 @@ function userAuth(req, res, next) {
         else if (payload.userType == "Driver") {
              driverAuth(req,res,next);
             let Driver = await Driver.findOne({
-                'userId': mongoose.Types.ObjectId(req.sender.id)
+                'user_id': mongoose.Types.ObjectId(req.sender.id)
             })
             req.sender.DriverId = Driver._id;
         }
         else if (payload.userType == "Client") {
             clientAuth(req,res,next);
             let Client = await Client.findOne({
-                'userId': mongoose.Types.ObjectId(req.sender.id)
+                'user_id': mongoose.Types.ObjectId(req.sender.id)
             })
             // console.log("inside user auth. Client",req.sender.id)
             // console.log("inside user auth. Client",Client)

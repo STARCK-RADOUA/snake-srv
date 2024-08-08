@@ -2,22 +2,22 @@ const express = require("express");
 const router = express.Router();
 
 const  { 
-    getAdminByUserId,
+    getAdminByuser_id,
     updateAdmin,
-    getClientByUserId,
+    getClientByuser_id,
     updateClient,
-    getDriverByUserId,
+    getDriverByuser_id,
     updateDriver,
 } = require('../controllers/ProfileController.js')
  
  
-router.get('/profile/admin/:id', getAdminByUserId);
+router.get('/profile/admin/:id', getAdminByuser_id);
 router.patch('/profile/admin/:id', updateAdmin);
 
-router.get('/profile/Client/:id', getClientByUserId);
+router.get('/profile/Client/:id', getClientByuser_id);
 router.patch('/profile/Client/:id', updateClient);
 
-router.get('/profile/Driver/:id', getDriverByUserId);
+router.get('/profile/Driver/:id', getDriverByuser_id);
 router.patch('/profile/Driver/:id', updateDriver);
 
 

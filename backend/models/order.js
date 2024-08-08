@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
   client_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
-  courier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Courier', required: false },
+  driver_id: { type: mongoose.Schema.Types.ObjectId, ref: 'driver', required: false },
   address_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: true },
   status: { type: String, enum: ['pending', 'approved', 'in_progress', 'delivered', 'cancelled'], required: true },
   total_price: { type: Number, required: true },
