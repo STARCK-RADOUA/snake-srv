@@ -27,14 +27,14 @@ exports.getDriverById = async (req, res) => {
 // Create a new driver
 exports.createDriver = async (req, res) => {
     try {
-        const { user_id, vehicle_type, additional_courier_info } = req.body;
+        const { user_id, phone, additional_courier_info } = req.body;
         const user = await User.findById(user_id);
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const newDriver = new Driver({ user_id, vehicle_type, additional_courier_info });
+        const newDriver = new Driver({ user_id, phone, additional_courier_info });
         await newDriver.save();
         res.status(201).json(newDriver);
     } catch (error) {
@@ -45,8 +45,8 @@ exports.createDriver = async (req, res) => {
 // Update a driver
 exports.updateDriver = async (req, res) => {
     try {
-        const { vehicle_type, additional_courier_info } = req.body;
-        const driver = await Driver.findByIdAndUpdate(req.params.id, { vehicle_type, additional_courier_info }, { new: true });
+        const { phone, additional_courier_info } = req.body;
+        const driver = await Driver.findByIdAndUpdate(req.params.id, { phone, additional_courier_info }, { new: true });
 
         if (!driver) {
             return res.status(404).json({ error: 'Driver not found' });

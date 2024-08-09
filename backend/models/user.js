@@ -14,7 +14,7 @@ UserType: {
   enum: ['Admin', 'Client', 'Driver'],
 },
 phone: {
-  type: number,
+  type: Number,
   required: true,
   
 },
@@ -26,3 +26,6 @@ phone: {
 
 const User = mongoose.model('User', UserSchema);
 module.exports = User;
+
+
+

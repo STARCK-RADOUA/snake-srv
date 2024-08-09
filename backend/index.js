@@ -1,55 +1,61 @@
-const express = require("express");
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+require('dotenv').config();
+
+const addressRoutes = require('./routes/addressRoute');
+const adminRoutes = require('./routes/adminRoutes');
+const chatRoutes = require('./routes/chatRoute');
+const clientRoutes = require('./routes/clientRoutes');
+const driverRoutes = require('./routes/driverRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const orderRoutes = require('./routes/orderRoutes');
+const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
+const orderItemRoutes = require('./routes/orderItemRoutesr');
+const productRoutes = require('./routes/productRoutes');
+const profileRoutes = require('./routes/ProfileRoute');
+const referralRoutes = require('./routes/referralRoutes');
+const sessionRoutes = require('./routes/sessionRoutes');
+const userRoutes = require('./routes/userRoutes');
+
+// Initialize express
 const app = express();
-const cors = require("cors");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-require("dotenv").config();
-const DepartementRoute = require("./routes/DepartementRoute");
-const nodphoneer = require("nodphoneer");
 
-const getAllClients = require("./routes/api/getAllClients");
-const getClientByID = require("./routes/api/getClientByID");
-const createClient = require("./routes/api/createClient");
-const editClientByID = require("./routes/api/editClientByID");
-const deleteClientByID = require("./routes/api/deleteClientByID");
-const LoginRegisterRoute = require("./routes/LoginRegisterRoute.js");
-const UserRoute = require("./routes/UserRoute.js");
-const HomeRoute = require("./routes/HomeRoute.js");
-const ClientRoute = require("./routes/ClientRoute.js");
-const DriverRoute = require("./routes/DriverRoute.js");
-const OrderRoute = require("./routes/OrderRoute.js");
-const MedicineRoute = require("./routes/MedicineRoute.js");
-const ProductRoute = require("./routes/ProductRoute.js");
-const InvoiceRoute = require("./routes/InvoiceRoute.js");
-const ProfileRoute = require("./routes/ProfileRoute.js");
-
-app.use(cors());
+// Middleware
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+
 
 mongoose.set("strictQuery", true);
-mongoose.connect(
-  "mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0",
-  { useNewUrlParser: true }
-);
 
-app.listen(3001, () => {
-  console.log("App listening on port " + 3001);
+// Database connection
+mongoose.connect("mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  
+}).then(() => {
+    console.log('Connected to MongoDB');
+}).catch(err => {
+    console.error('Failed to connect to MongoDB:', err);
 });
 
-app.use(LoginRegisterRoute);
-app.use(HomeRoute);
-app.use(UserRoute);
-app.use(ClientRoute);
-app.use(DriverRoute);
-app.use(OrderRoute);
-app.use(MedicineRoute);
-app.use(ProductRoute);
-app.use(InvoiceRoute);
-app.use(ProfileRoute);
-app.use(DepartementRoute);
+// Routes
+app.use('/api/addresses', addressRoutes);
+app.use('/api/admins', adminRoutes);
+app.use('/api/chats', chatRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/drivers', driverRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/order-history', orderHistoryRoutes);
+app.use('/api/order-items', orderItemRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/referrals', referralRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/users', userRoutes);
 
-app.get("/", (req, res) => {
-  res.send("hello world");
+// Server setup
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
