@@ -1,9 +1,9 @@
-const User = require("../../models/User");
+const User = require("../../models/user");
 
 module.exports = (req, res) => {
     const token = req.params.id;
-    const verifyphone = async (token) => {
-        const User = await User.findOneAndUpdate({
+    const verifyEmail = async (token) => {
+        const user = await User.findOneAndUpdate({
             'verificationToken.token': token,
             'verificationToken.expires': { $gt: Date.now() } // Check that the token has not expired
         }, {
@@ -11,14 +11,14 @@ module.exports = (req, res) => {
             "verificationToken.token": null
         });
 
-        if (!User) {
-            console.log("phone could not be verified");
+        if (!user) {
+            console.log("Email could not be verified");
             res.status(500).json({ message: 'Error verifying account' });
         }
         else {
-            console.log("phone verified");
-            res.send("phone verified");
+            console.log("Email verified");
+            res.send("Email verified");
         }
     };
-    verifyphone(token);
+    verifyEmail(token);
 }

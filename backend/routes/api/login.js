@@ -1,18 +1,18 @@
 const jwt = require("jsonwebtoken");
-const User = require("../../models/User");
+const User = require("../../models/user");
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 
-const isLoginValid = (phone, password) => {
+const isLoginValid = (email, password) => {
     const errorList = [];
-    const phoneRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
-    if (!phone) {
-        errorList.push("Please enter phone");
-    } else if (!phoneRegex.test(phone)) {
-        errorList.push("Invalid phone format");
+    if (!email) {
+        errorList.push("Please enter email");
+    } else if (!emailRegex.test(email)) {
+        errorList.push("Invalid email format");
     }
 
     if (!password) {
@@ -32,33 +32,33 @@ const isLoginValid = (phone, password) => {
 };
 
 const loginUser = (req, res) => {
-    const { phone, password } = req.body;
+    const { email, password } = req.body;
 
-    const loginValidStatus = isLoginValid(phone, password);
+    const loginValidStatus = isLoginValid(email, password);
     if (!loginValidStatus.status) {
         res.status(400).json({ message: "error", errors: loginValidStatus.errors });
     } else {
-        User.findOne({ phone: phone }, (error, User) => {
+        User.findOne({ email: email }, (error, user) => {
             if (error) {
                 res.status(400).json({ message: "error", errors: [error.message] });
-            } else if (!User) {
+            } else if (!user) {
                 res.status(401).json({ message: "error", errors: ["User not found"] });
             } else {
-                bcrypt.compare(password, User.password, (error2, result) => {
+                bcrypt.compare(password, user.password, (error2, result) => {
                     if (error2) {
                         res.status(401).json({ message: "error", errors: [error2.message] });
                     } else if (!result) {
                         res.status(401).json({ message: "error", errors: ["Invalid password"] });
                     } else {
                         const currentUser = {
-                            "firstName": User.firstName,
-                            "lastName": User.lastName,
-                            "UserType": User.UserType,
-                            "User_id": User._id
+                            "firstName": user.firstName,
+                            "lastName": user.lastName,
+                            "userType": user.userType,
+                            "user_id": user._id
                         };
 
-                        const token = jwt.sign({ id: User._id, UserType: User.UserType }, "ae2d8329d69cb40ef776f4d64c9b20ee67971cfd3df455f199d1f500712018fc", { expiresIn: "365d" });
-                        res.json({ message: "success", User: currentUser, token: token });
+                        const token = jwt.sign({ id: user._id, userType: user.userType }, "ae2d8329d69cb40ef776f4d64c9b20ee67971cfd3df455f199d1f500712018fc", { expiresIn: "365d" });
+                        res.json({ message: "success", user: currentUser, token: token });
                     }
                 });
             }

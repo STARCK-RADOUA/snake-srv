@@ -1,163 +1,68 @@
-const User = require("../models/User.js");
-const Client = require("../models/Client.js");
-const Driver = require("../models/Driver.js");
+const User = require('../models/User');
 
-const getUsers = async (req, res) => {
+// Get all users
+exports.getAllUsers = async (req, res) => {
     try {
-        const { name, role } = req.query;
+        const users = await User.find();
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+};
 
-        let conditions = [];
-        if (name) {
-            conditions.push({ firstName: name });
-            conditions.push({ lastName: name });
+// Get a user by ID
+exports.getUserById = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
-        if (role) {
-            conditions.push({ UserType: role });
-        }
-
-        const Users = conditions.length === 0 ? await User.find({}) : await User.find({ $or: conditions });
-
-        res.json(Users);
+        res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ error: 'Failed to fetch user' });
     }
-}
+};
 
-const getUserById = async (req, res) => {
+// Create a new user
+exports.createUser = async (req, res) => {
     try {
-        const User = await User.findById(req.params.id);
-        res.json(User);
+        const { name, email, password } = req.body;
+        const newUser = new User({ name, email, password });
+        await newUser.save();
+        res.status(201).json(newUser);
     } catch (error) {
-        res.status(404).json({ message: error.message });
+        res.status(500).json({ error: 'Failed to create user' });
     }
-}
+};
 
-const isUserValid = (newUser) => {
-    let errorList = [];
-    if (!newUser.firstName) errorList.push("Please enter first name");
-    if (!newUser.lastName) errorList.push("Please enter last name");
-    if (!newUser.phone) errorList.push("Please enter phone");
-    if (!newUser.password) errorList.push("Please enter password");
-    if (!newUser.confirmPassword) errorList.push("Please re-enter password in Confirm Password field");
-    if (!newUser.UserType) errorList.push("Please enter User Type");
-    if (newUser.password !== newUser.confirmPassword) errorList.push("Password and Confirm Password did not match");
-
-    return errorList.length > 0 ? { status: false, errors: errorList } : { status: true };
-}
-
-const saveUser = async (req, res) => {
-    const newUser = req.body;
-    const UserValidStatus = isUserValid(newUser);
-
-    if (!UserValidStatus.status) {
-        return res.status(400).json({ message: 'error', errors: UserValidStatus.errors });
-    }
-
+// Update a user
+exports.updateUser = async (req, res) => {
     try {
-        const UserDetails = await User.create({
-            phone: newUser.phone,
-            Username: newUser.Username,
-            firstName: newUser.firstName,
-            lastName: newUser.lastName,
-            password: newUser.password,
-            UserType: newUser.UserType,
-            activated: true
-        });
+        const { name, email, password } = req.body;
+        const user = await User.findByIdAndUpdate(req.params.id, { name, email, password }, { new: true });
 
-        if (newUser.UserType === "Driver") {
-            await Driver.create({
-                User_id: UserDetails._id,
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                phone: newUser.phone
-            });
-        } else if (newUser.UserType === "Client") {
-            await Client.create({
-                User_id: UserDetails._id,
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                phone: newUser.phone
-            });
-        }
-        res.status(201).json({ message: "success" });
-    } catch (error) {
-        res.status(400).json({ message: "error", errors: [error.message] });
-    }
-}
-
-const updateUser = async (req, res) => {
-    const newUser = req.body;
-    const UserValidStatus = isUserValid(newUser);
-
-    if (!UserValidStatus.status) {
-        return res.status(400).json({ message: 'error', errors: UserValidStatus.errors });
-    }
-
-    try {
-        await User.updateOne({ _id: req.params.id }, { $set: req.body });
-        res.status(201).json({ message: 'success' });
-    } catch (error) {
-        res.status(400).json({ message: 'error', errors: [error.message] });
-    }
-}
-
-const deleteUser = async (req, res) => {
-    try {
-        const User = await User.findById(req.params.id);
-
-        if (User.UserType === 'Driver') {
-            await Driver.deleteOne({ User_id: req.params.id });
-        } else if (User.UserType === 'Client') {
-            await Client.deleteOne({ User_id: req.params.id });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
 
-        await User.deleteOne({ _id: req.params.id });
-        res.status(200).json({ message: 'success' });
+        res.status(200).json(user);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ error: 'Failed to update user' });
     }
-}
+};
 
-const getActivatedStatus = async (User_id) => {
+// Delete a user
+exports.deleteUser = async (req, res) => {
     try {
-        const User = await User.findById(User_id);
-        if (!User) throw new Error("Utilisateur introuvable");
-
-        return { activated: User.activated };
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        res.status(200).json({ message: 'User deleted successfully' });
     } catch (error) {
-        throw error;
+        res.status(500).json({ error: 'Failed to delete user' });
     }
-}
-
-const editActivatedStatus = async (User_id, newActivatedStatus) => {
-    try {
-        const User = await User.findById(User_id);
-        if (!User) throw new Error("Utilisateur introuvable");
-
-     
-        const updatedDepartement = await User.findByIdAndUpdate(
-          User_id,
-          { activated: newActivatedStatus },
-         
-        );
+};
 
 
-
-
-        
-
-        return { message: "Statut 'activated' mis à jour avec succès" };
-    } catch (error) {
-        throw error;
-    }
-}
-
-module.exports = {
-    getUsers,
-    getUserById,
-    saveUser,
-    updateUser,
-    deleteUser,
-    getActivatedStatus,
-    editActivatedStatus
-}
+// activateUser , 

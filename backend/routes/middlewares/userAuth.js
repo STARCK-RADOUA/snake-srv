@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const Driver = require("../../models/Driver");
 
 
-function UserAuth(req, res, next) {
+function userAuth(req, res, next) {
     // console.log("adminAuth hit",);
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -22,25 +22,25 @@ function UserAuth(req, res, next) {
         // console.log("adminAuth ",payload);
         req.sender = {
             "id": payload.id,
-            "UserType": payload.UserType
+            "userType": payload.userType
         };
-        if (payload.UserType == "Admin") {
+        if (payload.userType == "Admin") {
              adminAuth(req,res,next);
         }
-        else if (payload.UserType == "Driver") {
+        else if (payload.userType == "Driver") {
              driverAuth(req,res,next);
             let Driver = await Driver.findOne({
-                'User_id': mongoose.Types.ObjectId(req.sender.id)
+                'user_id': mongoose.Types.ObjectId(req.sender.id)
             })
             req.sender.DriverId = Driver._id;
         }
-        else if (payload.UserType == "Client") {
+        else if (payload.userType == "Client") {
             clientAuth(req,res,next);
             let Client = await Client.findOne({
-                'User_id': mongoose.Types.ObjectId(req.sender.id)
+                'user_id': mongoose.Types.ObjectId(req.sender.id)
             })
-            // console.log("inside User auth. Client",req.sender.id)
-            // console.log("inside User auth. Client",Client)
+            // console.log("inside user auth. Client",req.sender.id)
+            // console.log("inside user auth. Client",Client)
             req.sender.ClientId = Client._id;
         }
         else {
@@ -51,4 +51,4 @@ function UserAuth(req, res, next) {
 
 }
 
-module.exports = UserAuth;
+module.exports = userAuth;

@@ -1,8 +1,8 @@
-const User = require("../models/User.js");
+const User = require("../models/user.js");
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 
-const getAdminByUser_id = async (req, res) => {
+const getAdminByuser_id = async (req, res) => {
     //console.log(req.params.id);
     try {
         const admin = await User.findOne({_id : req.params.id});
@@ -20,8 +20,8 @@ const isAdminValid = (newUser) => {
     if (!newUser.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newUser.phone) {
-        errorList[errorList.length] = "Please enter phone";
+    if (!newUser.email) {
+        errorList[errorList.length] = "Please enter email";
     }
     if (!newUser.password) {
         errorList[errorList.length] = "Please enter password";
@@ -50,16 +50,16 @@ const isAdminValid = (newUser) => {
 const updateAdmin = async (req, res) => {
     console.log(req.body);
     let newUser = req.body;
-    let UserValidStatus = isAdminValid(newUser);
-    if (!UserValidStatus.status) {
+    let userValidStatus = isAdminValid(newUser);
+    if (!userValidStatus.status) {
         res.status(400).json({
             message: 'error',
-            errors: UserValidStatus.errors
+            errors: userValidStatus.errors
         });
     }
     else {
         try {
-            const updatedUser = await User.updateOne({ _id: req.params.id }, { $set: req.body });
+            const updateduser = await User.updateOne({ _id: req.params.id }, { $set: req.body });
             res.status(201).json({ message: 'success' });
         } catch (error) {
             res.status(400).json({ message: 'error', errors: [error.message] });
@@ -68,10 +68,10 @@ const updateAdmin = async (req, res) => {
 }
 
 
-const getDriverByUser_id = async (req, res) => {
+const getDriverByuser_id = async (req, res) => {
     //console.log(req.params.id);
     try {
-        const Driver = await Driver.findOne({User_id : req.params.id}).populate('User_id');
+        const Driver = await Driver.findOne({user_id : req.params.id}).populate('user_id');
         res.json(Driver);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -87,8 +87,8 @@ const isDriverValid = (newDriver) => {
     if (!newDriver.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newDriver.phone) {
-        errorList[errorList.length] = "Please enter phone";
+    if (!newDriver.email) {
+        errorList[errorList.length] = "Please enter email";
     }
     if (!newDriver.password) {
         errorList[errorList.length] = "Please enter password";
@@ -130,7 +130,7 @@ const updateDriver = async (req, res) => {
 
             const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "department": req.body.department } });
 
-            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"phone":req.body.phone, "Username": req.body.Username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -139,9 +139,9 @@ const updateDriver = async (req, res) => {
     }
 }
 
-const getClientByUser_id = async (req, res) => {
+const getClientByuser_id = async (req, res) => {
     try {
-        const Client = await Client.findOne({User_id : req.params.id}).populate('User_id');
+        const Client = await Client.findOne({user_id : req.params.id}).populate('user_id');
         res.json(Client);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -157,8 +157,8 @@ const isClientValid = (newClient) => {
     if (!newClient.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newClient.phone) {
-        errorList[errorList.length] = "Please enter phone";
+    if (!newClient.email) {
+        errorList[errorList.length] = "Please enter email";
     }
     if (!newClient.password) {
         errorList[errorList.length] = "Please enter password";
@@ -200,7 +200,7 @@ const updateClient = async (req, res) => {
         try {
             const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender,"dob": req.body.dob } });
 
-            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"phone":req.body.phone, "Username": req.body.Username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -211,10 +211,10 @@ const updateClient = async (req, res) => {
 
 
 module.exports = {
-    getAdminByUser_id,
+    getAdminByuser_id,
     updateAdmin,
-    getDriverByUser_id,
+    getDriverByuser_id,
     updateDriver,
-    getClientByUser_id,
+    getClientByuser_id,
     updateClient,
 }

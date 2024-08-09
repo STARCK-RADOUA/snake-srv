@@ -1,256 +1,76 @@
-const Order = require("../models/Order.js");
-const Driver = require("../models/Driver.js");
-const Client = require("../models/Client.js");
-const mongoose = require("mongoose");
+const Order = require('../models/Order');
+const Client = require('../models/Client');
+const Courier = require('../models/Driver');
+const Address = require('../models/Address');
 
-
-const getDepartments = async (req, res) => {
+// Get all orders
+exports.getAllOrders = async (req, res) => {
     try {
-        let departmentList = await Driver.distinct("department");
-        res.json({ message: "success", 'departments': departmentList });
-    }
-    catch (error) {
-        res.status(500).json({ errors: [error.message] });
-    }
-}
-
-const getOrders = async (req, res) => {
-    try {
-        // console.log("appDate",req.body.appDate)
-        let isTimeSlotAvailable = req.body.isTimeSlotAvailable;
-        let OrderType = req.body.OrderType;
-        let OrderDate = req.body.appDate?(new Date(req.body.appDate).toISOString().slice(0, 10)):null;
-        let docID = req.body.DriverID;
-        let Orders = [];
-        if (isTimeSlotAvailable) {
-            if (docID) {
-                Orders = await Order.find({
-                    'isTimeSlotAvailable': isTimeSlotAvailable,
-                    'OrderDate': OrderDate,
-                    "OrderType": OrderType,
-                    'DriverId': mongoose.Types.ObjectId(docID)
-                });
-            }
-            else if (req.sender.UserType == "Driver") {
-                Orders = await Order.find({
-                    'isTimeSlotAvailable': isTimeSlotAvailable,
-                    'OrderDate': OrderDate,
-                    "OrderType": OrderType,
-
-                    'DriverId': req.sender.DriverId
-                }).populate({
-                    path: 'DriverId',
-                    populate: {
-                        path: 'User_id'
-                    }
-                })
-                    .populate({
-                        path: 'ClientId',
-                        populate: {
-                            path: 'User_id'
-                        }
-                    });
-            }
-        } else if (isTimeSlotAvailable == false) {
-            // console.log("here 2")
-            if (req.sender.UserType == "Admin") {
-                Orders = await Order.find({
-                    'isTimeSlotAvailable': false,
-                    'completed': false,
-                    
-                    'OrderDate': OrderDate,
-                   
-                    
-                }).populate({
-                    path: 'DriverId',
-                    populate: {
-                        path: 'User_id'
-                    }
-                })
-                    .populate({
-                        path: 'ClientId',
-                        populate: {
-                            path: 'User_id'
-                        }
-                    });
-            }
-            else if (req.sender.UserType == "Client") {
-                console.log("ClientId" , req.sender.ClientId);
-                let query = {
-                    'isTimeSlotAvailable': false,
-                    "OrderType": OrderType,
-                    'completed': false,
-                    'ClientId': req.sender.ClientId
-                }
-                if (docID){
-                    query.DriverId = mongoose.Types.ObjectId(docID)
-                }
-                if (OrderDate) {
-                    query.OrderDate = OrderDate
-                }
-                Orders = await Order.find(query).populate({
-                    path: 'DriverId',
-                    populate: {
-                        path: 'User_id'
-                    }
-                })
-                    .populate({
-                        path: 'ClientId',
-                        populate: {
-                            path: 'User_id'
-                        }
-                    });
-            }
-            else if (req.sender.UserType == "Driver") {
-                Orders = await Order.find({
-                    'isTimeSlotAvailable': false,
-                    'completed': false,
-                    
-                    'OrderDate': OrderDate,
-                   
-                    'DriverId': req.sender.DriverId
-                }).populate({
-                    path: 'DriverId',
-                    populate: {
-                        path: 'User_id'
-                    }
-                })
-                    .populate({
-                        path: 'ClientId',
-                        populate: {
-                            path: 'User_id'
-                        }
-                    });
-            }
-           
-             console.log(Orders)
-        }
-        console.log("OrderDate",OrderDate);
-        console.log("OrderType", OrderType);
-         console.log("docID",docID);
-         console.log("isTimeSlotAvailable",isTimeSlotAvailable);
-         console.log("Orders",Orders);
-        res.json({ message: "success", 'Orders': Orders });
+        const orders = await Order.find().populate('client_id').populate('courier_id').populate('address_id');
+        res.status(200).json(orders);
     } catch (error) {
-        res.status(500).json({ errors: [error.message] });
+        res.status(500).json({ error: 'Failed to fetch orders' });
     }
-}
+};
 
-const createOrderSlot = async (req, res) => {
+// Get an order by ID
+exports.getOrderById = async (req, res) => {
     try {
-        let appDate = (new Date(req.body.appDate).toISOString().slice(0, 10));
-        let timeSlots = req.body.timeSlots;
-        let OrderType = req.body.OrderType;
-        let docID = req.body.DriverID;
-        // console.log(slot)
-        for (slot of timeSlots) {
-            let app = await Order.find({
-                'OrderDate': appDate,
-                'OrderTime': slot,
-                "OrderType": OrderType,
-                'DriverId': docID
-            });
-            if (!(app.length > 0)) {
-                let Order = await Order.create({
-                    'OrderDate': appDate,
-                    'OrderTime': slot,
-                    "OrderType": OrderType,
-                    'DriverId': docID
-                });
-            }
+        const order = await Order.findById(req.params.id).populate('client_id').populate('courier_id').populate('address_id');
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
         }
-        // console.log(appDate)
-        res.json({ message: "success" });
-
-
+        res.status(200).json(order);
     } catch (error) {
-        res.status(404).json({ errors: [error.message] });
+        res.status(500).json({ error: 'Failed to fetch order' });
     }
-}
+};
 
-const bookOrder = async (req, res) => {
+// Create a new order
+exports.createOrder = async (req, res) => {
     try {
-        let Order = await Order.findOneAndUpdate({
-            'isTimeSlotAvailable': true,
-            'OrderDate': req.body.appDate,
-            'OrderTime': req.body.appTime,
-            "OrderType": req.body.OrderType,
-            'DriverId': mongoose.Types.ObjectId(req.body.DriverId)
-        }, {
-            'isTimeSlotAvailable': false,
-            'ClientId': mongoose.Types.ObjectId(req.body.ClientId)
-        });
-        // console.log("Order",Order);
-        if (Order) {
-            res.json({ message: "success" });
-        }
-        else {
-            res.status(404).json({ errors: ["Could not book Order. Please Try again."] });
-        }
-    } catch (error) {
-        res.status(404).json({ errors: [error.message] });
-    }
-}
+        const { client_id, courier_id, address_id, status, total_price, payment_method } = req.body;
+        const client = await Client.findById(client_id);
+        const courier = courier_id ? await Courier.findById(courier_id) : null;
+        const address = await Address.findById(address_id);
 
-const deleteOrder = async (req, res) => {
-    // console.log("delete Order")
+        if (!client || !address || (courier_id && !courier)) {
+            return res.status(404).json({ error: 'Client, Courier or Address not found' });
+        }
+
+        const newOrder = new Order({ client_id, courier_id, address_id, status, total_price, payment_method });
+        await newOrder.save();
+        res.status(201).json(newOrder);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create order' });
+    }
+};
+
+// Update an order
+exports.updateOrder = async (req, res) => {
     try {
-        let Order = await Order.findByIdAndDelete(req.body.OrderId);
-        if (Order) {
-            res.json({ message: "success" });
+        const { status, courier_id } = req.body;
+        const order = await Order.findByIdAndUpdate(req.params.id, { status, courier_id }, { new: true });
+
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
         }
-        else {
-            res.status(404).json({ errors: ["Could not delete Order"] });
-        }
+
+        res.status(200).json(order);
     } catch (error) {
-        res.status(404).json({ errors: [error.message] });
+        res.status(500).json({ error: 'Failed to update order' });
     }
-}
-const getOrderById = async (req, res) => {
+};
+
+// Delete an order
+exports.deleteOrder = async (req, res) => {
     try {
-        const Order = await Order.findById(req.params.id).lean();
-        Order.DriverDetails = await Driver.findById(Order.DriverId);
-        Order.ClientDetails = await Client.findById(Order.ClientId);
-        res.json({ message: "success", "Order": Order });
-    } catch (error) {
-        res.status(404).json({ errors: [error.message] });
-    }
-}
-
-const updateOrderById = async (req, res) => {
-    try {
-        const Order = await Order.findByIdAndUpdate(
-            req.params.id,
-            {
-                'isTimeSlotAvailable': false,
-                'OrderDate': req.body.appDate,
-                'OrderTime': req.body.appTime,
-                'OrderType': req.body.OrderType,
-                'DriverId': mongoose.Types.ObjectId(req.body.DriverId),
-                'ClientId': mongoose.Types.ObjectId(req.body.ClientId)
-            });
-        if (Order) {
-            const openSlot = await Order.findOneAndDelete({
-                'isTimeSlotAvailable': true,
-                'OrderDate': req.body.appDate,
-                'OrderTime': req.body.appTime,
-                'OrderType': req.body.OrderType,
-            })
-            res.json({ message: "success" });
+        const order = await Order.findByIdAndDelete(req.params.id);
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
         }
-
+        res.status(200).json({ message: 'Order deleted successfully' });
     } catch (error) {
-        res.status(404).json({ errors: [error.message] });
+        res.status(500).json({ error: 'Failed to delete order' });
     }
-}
-
-
-module.exports = {
-    getDepartments,
-    getOrders,
-    getOrderById,
-    createOrderSlot,
-    bookOrder,
-    deleteOrder,
-    updateOrderById
-}
+};

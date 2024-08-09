@@ -1,6 +1,6 @@
 const Driver = require("../models/Driver.js");
-const User = require("../models/User.js");
-const { getActivatedStatus, editActivatedStatus } = require("../controllers/UserController");
+const User = require("../models/user.js");
+const { getActivatedStatus, editActivatedStatus } = require("./UserController.js");
 
 
 
@@ -14,27 +14,27 @@ const getDrivers = async (req, res) => {
         let Drivers;
         if (searchDriver) {
             Drivers = await Driver.find().populate({
-                path: 'User_id',
-                select: 'firstName lastName phone Username activated',
+                path: 'user_id',
+                select: 'firstName lastName email username activated',
                 match: {
                     $or: [
                         { firstName: { $regex: searchDriver } },
                         { lastName: { $regex: searchDriver } },
-                        { phone: { $regex: searchDriver } }
+                        { email: { $regex: searchDriver } }
                     ]
                 }
-            }).then(Drivers => Drivers.filter(Driver => Driver.User_id != null));
+            }).then(Drivers => Drivers.filter(Driver => Driver.user_id != null));
         } else {
-            Drivers = await Driver.find({}).populate('User_id', 'firstName lastName phone Username activated');
+            Drivers = await Driver.find({}).populate('user_id', 'firstName lastName email username activated');
         }
 
         // Ajout de la propriété activated à chaque médecin
         for (let Driver of Drivers) {
-            if (Driver.User_id && Driver.User_id.activated !== undefined) {
+            if (Driver.user_id && Driver.user_id.activated !== undefined) {
                 Driver = Driver.toObject();  // Convertir en objet JS standard pour ajouter la propriété
-                Driver.activated = Driver.User_id.activated;
+                Driver.activated = Driver.user_id.activated;
             } else {
-                const { activated } = await getActivatedStatus(Driver.User_id._id);
+                const { activated } = await getActivatedStatus(Driver.user_id._id);
                 Driver = Driver.toObject();  // Convertir en objet JS standard pour ajouter la propriété
                 Driver.activated = activated;
             }
@@ -48,7 +48,7 @@ const getDrivers = async (req, res) => {
 const getDriverById = async (req, res) => {
     //console.log(req.params.id);
     try {
-        const Driver = await Driver.findById(req.params.id).populate('User_id');
+        const Driver = await Driver.findById(req.params.id).populate('user_id');
         res.json(Driver);
     } catch (error) {
         res.status(404).json({ message: error.message });
@@ -64,8 +64,8 @@ const isDriverValid = (newDriver) => {
     if (!newDriver.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newDriver.phone) {
-        errorList[errorList.length] = "Please enter phone";
+    if (!newDriver.email) {
+        errorList[errorList.length] = "Please enter email";
     }
     if (!newDriver.password) {
         errorList[errorList.length] = "Please enter password";
@@ -89,8 +89,8 @@ const isDriverValid = (newDriver) => {
     }
 
 }
-const saveVerificationToken = async (User_id, verificationToken) => {
-    await User.findOneAndUpdate({ _id: User_id }, { "verificationToken": verificationToken });
+const saveVerificationToken = async (user_id, verificationToken) => {
+    await User.findOneAndUpdate({ _id: user_id }, { "verificationToken": verificationToken });
     return;
 }
 const generateVerificationToken = () => {
@@ -107,10 +107,10 @@ const editDriverActivatedStatus = async (req, res) => {
     try {
        
         const { activated } = req.body;
-        const Driver = await Driver.findById(req.params.User_id).populate('User_id');
+        const Driver = await Driver.findById(req.params.user_id).populate('user_id');
 
         // Modifier l'état "activated" de l'utilisateur
-        await editActivatedStatus(Driver.User_id._id, activated);
+        await editActivatedStatus(Driver.user_id._id, activated);
 
         res.status(200).json({ message: "Statut 'activated' mis à jour avec succès" });
     } catch (error) {
@@ -132,38 +132,38 @@ const saveDriver = async (req, res) => {
 
         User.create(
             {
-                phone: newDriver.phone,
-                Username: newDriver.Username,
+                email: newDriver.email,
+                username: newDriver.username,
                 firstName: newDriver.firstName,
                 lastName: newDriver.lastName,
                 password: newDriver.password,
-                UserType: 'Driver',
+                userType: 'Driver',
                 activated: true,
             },
            
 
-            (error, UserDetails) => {
+            (error, userDetails) => {
                 if (error) {
                     res.json({ message: "error", errors: [error.message] });
                 } else {
                     let verificationToken = generateVerificationToken()
-                    saveVerificationToken(UserDetails._id, verificationToken);
+                    saveVerificationToken(userDetails._id, verificationToken);
 
                   
                         Driver.create(
                             {
-                                User_id: UserDetails._id,
+                                user_id: userDetails._id,
                                 firstName: newDriver.firstName,
                                 lastName: newDriver.lastName,
-                                phone: newDriver.phone,
-                                Username: newDriver.phone,
+                                email: newDriver.email,
+                                username: newDriver.email,
                                 department: newDriver.department,
                                 phone: newDriver.phone ,
                                 imageUrls : newDriver.imageUrls ,
                             },
                             (error2, DriverDetails) => {
                                 if (error2) {
-                                    User.deleteOne({ _id: UserDetails });
+                                    User.deleteOne({ _id: userDetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
                                    
@@ -203,7 +203,7 @@ const updateDriver = async (req, res) => {
 
             const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "department": req.body.department } });
 
-            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "phone": req.body.phone, "Username": req.body.Username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -214,11 +214,11 @@ const updateDriver = async (req, res) => {
 
 const deleteDriver = async (req, res) => {
     try {
-        const Driver = await Driver.findById(req.params.id).populate('User_id');
+        const Driver = await Driver.findById(req.params.id).populate('user_id');
 
         const deletedDriver = await Driver.deleteOne({ _id: req.params.id });
 
-        const deletedUser = await User.deleteOne({ _id: Driver.User_id._id });
+        const deleteduser = await User.deleteOne({ _id: Driver.user_id._id });
         res.status(200).json();
     } catch (error) {
         res.status(400).json({ message: error.message });

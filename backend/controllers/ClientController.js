@@ -1,197 +1,72 @@
-const Client = require("../models/Client.js");
-const Product = require("../models/Product.js");
-const User = require("../models/User.js");
+const Client = require('../models/Client');
+const User = require('../models/User');
 
-const getClients = async (req, res) => {
-
+// Get all clients
+exports.getAllClients = async (req, res) => {
     try {
-        var searchClient = new RegExp(req.query.name, 'i');
+        const clients = await Client.find().populate('user_id');
+        res.status(200).json(clients);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch clients' });
+    }
+};
 
-        let Clients = [];
-        if (!searchClient) {
-            Clients = await Client.find({}).populate('User_id');
+// Get a client by ID
+exports.getClientById = async (req, res) => {
+    try {
+        const client = await Client.findById(req.params.id).populate('user_id');
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+        res.status(200).json(client);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch client' });
+    }
+};
 
-        } else {
-            Clients = await Client.find().populate({
-                path: 'User_id',
-                select: 'firstName lastName phone',
-                match: {
-                    $or: [
-                        { firstName: { $regex: searchClient } },
-                        { lastName: { $regex: searchClient } },
-                        { phone: { $regex: searchClient } }
-                    ]
-                }
-            }).then((Clients) => Clients.filter((Client => Client.User_id != null)));
+// Create a new client
+exports.createClient = async (req, res) => {
+    try {
+        const { user_id, additional_client_info } = req.body;
+        const user = await User.findById(user_id);
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
 
-        res.json(Clients);
+        const newClient = new Client({ user_id, additional_client_info });
+        await newClient.save();
+        res.status(201).json(newClient);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ error: 'Failed to create client' });
     }
-}
+};
 
-const getClientById = async (req, res) => {
+// Update a client
+exports.updateClient = async (req, res) => {
     try {
-        const Client = await Client.findById(req.params.id).populate('User_id');
-        res.json(Client);
-    } catch (error) {
-        res.status(404).json({ message: error.message });
-    }
-}
+        const { additional_client_info } = req.body;
+        const client = await Client.findByIdAndUpdate(req.params.id, { additional_client_info }, { new: true });
 
-
-const isClientValid = (newClient) => {
-    let errorList = [];
-    if (!newClient.firstName) {
-        errorList[errorList.length] = "Please enter first name";
-    }
-    if (!newClient.lastName) {
-        errorList[errorList.length] = "Please enter last name";
-    }
-    if (!newClient.phone) {
-        errorList[errorList.length] = "Please enter phone";
-    }
-   
-  
-    if (!newClient.phone) {
-        errorList[errorList.length] = "Please enter phone";
-    }
-
-    if (errorList.length > 0) {
-        result = {
-            status: false,
-            errors: errorList
-        }
-        return result;
-    }
-    else {
-        return { status: true };
-    }
-
-}
-
-const saveClient = async (req, res) => {
-    let newClient = req.body;
-    let ClientValidStatus = isClientValid(newClient);
-    if (!ClientValidStatus.status) {
-        res.status(400).json({
-            message: 'error',
-            errors: ClientValidStatus.errors
-        });
-    }
-    else {
-        //const Client = new Client(req.body);
-        User.create(
-            {
-                phone: newClient.phone,
-               
-                firstName: newClient.firstName,
-                lastName: newClient.lastName,
-               
-                UserType: 'Client',
-                activated: 0,
-            },
-            (error, UserDetails) => {
-                if (error) {
-                    res.status(400).json({ message: "error", errors: [error.message] });
-                } else {
-                    newClient.User_id = UserDetails._id,
-                        Client.create(newClient,
-                            (error2, ClientDetails) => {
-                                if (error2) {
-                                    User.deleteOne({ _id: UserDetails });
-                                    res.status(400).json({ message: 'error', errors: [error2.message] });
-                                } else {
-                                    res.status(201).json({ message: 'success' });
-                                }
-                            }
-                        );
-                }
-            }
-        );
-    }
-}
-
-const updateClient = async (req, res) => {
-    let newClient = req.body;
-    let ClientValidStatus = isClientValid(newClient);
-    if (!ClientValidStatus.status) {
-        res.status(400).json({
-            message: 'error',
-            errors: ClientValidStatus.errors
-        });
-    }
-    else {
-        try {
-            const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender, "dob": req.body.dob } });
-
-            const updatedUser = await User.updateOne({ _id: req.body.User_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "phone": req.body.phone, "Username": req.body.Username, "password": req.body.password } });
-
-            res.status(201).json({ message: 'success' });
-        } catch (error) {
-            res.status(400).json({ message: 'error', errors: [error.message] });
-        }
-    }
-}
-
-const deleteClient = async (req, res) => {
-    try {
-        const Client = await Client.findById(req.params.id).populate('User_id');
-
-        if (!Client) {
-            return res.status(404).json({ message: 'Client not found' });
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
         }
 
-        const deletedClient = await Client.deleteOne({ _id: req.params.id });
-
-        const deletedUser = await User.deleteOne({ _id: Client.User_id });
-
-        res.status(200).json(deletedClient);
+        res.status(200).json(client);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ error: 'Failed to update client' });
     }
-}
+};
 
-
-const getClientHistory = async (req, res) => {
+// Delete a client
+exports.deleteClient = async (req, res) => {
     try {
-        let Products = await Product.find().populate({
-            path: 'productElements.medicineId',
-        }).populate({
-            path: 'OrderId',
-            match: {ClientId:req.params.id},
-            populate: [
-                {
-                    path: 'ClientId',
-                    populate: {
-                        path: 'User_id'
-                    }
-                },
-                {
-                    path: 'DriverId',
-                    populate: {
-                        path: 'User_id'
-                    }
-                }
-            ]
-        }).then((Products) => Products.filter((pre => pre.OrderId != null)));
-
-        res.status(200).json({
-            "message":"success",
-            "Products":Products
-        });
+        const client = await Client.findByIdAndDelete(req.params.id);
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+        res.status(200).json({ message: 'Client deleted successfully' });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ error: 'Failed to delete client' });
     }
-}
-
-
-module.exports = {
-    getClients,
-    getClientById,
-    saveClient,
-    updateClient,
-    deleteClient,
-    getClientHistory
-}
+};
