@@ -3,12 +3,12 @@ const Driver = require("../../models/Driver");
 const Client = require("../../models/Client");
 
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const nodphoneer = require('nodphoneer');
 
 const isUserValid = (newUser) => {
     const errorList = [];
     const nameRegex = /^[a-zA-Z]+(([',. -][a-zA-Z ])?[a-zA-Z]*)*$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
     if (!newUser.firstName) {
@@ -22,10 +22,10 @@ const isUserValid = (newUser) => {
         errorList.push('Last name is invalid');
     }
 
-    if (!newUser.email) {
-        errorList.push("Please enter email");
-    } else if (!emailRegex.test(newUser.email)) {
-        errorList.push("Invalid email format");
+    if (!newUser.phone) {
+        errorList.push("Please enter phone");
+    } else if (!phoneRegex.test(newUser.phone)) {
+        errorList.push("Invalid phone format");
     }
 
     if (!newUser.password) {
@@ -71,9 +71,9 @@ const generateVerificationToken = () => {
     return verificationToken;
 };
 
-// Send an email with a verification link
-const sendVerificationEmail = async (email, token) => {
-    const transporter = nodemailer.createTransport({
+// Send an phone with a verification link
+const sendVerificationphone = async (phone, token) => {
+    const transporter = nodphoneer.createTransport({
         service: 'gmail',
         auth: {
               user: "radouatr@gmail.com",
@@ -83,9 +83,9 @@ const sendVerificationEmail = async (email, token) => {
 
     const mailOptions = {
         from: "radouatr@gmail.com",
-        to: email,
-        subject: 'Verify your email address',
-        text: `Please click the following link to verify your email address: http://localhost:3001/verify/${token}`,
+        to: phone,
+        subject: 'Verify your phone address',
+        text: `Please click the following link to verify your phone address: http://localhost:3001/verify/${token}`,
         html: `<p>Please click this link to verify your account:</p> <a href="http://localhost:3001/verify/${token}">Verify</a>`,
     };
 
@@ -102,8 +102,8 @@ module.exports = (req, res) => {
     } else {
         User.create(
             {
-                email: newUser.email,
-                username: newUser.email,
+                phone: newUser.phone,
+                username: newUser.phone,
                 firstName: newUser.firstName,
                 lastName: newUser.lastName,
                 password: newUser.password,
@@ -122,15 +122,15 @@ module.exports = (req, res) => {
                                 user_id: userDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
-                                email: newUser.email,
-                                username: newUser.email
+                                phone: newUser.phone,
+                                username: newUser.phone
                             },
                             (error2, DriverDetails) => {
                                 if (error2) {
                                     User.deleteOne({ _id: userDetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
-                                    let resp = sendVerificationEmail(userDetails.email, verificationToken.token);
+                                    let resp = sendVerificationphone(userDetails.phone, verificationToken.token);
                                     res.json({ message: "success" });
                                 }
                             }
@@ -142,15 +142,15 @@ module.exports = (req, res) => {
                                 user_id: userDetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
-                                email: newUser.email,
-                                username: newUser.email
+                                phone: newUser.phone,
+                                username: newUser.phone
                             },
                             (error2, ClientDetails) => {
                                 if (error2) {
                                     User.deleteOne({ _id: userDetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
-                                    let resp = sendVerificationEmail(userDetails.email, verificationToken.token);
+                                    let resp = sendVerificationphone(userDetails.phone, verificationToken.token);
                                     res.json({ message: "success" });
                                 }
                             }

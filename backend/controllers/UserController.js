@@ -26,8 +26,8 @@ exports.getUserById = async (req, res) => {
 // Create a new user
 exports.createUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        const newUser = new User({ name, email, password });
+        const { firstName, lastName, phone } = req.body;
+        const newUser = new User({ name, phone, password });
         await newUser.save();
         res.status(201).json(newUser);
     } catch (error) {
@@ -38,8 +38,8 @@ exports.createUser = async (req, res) => {
 // Update a user
 exports.updateUser = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        const user = await User.findByIdAndUpdate(req.params.id, { name, email, password }, { new: true });
+        const { name, phone, password } = req.body;
+        const user = await User.findByIdAndUpdate(req.params.id, { name, phone, password }, { new: true });
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });

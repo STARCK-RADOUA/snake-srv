@@ -1,4 +1,4 @@
-const User = require("../models/user.js");
+const User = require("../models/User.js");
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 
@@ -20,8 +20,8 @@ const isAdminValid = (newUser) => {
     if (!newUser.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newUser.email) {
-        errorList[errorList.length] = "Please enter email";
+    if (!newUser.phone) {
+        errorList[errorList.length] = "Please enter phone";
     }
     if (!newUser.password) {
         errorList[errorList.length] = "Please enter password";
@@ -87,8 +87,8 @@ const isDriverValid = (newDriver) => {
     if (!newDriver.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newDriver.email) {
-        errorList[errorList.length] = "Please enter email";
+    if (!newDriver.phone) {
+        errorList[errorList.length] = "Please enter phone";
     }
     if (!newDriver.password) {
         errorList[errorList.length] = "Please enter password";
@@ -130,7 +130,7 @@ const updateDriver = async (req, res) => {
 
             const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "department": req.body.department } });
 
-            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"phone":req.body.phone, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {
@@ -157,8 +157,8 @@ const isClientValid = (newClient) => {
     if (!newClient.lastName) {
         errorList[errorList.length] = "Please enter last name";
     }
-    if (!newClient.email) {
-        errorList[errorList.length] = "Please enter email";
+    if (!newClient.phone) {
+        errorList[errorList.length] = "Please enter phone";
     }
     if (!newClient.password) {
         errorList[errorList.length] = "Please enter password";
@@ -200,7 +200,7 @@ const updateClient = async (req, res) => {
         try {
             const updatedClient = await Client.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone, "address": req.body.address, "gender": req.body.gender,"dob": req.body.dob } });
 
-            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"email":req.body.email, "username": req.body.username, "password": req.body.password } });
+            const updateduser = await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName,"phone":req.body.phone, "username": req.body.username, "password": req.body.password } });
 
             res.status(201).json({ message: 'success' });
         } catch (error) {

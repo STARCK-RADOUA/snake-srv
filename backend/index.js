@@ -30,7 +30,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.set("strictQuery", true);
 mongoose.connect(
-  "mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/myBase?retryWrites=true&w=majority&appName=Cluster0",
+  "mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0",
   { useNewUrlParser: true }
 );
 
