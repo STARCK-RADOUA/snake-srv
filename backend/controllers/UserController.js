@@ -78,13 +78,13 @@ exports.saveUser = async (req, res) => {
 
         if (newUser.userType === "Driver") {
             await Driver.create({
-                userId: userDetails._id,
+                user_id: userDetails._id,
                 additional_client_info: newUser.firstName+" "+newUser.lastName+""+newUser.phone,
                 
             });
         } else if (newUser.userType === "Client") {
             await Client.create({
-                userId: userDetails._id,
+                user_id: userDetails._id,
                 additional_client_info: newUser.firstName+" "+newUser.lastName+""+newUser.phone,
             });
         }
@@ -117,9 +117,9 @@ exports.deleteUser = async (req, res) => {
         const user = await User.findById(req.params.id);
 
         if (user.userType === 'Driver') {
-            await Driver.deleteOne({ userId: req.params.id });
+            await Driver.deleteOne({ user_id: req.params.id });
         } else if (user.userType === 'Client') {
-            await Client.deleteOne({ userId: req.params.id });
+            await Client.deleteOne({ user_id: req.params.id });
         }
 
         await User.deleteOne({ _id: req.params.id });
@@ -130,9 +130,9 @@ exports.deleteUser = async (req, res) => {
 }
 
 // activateUser , 
-exports.getActivatedStatus = async (userId) => {
+exports.getActivatedStatus = async (user_id) => {
     try {
-        const user = await User.findById(userId);
+        const user = await User.findById(user_id);
         if (!user) throw new Error("Utilisateur introuvable");
 
         return { activated: user.activated };
@@ -141,14 +141,14 @@ exports.getActivatedStatus = async (userId) => {
     }
 }
 
-exports.editActivatedStatus = async (userId, newActivatedStatus) => {
+exports.editActivatedStatus = async (user_id, newActivatedStatus) => {
     try {
-        const user = await User.findById(userId);
+        const user = await User.findById(user_id);
         if (!user) throw new Error("Utilisateur introuvable");
 
      
-        const updatedDepartement = await User.findByIdAndUpdate(
-          userId,
+        await User.findByIdAndUpdate(
+          user_id,
           { activated: newActivatedStatus },
          
         );
