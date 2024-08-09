@@ -44,19 +44,28 @@ exports.createDriver = async (req, res) => {
 
 // Update a driver
 exports.updateDriver = async (req, res) => {
-    try {
-        const { phone, additional_courier_info } = req.body;
-        const driver = await Driver.findByIdAndUpdate(req.params.id, { phone, additional_courier_info }, { new: true });
+    let newDriver = req.body;
 
-        if (!driver) {
-            return res.status(404).json({ error: 'Driver not found' });
-        }
-
-        res.status(200).json(driver);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to update driver' });
+    let DriverValidStatus = isDriverValid(newDriver);
+    if (!DriverValidStatus.status) {
+        res.status(400).json({
+            message: 'error',
+            errors: DriverValidStatus.errors
+        });
     }
-};
+    else {
+        try {
+
+            const updatedDriver = await Driver.updateOne({ _id: req.params.id }, { $set: { "phone": req.body.phone } });
+
+            const updateduser = await User.updateOne({ _id: req.body.userId }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "email": req.body.email, "username": req.body.username, "password": req.body.password } });
+
+            res.status(201).json({ message: 'success' });
+        } catch (error) {
+            res.status(400).json({ message: 'error', errors: [error.message] });
+        }
+    }
+}
 
 // Delete a driver
 exports.deleteDriver = async (req, res) => {
