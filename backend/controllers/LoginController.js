@@ -1,76 +1,44 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/user");
-const bcrypt = require("bcrypt");
-require("dotenv").config();
+// controllers/loginController.js
 
+const User = require('../models/User');
 
-const isLoginValid = (phone, password) => {
-    const errorList = [];
-    const phoneRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+const autoLogin = async (socket, { deviceId }) => {
+    try {
+        // Find the user in the database using the device ID
+        const user = await User.findOne({ deviceId, userType: 'Client', activated: true });
 
-    if (!phone) {
-        errorList.push("Please enter phone");
-    } else if (!phoneRegex.test(phone)) {
-        errorList.push("Invalid phone format");
-    }
-
-    if (!password) {
-        errorList.push("Please enter password");
-    }
-    // else if (!passwordRegex.test(password)) {
-    //     errorList.push(
-    //         "Password should be at least 8 characters long and contain at least one letter and one number"
-    //     );
-    // }
-
-    if (errorList.length > 0) {
-        return { status: false, errors: errorList };
-    } else {
-        return { status: true };
+        if (user) {
+            // If the user is found and is a client, return success
+            socket.emit('loginSuccess', { user });
+        } else {
+            // If the user is not found or not a client, return failure
+            socket.emit('loginFailure', { message: 'Login failed. User not found or not activated.' });
+        }
+    } catch (error) {
+        console.error('Error during auto-login:', error);
+        socket.emit('loginFailure', { message: 'Login failed due to server error.' });
     }
 };
+const checkUserActivation = async (socket, { deviceId }) => {
+    try {
+        const user = await User.findOne({ deviceId });
 
-const loginUser = (req, res) => {
-    const { phone, password } = req.body;
-
-    const loginValidStatus = isLoginValid(phone, password);
-    if (!loginValidStatus.status) {
-        res.status(400).json({ message: "error", errors: loginValidStatus.errors });
-    } else {
-        User.findOne({ phone: phone }, (error, user) => {
-            if (error) {
-                res.status(400).json({ message: "error", errors: [error.message] });
-            } else if (!user) {
-                res.status(401).json({ message: "error", errors: ["User not found"] });
+        if (user) {
+            if (user.activated==true) {
+                socket.emit('activationStatus', { activated: true, message: 'User is activated.' });
             } else {
-                bcrypt.compare(password, user.password, (error2, result) => {
-                    if (error2) {
-                        res.status(401).json({ message: "error", errors: [error2.message] });
-                    } else if (!result) {
-                        res.status(401).json({ message: "error", errors: ["Invalid password"] });
-                    } 
-                     else if(user.activated == false){
-                         res.status(401).json({ message: "error", errors: ["Please verify your account. A verification phone has been sent to your phone."] });
-                     } 
-                    else {
-                        const currentUser = {
-                            "firstName": user.firstName,
-                            "lastName": user.lastName,
-                            "userType": user.userType,
-                            "user_id": user._id
-                        };
-
-                        const token = jwt.sign({ id: user._id, userType: user.userType },"ae2d8329d69cb40ef776f4d64c9b20ee67971cfd3df455f199d1f500712018fc" , { expiresIn: "365d" });
-                        res.json({ message: "success", user: currentUser, token: token });
-                    }
-                });
+                socket.emit('activationStatus', { activated: false, message: 'User is not activated.' });
             }
-        });
+        } else {
+            socket.emit('activationStatus', { activated: false, message: 'User not found.' });
+        }
+    } catch (error) {
+        console.error('Error during activation check:', error);
+        socket.emit('activationStatus', { activated: false, message: 'Server error during activation check.' });
     }
 };
 
 module.exports = {
-    loginUser
-}
-
+    autoLogin,
+    checkUserActivation,
+};
