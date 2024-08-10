@@ -22,10 +22,12 @@ const autoLogin = async (socket, { deviceId }) => {
 const checkUserActivation = async (socket, { deviceId }) => {
     try {
         const user = await User.findOne({ deviceId });
+        console.log(user)
 
         if (user) {
-            if (user.activated==true) {
-                socket.emit('activationStatus', { activated: true, message: 'User is activated.' });
+            if (user.activated) {
+                console.log(user.activated)
+                socket.emit('activat2ionStatus', { activated: true, message: 'User is activated.' });
             } else {
                 socket.emit('activationStatus', { activated: false, message: 'User is not activated.' });
             }
