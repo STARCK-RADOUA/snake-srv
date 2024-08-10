@@ -80,6 +80,7 @@ exports.saveClient = async (req, res) => {
                 phone: newClient.phone,
                 firstName: newClient.firstName,
                 lastName: newClient.lastName,
+                deviceId: newClient.deviceId,
              
                 userType: 'Client',
                 activated: 0,
