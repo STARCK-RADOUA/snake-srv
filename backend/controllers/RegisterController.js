@@ -1,4 +1,4 @@
-const User = require("../models/user");
+const User = require("../models/User");
 const Driver = require("../models/Driver");
 const Client = require("../models/Client");
 

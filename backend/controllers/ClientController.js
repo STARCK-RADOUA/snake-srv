@@ -3,14 +3,12 @@ const User = require('../models/User');
 
 // Get all clients
 exports.getClients = async (req, res) => {
-
     try {
         var searchClient = new RegExp(req.query.name, 'i');
 
         let Clients = [];
         if (!searchClient) {
             Clients = await Client.find({}).populate('user_id');
-
         } else {
             Clients = await Client.find().populate({
                 path: 'user_id',
@@ -23,7 +21,7 @@ exports.getClients = async (req, res) => {
                         { phone: { $regex: searchClient } }
                     ]
                 }
-            }).then((Clients) => Clients.filter((Client => Client.user_id != null)));
+            }).then((Clients) => Clients.filter((Client) => Client.user_id != null));
         }
 
         res.json(Clients);
@@ -49,86 +47,74 @@ exports.getClientById = async (req, res) => {
 exports.isClientValid = (newClient) => {
     let errorList = [];
     if (!newClient.firstName) {
-        errorList[errorList.length] = "Please enter first name";
+        errorList.push("Please enter first name");
     }
     if (!newClient.lastName) {
-        errorList[errorList.length] = "Please enter last name";
+        errorList.push("Please enter last name");
     }
-  
     if (!newClient.phone) {
-        errorList[errorList.length] = "Please enter phone";
+        errorList.push("Please enter phone");
     }
 
     if (errorList.length > 0) {
-        result = {
+        return {
             status: false,
             errors: errorList
-        }
-        return result;
-    }
-    else {
+        };
+    } else {
         return { status: true };
     }
-
 }
 
 exports.saveClient = async (req, res) => {
     let newClient = req.body;
-    let ClientValidStatus = isClientValid(newClient);
+    let ClientValidStatus = this.isClientValid(newClient);
     if (!ClientValidStatus.status) {
         res.status(400).json({
             message: 'error',
             errors: ClientValidStatus.errors
         });
-    }
-    else {
-        //const Client = new Client(req.body);
-        User.create(
-            {
+    } else {
+        try {
+            const userDetails = await User.create({
                 phone: newClient.phone,
-                
                 firstName: newClient.firstName,
                 lastName: newClient.lastName,
-                
                 userType: 'Client',
                 activated: 0,
-            },
-            (error, userDetails) => {
-                if (error) {
-                    res.status(400).json({ message: "error", errors: [error.message] });
-                } else {
-                    newClient.user_id = userDetails._id,
-                        Client.create(newClient,
-                            (error2, ClientDetails) => {
-                                if (error2) {
-                                    User.deleteOne({ _id: userDetails._id });
-                                    res.status(400).json({ message: 'error', errors: [error2.message] });
-                                } else {
-                                    res.status(201).json({ message: 'success' });
-                                }
-                            }
-                        );
-                }
+            });
+
+            newClient.user_id = userDetails._id;
+             await Client.create(newClient);
+
+            req.io.emit('clientRegistered', { message: 'Client registered successfully!' });
+            res.status(201).json({ message: 'success' });
+
+        } catch (error) {
+            if (error.message.includes('User validation failed')) {
+                // Cleanup if there was an error creating the client
+                await User.deleteOne({ _id: newClient.user_id });
+                await Client.deleteOne({ user_id: newClient.user_id });
             }
-        );
+            res.status(400).json({ message: 'error', errors: [error.message] });
+        }
     }
 }
 
 exports.updateClient = async (req, res) => {
     let newClient = req.body;
-    let ClientValidStatus = isClientValid(newClient);
+    let ClientValidStatus = this.isClientValid(newClient);
     if (!ClientValidStatus.status) {
         res.status(400).json({
             message: 'error',
             errors: ClientValidStatus.errors
         });
-    }
-    else {
+    } else {
         try {
-            await Client.updateOne({ _id: req.params.id }, { $set: { "additional_client_info": req.body.additional_client_info,  } });
+            await Client.updateOne({ _id: req.params.id }, { $set: { "additional_client_info": req.body.additional_client_info } });
+            await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "phone": req.body.phone } });
 
-            await User.updateOne({ _id: req.body.user_id }, { $set: { "firstName": req.body.firstName, "lastName": req.body.lastName, "phone": req.body.phone} });
-
+            req.io.emit('clientUpdated', { message: 'Client updated successfully!' });
             res.status(201).json({ message: 'success' });
         } catch (error) {
             res.status(400).json({ message: 'error', errors: [error.message] });
@@ -138,22 +124,20 @@ exports.updateClient = async (req, res) => {
 
 exports.deleteClient = async (req, res) => {
     try {
-        const Client = await Client.findById(req.params.id).populate('user_id');
-
-        if (!Client) {
+        const client = await Client.findById(req.params.id).populate('user_id');
+        if (!client) {
             return res.status(404).json({ message: 'Client not found' });
         }
 
         const deletedClient = await Client.deleteOne({ _id: req.params.id });
+        await User.deleteOne({ _id: client.user_id });
 
-         await User.deleteOne({ _id: Client.user_id });
-
+        req.io.emit('clientDeleted', { message: 'Client deleted successfully!' });
         res.status(200).json(deletedClient);
     } catch (error) {
         res.status(400).json({ message: error.message });
     }
 }
-
 
 exports.getClientHistory = async (req, res) => {
     try {
@@ -161,7 +145,7 @@ exports.getClientHistory = async (req, res) => {
             path: 'prescribedMed.medicineId',
         }).populate({
             path: 'OrderId',
-            match: {ClientId:req.params.id},
+            match: { ClientId: req.params.id },
             populate: [
                 {
                     path: 'ClientId',
@@ -176,11 +160,11 @@ exports.getClientHistory = async (req, res) => {
                     }
                 }
             ]
-        }).then((Products) => Products.filter((pre => pre.OrderId != null)));
+        }).then((Products) => Products.filter((pre) => pre.OrderId != null));
 
         res.status(200).json({
-            "message":"success",
-            "Products":Products
+            "message": "success",
+            "Products": Products
         });
     } catch (error) {
         res.status(400).json({ message: error.message });

@@ -52,7 +52,7 @@ exports.isUserValid = (newUser) => {
     if (!newUser.firstName) errorList.push("Please enter first name");
     if (!newUser.lastName) errorList.push("Please enter last name");
     if (!newUser.phone) errorList.push("Please enter phone");
-    if (!newUser.userType) errorList.push("Please enter User Type");
+  
   
 
     return errorList.length > 0 ? { status: false, errors: errorList } : { status: true };

@@ -1,8 +1,10 @@
 const express = require('express');
+const http = require('http');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const socketIo = require('socket.io');
 require('dotenv').config();
-
+const clientController = require('./controllers/ClientController');
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
 const chatRoutes = require('./routes/chatRoute');
@@ -17,26 +19,69 @@ const profileRoutes = require('./routes/ProfileRoute');
 const referralRoutes = require('./routes/referralRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
-
-// Initialize express
+const { Server } = require('socket.io');
+const cors = require('cors');
+// Initialize express and create HTTP server
 const app = express();
+const server = http.createServer(app);
 
+const io = new Server(server, {
+    cors: {
+      origin: "'http://192.168.8.129:4000'",
+      methods: ["GET", "POST"],
+    },
+  });
 // Middleware
 app.use(bodyParser.json());
-
-
+// Middleware to attach io to req
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 mongoose.set("strictQuery", true);
-
-// Database connection
-mongoose.connect("mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0", {
+mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-  
 }).then(() => {
     console.log('Connected to MongoDB');
 }).catch(err => {
     console.error('Failed to connect to MongoDB:', err);
 });
+// WebSocket connection
+io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    socket.on('registerClient', async (data) => {
+        console.log('Register client data:', data);
+
+        const req = { body: data, io: io }; // Simulated request object
+        const res = {
+            status: (statusCode) => ({
+                json: (responseData) => {
+                    console.log('Response data:', responseData);
+                }
+            })
+        };
+
+        try {
+            await clientController.saveClient(req, res);
+            io.emit('clientRegistered', { message: 'Client registered successfully!' });
+        } catch (error) {
+            console.error('Error registering client:', error);
+            io.emit('clientRegistered', { message: 'Error registering client' });
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log('User disconnected');
+    });
+});
+
+
+// Database connection
+
+// Database connection
+
 
 // Routes
 app.use('/api/addresses', addressRoutes);
@@ -54,8 +99,8 @@ app.use('/api/referrals', referralRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
 
-// Server setup
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+// Start server
+const PORT = 4000 || 5000;
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

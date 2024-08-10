@@ -9,7 +9,7 @@ router.get('/', driverController.getAllDrivers);
 router.get('/:id', driverController.getDriverById);
 
 // Create a new driver
-router.post('/', driverController.createDriver);
+router.post('/', driverController.saveDriver);
 
 // Update a driver
 router.put('/:id', driverController.updateDriver);
