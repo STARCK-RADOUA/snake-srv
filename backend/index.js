@@ -8,6 +8,7 @@ const socketIo = require('socket.io');
 require('dotenv').config();
 const clientController = require('./controllers/ClientController');
 const loginController = require('./controllers/LoginController'); // Import the login controller
+const ProductController = require('./controllers/ProductController'); // Import the login controller
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
 const chatRoutes = require('./routes/chatRoute');
@@ -84,7 +85,9 @@ io.on('connection', (socket) => {
   socket.on('checkActivation', async ({ deviceId }) => {
     await loginController.checkUserActivation(socket, { deviceId });
 });
-  
+socket.on('requestActiveProducts', () => {
+    ProductController.sendActiveProducts(socket);
+  });
     socket.on('autoLogin', (data) => {
         loginController.autoLogin(socket, data); // Use the autoLogin function from the controller
     });
