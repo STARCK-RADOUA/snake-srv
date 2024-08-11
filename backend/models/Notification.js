@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
   User_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String, required: true },
   message: { type: String, required: true },
   read_at: { type: Date, default: null },
   created_at: { type: Date, default: Date.now },
