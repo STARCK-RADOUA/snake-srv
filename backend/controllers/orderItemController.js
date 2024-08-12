@@ -6,7 +6,7 @@ const Cart = require('../models/Cart');
 // Get all order items
 exports.getAllOrderItems = async (req, res) => {
     try {
-        const orderItems = await OrderItem.find().populate('order_id').populate('product_id');
+        const orderItems = await OrderItem.find().populate('product_id');
         res.status(200).json(orderItems);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch order items' });
