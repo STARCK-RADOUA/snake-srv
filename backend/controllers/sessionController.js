@@ -70,3 +70,43 @@ exports.deleteSession = async (req, res) => {
         res.status(500).json({ error: 'Failed to delete session' });
     }
 };
+
+
+exports.getUserIdByDeviceId = async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+
+        // Find the user with the provided device ID
+        const user = await User.findOne({ deviceId: deviceId });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Return the user_id
+        res.status(200).json({ userId: user._id });
+    } catch (error) {
+        console.error('Error fetching user ID:', error);
+        res.status(500).json({ error: 'Failed to fetch user ID' });
+    }
+};
+
+// Get user details by device ID
+exports.getUserDetailsByDeviceId = async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+
+        // Find the user with the provided device ID
+        const user = await User.findOne({ deviceId: deviceId });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Return the user details
+        res.status(200).json(user);
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        res.status(500).json({ error: 'Failed to fetch user details' });
+    }
+};

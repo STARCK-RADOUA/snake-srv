@@ -17,4 +17,7 @@ router.put('/:id', sessionController.updateSession);
 // Delete a session
 router.delete('/:id', sessionController.deleteSession);
 
+router.post('/get-user-id', sessionController.getUserIdByDeviceId);
+router.post('/get-user-details', sessionController.getUserDetailsByDeviceId);
+
 module.exports = router;
