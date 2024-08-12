@@ -15,7 +15,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const chatRoutes = require('./routes/chatRoute');
 const clientRoutes = require('./routes/clientRoutes');
 const driverRoutes = require('./routes/driverRoutes');
-
+const cartRoute = require('./routes/cartRoute');
 const orderRoutes = require('./routes/orderRoutes');
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -142,6 +142,12 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/cart', cartRoute);
+
+
+
+
+
 
 // Start server
 const PORT = process.env.PORT || 4000;
