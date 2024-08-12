@@ -92,34 +92,35 @@ socket.on('requestActiveProducts', () => {
     socket.on('autoLogin', (data) => {
         loginController.autoLogin(socket, data); // Use the autoLogin function from the controller
     });
-    socket.on('requestNotifications', async (user_id) => {
+  
+    socket.on('requestNotifications', async (deviceId) => {
       try {
-        const notifications = await notificationController.getNotifications(user_id);
+        const notifications = await notificationController.getNotifications(deviceId);
         socket.emit('allNotifications', notifications);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
     });
   
-    // Ajouter une nouvelle notification via Socket.IO
     socket.on('addNotification', async (data) => {
       try {
         const notification = await notificationController.sendNotification(data, io);
-        io.emit('newNotification', notification); // Émet la nouvelle notification à tous les clients connectés
+        io.emit('newNotification', notification); // Envoie la nouvelle notification à tous les clients connectés
       } catch (error) {
         console.error('Error adding notification:', error);
       }
     });
   
-    // Marquer une notification comme lue
     socket.on('markAsRead', async (notificationId) => {
       try {
         const updatedNotification = await notificationController.markAsRead(notificationId);
         socket.emit('notificationRead', updatedNotification); // Émet l'état mis à jour au client
       } catch (error) {
-        console.error('Error marking notification as read:', error);
+        console.error('Error marking notification as read:', error.message);
       }
     });
+    
+  
 
     socket.on('disconnect', () => {
         console.log('User disconnected');
