@@ -21,3 +21,4 @@ router.post('/get-client-id', sessionController.getUserIdByDeviceId);
 router.post('/get-client-details', sessionController.getUserDetailsByDeviceId);
 
 module.exports = router;
+//
