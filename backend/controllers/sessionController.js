@@ -110,3 +110,65 @@ exports.getUserDetailsByDeviceId = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch user details' });
     }
 };
+
+
+
+
+
+
+exports.getClientIdByDeviceId = async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+
+        // Find the user with the provided device ID
+        const user = await User.findOne({ deviceId: deviceId });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Find the client with the found user ID
+        const client = await Client.findOne({ user_id: user._id });
+
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        // Return the client IDh
+        res.status(200).json({ clientId: client._id });
+    } catch (error) {
+        console.error('Error fetching client ID:', error);
+        res.status(500).json({ error: 'Failed to fetch client ID' });
+    }
+};
+
+
+
+exports.getClientDetailsByDeviceId = async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+
+        // Find the user with the provided device ID
+        const user = await User.findOne({ deviceId: deviceId });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Find the client with the found user ID
+        const client = await Client.findOne({ user_id: user._id }).populate('user_id');
+
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        // Return the client details
+        res.status(200).json(client);
+    } catch (error) {
+        console.error('Error fetching client details:', error);
+        res.status(500).json({ error: 'Failed to fetch client details' });
+    }
+};
+
+
+
