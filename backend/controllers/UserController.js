@@ -66,7 +66,7 @@ exports.saveUser = async (req, res) => {
     }
 
     try {
-        const userDetails = await User.create({
+        const user_idetails = await User.create({
             phone: newUser.phone,
         
             firstName: newUser.firstName,
@@ -78,13 +78,13 @@ exports.saveUser = async (req, res) => {
 
         if (newUser.userType === "Driver") {
             await Driver.create({
-                user_id: userDetails._id,
+                user_id: user_idetails._id,
                 additional_client_info: newUser.firstName+" "+newUser.lastName+""+newUser.phone,
                 
             });
         } else if (newUser.userType === "Client") {
             await Client.create({
-                user_id: userDetails._id,
+                user_id: user_idetails._id,
                 additional_client_info: newUser.firstName+" "+newUser.lastName+""+newUser.phone,
             });
         }

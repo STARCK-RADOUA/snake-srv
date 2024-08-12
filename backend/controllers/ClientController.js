@@ -76,7 +76,7 @@ exports.saveClient = async (req, res) => {
         });
     } else {
         try {
-            const userDetails = await User.create({
+            const user_idetails = await User.create({
                 phone: newClient.phone,
                 firstName: newClient.firstName,
                 lastName: newClient.lastName,
@@ -86,7 +86,7 @@ exports.saveClient = async (req, res) => {
                 activated: 0,
             });
 
-            newClient.user_id = userDetails._id;
+            newClient.user_id = user_idetails._id;
              await Client.create(newClient);
 
             req.io.emit('clientRegistered', { message: 'Client registered successfully!' });

@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const socketIo = require('socket.io');
 require('dotenv').config();
 const clientController = require('./controllers/ClientController');
+const notificationController = require('./controllers/notificationController');
 const loginController = require('./controllers/LoginController'); // Import the login controller
 const ProductController = require('./controllers/ProductController'); // Import the login controller
 const addressRoutes = require('./routes/addressRoute');
@@ -14,7 +15,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const chatRoutes = require('./routes/chatRoute');
 const clientRoutes = require('./routes/clientRoutes');
 const driverRoutes = require('./routes/driverRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
+
 const orderRoutes = require('./routes/orderRoutes');
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -91,6 +92,34 @@ socket.on('requestActiveProducts', () => {
     socket.on('autoLogin', (data) => {
         loginController.autoLogin(socket, data); // Use the autoLogin function from the controller
     });
+    socket.on('requestNotifications', async (user_id) => {
+      try {
+        const notifications = await notificationController.getNotifications(user_id);
+        socket.emit('allNotifications', notifications);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    });
+  
+    // Ajouter une nouvelle notification via Socket.IO
+    socket.on('addNotification', async (data) => {
+      try {
+        const notification = await notificationController.sendNotification(data, io);
+        io.emit('newNotification', notification); // Émet la nouvelle notification à tous les clients connectés
+      } catch (error) {
+        console.error('Error adding notification:', error);
+      }
+    });
+  
+    // Marquer une notification comme lue
+    socket.on('markAsRead', async (notificationId) => {
+      try {
+        const updatedNotification = await notificationController.markAsRead(notificationId);
+        socket.emit('notificationRead', updatedNotification); // Émet l'état mis à jour au client
+      } catch (error) {
+        console.error('Error marking notification as read:', error);
+      }
+    });
 
     socket.on('disconnect', () => {
         console.log('User disconnected');
@@ -103,7 +132,7 @@ app.use('/api/admins', adminRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/drivers', driverRoutes);
-app.use('/api/notifications', notificationRoutes);
+
 app.use('/api/orders', orderRoutes);
 app.use('/api/order-history', orderHistoryRoutes);
 app.use('/api/order-items', orderItemRoutes);

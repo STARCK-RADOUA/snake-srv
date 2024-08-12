@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+const optionSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+});
+
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
@@ -8,7 +13,8 @@ const productSchema = new mongoose.Schema({
   service_type: { type: String, enum: ['driver', 'food', 'pleasure', 'gift', 'market'], required: true },
   is_active: { type: Boolean, default: true },
   created_at: { type: Date, default: Date.now },
-  updated_at: { type: Date, default: Date.now }
+  updated_at: { type: Date, default: Date.now },
+  options: [optionSchema] // Liste des choix supplémentaires
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });

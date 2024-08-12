@@ -93,7 +93,7 @@ exports.saveDriver = async (req, res) => {
             },
            
 
-            (error, userDetails) => {
+            (error, user_idetails) => {
                 if (error) {
                     res.json({ message: "error", errors: [error.message] });
                 } else {
@@ -102,7 +102,7 @@ exports.saveDriver = async (req, res) => {
                   
                         Driver.create(
                             {
-                                user_id: userDetails._id,
+                                user_id: user_idetails._id,
                               
                                
                                
@@ -110,7 +110,7 @@ exports.saveDriver = async (req, res) => {
                             },
                             (error2, DriverDetails) => {
                                 if (error2) {
-                                    User.deleteOne({ _id: userDetails._id });
+                                    User.deleteOne({ _id: user_idetails._id });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
                                    

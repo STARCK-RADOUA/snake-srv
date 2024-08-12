@@ -109,17 +109,17 @@ module.exports = (req, res) => {
                 password: newUser.password,
                 userType: newUser.userType,
             },
-            (error, userDetails) => {
+            (error, user_idetails) => {
                 if (error) {
                     res.json({ message: "error", errors: [error.message] });
                 } else {
                     let verificationToken = generateVerificationToken()
-                    saveVerificationToken(userDetails._id, verificationToken);
+                    saveVerificationToken(user_idetails._id, verificationToken);
 
                     if (newUser.userType === "Driver") {
                         Driver.create(
                             {
-                                user_id: userDetails._id,
+                                user_id: user_idetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
                                 phone: newUser.phone,
@@ -127,10 +127,10 @@ module.exports = (req, res) => {
                             },
                             (error2, DriverDetails) => {
                                 if (error2) {
-                                    User.deleteOne({ _id: userDetails });
+                                    User.deleteOne({ _id: user_idetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
-                                    let resp = sendVerificationphone(userDetails.phone, verificationToken.token);
+                                    let resp = sendVerificationphone(user_idetails.phone, verificationToken.token);
                                     res.json({ message: "success" });
                                 }
                             }
@@ -139,7 +139,7 @@ module.exports = (req, res) => {
                     if (newUser.userType === "Client") {
                         Client.create(
                             {
-                                user_id: userDetails._id,
+                                user_id: user_idetails._id,
                                 firstName: newUser.firstName,
                                 lastName: newUser.lastName,
                                 phone: newUser.phone,
@@ -147,10 +147,10 @@ module.exports = (req, res) => {
                             },
                             (error2, ClientDetails) => {
                                 if (error2) {
-                                    User.deleteOne({ _id: userDetails });
+                                    User.deleteOne({ _id: user_idetails });
                                     res.json({ message: "error", errors: [error2.message] });
                                 } else {
-                                    let resp = sendVerificationphone(userDetails.phone, verificationToken.token);
+                                    let resp = sendVerificationphone(user_idetails.phone, verificationToken.token);
                                     res.json({ message: "success" });
                                 }
                             }
