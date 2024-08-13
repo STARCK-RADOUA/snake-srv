@@ -1,22 +1,21 @@
-// index.js
-
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const socketIo = require('socket.io');
+const { Server } = require('socket.io');
 require('dotenv').config();
 const clientController = require('./controllers/ClientController');
 const notificationController = require('./controllers/notificationController');
-const loginController = require('./controllers/LoginController'); // Import the login controller
-const ProductController = require('./controllers/ProductController'); // Import the login controller
+const loginController = require('./controllers/LoginController');
+const orderController = require('./controllers/orderController');
+const ProductController = require('./controllers/productController');
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
 const chatRoutes = require('./routes/chatRoute');
 const clientRoutes = require('./routes/clientRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const cartRoute = require('./routes/cartRoute');
-const orderRoutes = require('./routes/orderRoutes');
+
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
 const productRoutes = require('./routes/productRoutes');
@@ -24,7 +23,6 @@ const profileRoutes = require('./routes/ProfileRoute');
 const referralRoutes = require('./routes/referralRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
-const { Server } = require('socket.io');
 const cors = require('cors');
 
 // Initialize express and create HTTP server
@@ -33,7 +31,9 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: "'http://192.168.1.35:4000'",
+
+        origin: 'http://192.168.8.129:4000',
+
         methods: ["GET", "POST"],
     },
 });
@@ -81,45 +81,67 @@ io.on('connection', (socket) => {
             io.emit('clientRegistered', { message: 'Error registering client' });
         }
     });
-// In your login controller
 
-  socket.on('checkActivation', async ({ deviceId }) => {
-    await loginController.checkUserActivation(socket, { deviceId });
-});
-socket.on('requestActiveProducts', () => {
-    ProductController.sendActiveProducts(socket);
-  });
+    socket.on('checkActivation', async ({ deviceId }) => {
+        await loginController.checkUserActivation(socket, { deviceId });
+    });
+
+    socket.on('requestActiveProducts', () => {
+        ProductController.sendActiveProducts(socket);
+    });
+
     socket.on('autoLogin', (data) => {
         loginController.autoLogin(socket, data); // Use the autoLogin function from the controller
     });
-  
-    socket.on('requestNotifications', async (deviceId) => {
-      try {
-        const notifications = await notificationController.getNotifications(deviceId);
-        socket.emit('allNotifications', notifications);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      }
-    });
-  
+
+    socket.on('requestOrders', async (deviceId) => {
+        try {
+          const orders = await orderController.getOrdersByDeviceId(deviceId);
+          console.log('----------indeeeeeeex  indeeeexxxxx--------------------------');
+          console.log(orders);
+          console.log('------------------------------------');
+          socket.emit('allOrders', orders);
+        } catch (error) {
+          console.error('Error fetching orders:', error.message);
+        }
+      });
+
     socket.on('addNotification', async (data) => {
-      try {
-        const notification = await notificationController.sendNotification(data, io);
-        io.emit('newNotification', notification); // Envoie la nouvelle notification à tous les clients connectés
-      } catch (error) {
-        console.error('Error adding notification:', error);
-      }
+        try {
+            const notification = await notificationController.sendNotification(data, io);
+            io.emit('newNotification', notification); // Envoie la nouvelle notification à tous les clients connectés
+        } catch (error) {
+            console.error('Error adding notification:', error);
+        }
     });
-  
+
     socket.on('markAsRead', async (notificationId) => {
-      try {
-        const updatedNotification = await notificationController.markAsRead(notificationId);
-        socket.emit('notificationRead', updatedNotification); // Émet l'état mis à jour au client
-      } catch (error) {
-        console.error('Error marking notification as read:', error.message);
-      }
+        try {
+            const updatedNotification = await notificationController.markAsRead(notificationId);
+            socket.emit('notificationRead', updatedNotification); // Émet l'état mis à jour au client
+        } catch (error) {
+            console.error('Error marking notification as read:', error.message);
+        }
     });
-    
+
+   // Quand un utilisateur demande ses commandes en fonction de son deviceId
+socket.on('requestOrders', async (deviceId) => {
+    try {
+      const orders = await orderController.getOrdersByDeviceId(deviceId);
+      socket.emit('allOrders', orders);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  });
+  
+  // Quand une nouvelle commande est ajoutée
+  socket.on('addOrder', async (orderData) => {
+    try {
+      const order = await orderController.addOrder(orderData, io);
+    } catch (error) {
+      console.error('Error adding new order:', error);
+    }
+  });
   
 
     socket.on('disconnect', () => {
@@ -134,7 +156,6 @@ app.use('/api/chats', chatRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/drivers', driverRoutes);
 
-app.use('/api/orders', orderRoutes);
 app.use('/api/order-history', orderHistoryRoutes);
 app.use('/api/order-items', orderItemRoutes);
 app.use('/api/products', productRoutes);
@@ -143,11 +164,6 @@ app.use('/api/referrals', referralRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/cart', cartRoute);
-
-
-
-
-
 
 // Start server
 const PORT = process.env.PORT || 4000;
