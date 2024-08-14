@@ -77,6 +77,7 @@ exports.createOrderItem = async (req, res) => {
   
       // Step 4: Create a new order item
       const newOrderItem = new OrderItem({
+        Order_id: null,
         product_id: productId,
         cart_id: cart._id,
         quantity,

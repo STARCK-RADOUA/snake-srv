@@ -94,15 +94,12 @@ io.on('connection', (socket) => {
         loginController.autoLogin(socket, data); // Use the autoLogin function from the controller
     });
 
-    socket.on('requestOrders', async (deviceId) => {
+    socket.on('requestNotifications', async (deviceId) => {
         try {
-          const orders = await orderController.getOrdersByDeviceId(deviceId);
-          console.log('----------indeeeeeeex  indeeeexxxxx--------------------------');
-          console.log(orders);
-          console.log('------------------------------------');
-          socket.emit('allOrders', orders);
+          const notifications = await notificationController.getNotifications(deviceId);
+          socket.emit('allNotifications', notifications);
         } catch (error) {
-          console.error('Error fetching orders:', error.message);
+          console.error('Error fetching notifications:', error);
         }
       });
 
@@ -125,7 +122,7 @@ io.on('connection', (socket) => {
     });
 
    // Quand un utilisateur demande ses commandes en fonction de son deviceId
-socket.on('requestOrders', async (deviceId) => {
+   socket.on('requestOrders', async (deviceId) => {
     try {
       const orders = await orderController.getOrdersByDeviceId(deviceId);
       socket.emit('allOrders', orders);
@@ -137,11 +134,18 @@ socket.on('requestOrders', async (deviceId) => {
   // Quand une nouvelle commande est ajoutée
   socket.on('addOrder', async (orderData) => {
     try {
+      // Make sure orderData includes an items array containing the OrderItem IDs
+      if (!orderData.items || !Array.isArray(orderData.items)) {
+        throw new Error('Order items are missing or not an array');
+      }
+  
       const order = await orderController.addOrder(orderData, io);
+      socket.emit('orderAdded', order); // Optionally emit this back to the client
     } catch (error) {
       console.error('Error adding new order:', error);
     }
   });
+  
   
 
     socket.on('disconnect', () => {

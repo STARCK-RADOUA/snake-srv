@@ -6,7 +6,7 @@ const selectedOptionSchema = new mongoose.Schema({
 });
 
 const orderItemSchema = new mongoose.Schema({
-  
+  Order_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: false },
   product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   cart_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart', required: true },
   quantity: { type: Number, required: true },
