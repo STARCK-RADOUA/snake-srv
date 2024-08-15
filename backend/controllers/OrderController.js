@@ -18,7 +18,7 @@ exports.getOrdersByDeviceId = async (deviceId) => {
 
     // Fetch all orders for the client
     const orders = await Order.find({ client_id: client._id })
-      .populate('address_id')
+      .populate('client_id')
       .lean();
 
     if (orders.length === 0) {
@@ -57,25 +57,51 @@ exports.getOrdersByDeviceId = async (deviceId) => {
     throw error;
   }
 };
-
-exports.addOrder = async (orderData, io) => {
-  try {
-    // Create the new order
-    const order = new Order(orderData);
-    await order.save();
-
-    // Update the Order_id field in the order items associated with this order
-    await OrderItem.updateMany(
-      { _id: { $in: orderData.items } },  // Assuming items array contains the order item IDs
-      { Order_id: order._id }
-    );
-
-    // Emit the new order to all connected clients
-    io.emit('newOrder', order);
-
-    return order;
-  } catch (error) {
-    console.error('Error adding new order:', error.message);
-    throw error;
-  }
-};
+exports.addOrder = async (deviceId, totalPrice, io) => {
+    try {
+      // Find the user by deviceId
+      const user = await User.findOne({ deviceId });
+      if (!user) {
+        throw new Error('User not found');
+      }
+  
+      // Find the client associated with the user
+      const client = await Client.findOne({ user_id: user._id });
+      if (!client) {
+        throw new Error('Client not found');
+      }
+  
+      // Fetch the OrderItems from the client's cart (assuming there is a cart collection or order items linked to the client)
+      const orderItems = await OrderItem.find({ client_id: client._id, Order_id: null }); // Assuming Order_id is null for cart items
+  
+      if (!orderItems || orderItems.length === 0) {
+        throw new Error('No items found in the cart');
+      }
+  
+      // Create a new order
+      const order = new Order({
+        client_id: client._id,
+        status: 'pending',
+        total_price: totalPrice,
+      });
+  
+      // Save the new order
+      await order.save();
+  
+      // Update the Order_id field in the order items associated with this order
+      const orderItemIds = orderItems.map(item => item._id); // Extract order item IDs
+      await OrderItem.updateMany(
+        { _id: { $in: orderItemIds } },  // Find all items in the client's cart
+        { Order_id: order._id }          // Assign the new order ID
+      );
+  
+      // Emit the new order to all connected clients
+      io.emit('newOrder', order);
+  
+      return order;
+    } catch (error) {
+      console.error('Error adding new order:', error.message);
+      throw error;
+    }
+  };
+  

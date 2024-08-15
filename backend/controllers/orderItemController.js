@@ -40,7 +40,7 @@ exports.getOrderItemsByCart = async (req, res) => {
       }
   
       // Step 2: Find all order items associated with the cart
-      const orderItems = await OrderItem.find({ cart_id: cart._id }).populate('product_id');
+      const orderItems = await OrderItem.find({ cart_id: cart._id ,active:true}).populate('product_id');
   
       res.status(200).json(orderItems);
     } catch (error) {
