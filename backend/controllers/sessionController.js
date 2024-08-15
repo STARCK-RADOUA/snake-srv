@@ -1,5 +1,6 @@
 const Session = require('../models/Session');
 const User = require('../models/User');
+const Client = require('../models/Client');
 
 // Get all sessions
 exports.getAllSessions = async (req, res) => {
@@ -119,6 +120,7 @@ exports.getUserDetailsByDeviceId = async (req, res) => {
 exports.getClientIdByDeviceId = async (req, res) => {
     try {
         const { deviceId } = req.body;
+        console.log(deviceId)
 
         // Find the user with the provided device ID
         const user = await User.findOne({ deviceId: deviceId });
@@ -136,6 +138,7 @@ exports.getClientIdByDeviceId = async (req, res) => {
 
         // Return the client IDh
         res.status(200).json({ clientId: client._id });
+        console.log(client._id);
     } catch (error) {
         console.error('Error fetching client ID:', error);
         res.status(500).json({ error: 'Failed to fetch client ID' });

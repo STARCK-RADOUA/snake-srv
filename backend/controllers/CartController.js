@@ -1,21 +1,32 @@
 const Cart = require('../models/Cart');
+const Client = require('../models/Client');
+
 const mongoose = require('mongoose');
 
 // Create a new cart
 exports.createCart = async (req, res) => {
+
+
   try {
     const { client_id } = req.body;
+  console.log("xvdddhdhd" + client_id) 
 
-    if (!mongoose.Types.ObjectId.isValid(client_id)) {
-      return res.status(400).json({ error: 'Invalid client ID' });
+
+    // Check if the client already has a cart
+    const existingCart = await Cart.findOne({ client_id });
+
+    if (existingCart) {
+      // If cart already exists, return it
+      return res.status(200).json(existingCart);
     }
 
+    // If no cart exists, create a new one
     const newCart = new Cart({ client_id });
     await newCart.save();
 
-    res.status(201).json(newCart);
+    return res.status(201).json(newCart);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create cart' });
+    return res.status(500).json({ error: 'Failed to create cart' });
   }
 };
 

@@ -29,33 +29,37 @@ exports.getOrderItemById = async (req, res) => {
 // Create a new order item
 
 exports.getOrderItemsByCart = async (req, res) => {
-    try {
-      const { userId } = req.params;
-  
-      // Step 1: Find the cart for the given user
-      const cart = await Cart.findOne({ client_id: userId });
-  
-      if (!cart) {
-        return res.status(404).json({ error: 'Cart not found for this user' });
-      }
-  
-      // Step 2: Find all order items associated with the cart
-      const orderItems = await OrderItem.find({ cart_id: cart._id }).populate('product_id');
-  
-      res.status(200).json(orderItems);
-    } catch (error) {
-      console.error('Error fetching order items:', error);
-      res.status(500).json({ error: 'Failed to fetch order items' });
+  try {
+    const { clientId } = req.params;
+    
+    console.log('Received clientId (backend):', clientId); // Check the value of clientId here
+
+    if (!clientId) {
+      return res.status(400).json({ error: 'clientId is missing in the request' });
     }
-  };
+
+    const cart = await Cart.findOne({ client_id: clientId });
+
+    if (!cart) {
+      return res.status(404).json({ error: 'Cart not found for this user' });
+    }
+
+    const orderItems = await OrderItem.find({ cart_id: cart._id }).populate('product_id');
+
+    res.status(200).json(orderItems);
+  } catch (error) {
+    console.error('Error fetching order items:', error);
+    res.status(500).json({ error: 'Failed to fetch order items' });
+  }
+};
 
   
 exports.createOrderItem = async (req, res) => {
     try {
-      const { userId, productId, quantity, selectedItems } = req.body;
+      const { clientId, productId, quantity, selectedItems } = req.body;
   
       // Step 1: Find the cart for the given user (client_id)
-      const cart = await Cart.findOne({ client_id: userId });
+      const cart = await Cart.findOne({ client_id: clientId });
   
       if (!cart) {
         return res.status(404).json({ error: 'Cart not found for this user' });

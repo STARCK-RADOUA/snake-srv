@@ -193,7 +193,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/cart', cartRoute);
+app.use('/api/carts', cartRoute);
 
 // Start server
 const PORT = process.env.PORT || 4000;

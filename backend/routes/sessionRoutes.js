@@ -19,5 +19,6 @@ router.delete('/:id', sessionController.deleteSession);
 
 router.post('/get-client-id', sessionController.getUserIdByDeviceId);
 router.post('/get-client-details', sessionController.getUserDetailsByDeviceId);
+router.post('/get-client-ide', sessionController.getClientIdByDeviceId);
 
 module.exports = router;

@@ -3,7 +3,7 @@ const router = express.Router();
 const cartController = require('../controllers/CartController');
 
 // Route to create a new cart
-router.post('/', cartController.createCart);
+router.post('/add', cartController.createCart);
 
 // Route to get all carts
 router.get('/', cartController.getAllCarts);
