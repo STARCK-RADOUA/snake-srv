@@ -33,7 +33,11 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
+<<<<<<< HEAD
+        origin: "'http://192.168.8.131:4000'",
+=======
         origin: "'http://192.168.1.35:4000'",
+>>>>>>> 1c6093ab53c585ff144225e4574c9f772b3d73b6
         methods: ["GET", "POST"],
     },
 });
