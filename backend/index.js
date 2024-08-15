@@ -34,7 +34,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.129:4000',
+        origin: 'http://192.168.8.119:4000',
 
         methods: ["GET", "POST"],
     },
@@ -135,19 +135,17 @@ io.on('connection', (socket) => {
   });
   
   // Quand une nouvelle commande est ajoutée
-  socket.on('addOrder', async (orderData) => {
+socket.on('addOrder', async ( deviceId, totalPrice) => {
     try {
-      // Make sure orderData includes an items array containing the OrderItem IDs
-      if (!orderData.items || !Array.isArray(orderData.items)) {
-        throw new Error('Order items are missing or not an array');
-      }
-  
-      const order = await orderController.addOrder(orderData, io);
+   
+      const order = await orderController.addOrder( deviceId, totalPrice, io);
       socket.emit('orderAdded', order); // Optionally emit this back to the client
+  
     } catch (error) {
       console.error('Error adding new order:', error);
     }
   });
+  
 
   socket.on('joinChat', ({ chatId }) => {
     socket.join(chatId);
