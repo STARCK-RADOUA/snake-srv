@@ -44,7 +44,7 @@ exports.getOrderItemsByCart = async (req, res) => {
       return res.status(404).json({ error: 'Cart not found for this user' });
     }
 
-    const orderItems = await OrderItem.find({ cart_id: cart._id }).populate('product_id');
+    const orderItems = await OrderItem.find({ cart_id: cart._id , active : true}).populate('product_id');
 
     res.status(200).json(orderItems);
   } catch (error) {
