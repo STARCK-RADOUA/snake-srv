@@ -11,7 +11,6 @@ const orderController = require('./controllers/orderController');
 const ProductController = require('./controllers/productController');
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
-const chatRoutes = require('./routes/chatRoute');
 const clientRoutes = require('./routes/clientRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const cartRoute = require('./routes/cartRoute');
@@ -23,6 +22,9 @@ const profileRoutes = require('./routes/ProfileRoute');
 const referralRoutes = require('./routes/referralRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
+
+const chatRoutes = require('./routes/chatRoutes');
+
 const cors = require('cors');
 
 // Initialize express and create HTTP server
@@ -125,6 +127,7 @@ io.on('connection', (socket) => {
    socket.on('requestOrders', async (deviceId) => {
     try {
       const orders = await orderController.getOrdersByDeviceId(deviceId);
+      console.log(orders)
       socket.emit('allOrders', orders);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -145,6 +148,29 @@ io.on('connection', (socket) => {
       console.error('Error adding new order:', error);
     }
   });
+
+  socket.on('joinChat', ({ chatId }) => {
+    socket.join(chatId);
+    console.log(`User ${socket.id} joined chat room ${chatId}`);
+});
+
+// Handle message sending
+socket.on('sendMessage', async (data) => {
+  const { chatId, sender, content } = data;
+  try {
+      const chat = await ChatSupport.findById(chatId);
+      if (!chat) {
+          socket.emit('errorMessage', 'Chat not found');
+          return;
+      }
+      chat.messages.push({ sender, content, timestamp: new Date() });
+      await chat.save();
+      io.to(chatId).emit('newMessage', { sender, content, timestamp: new Date() });
+  } catch (error) {
+      socket.emit('errorMessage', 'Error sending message');
+  }
+});
+
   
   
 
