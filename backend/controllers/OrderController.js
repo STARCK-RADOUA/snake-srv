@@ -104,4 +104,35 @@ exports.addOrder = async (deviceId, totalPrice, io) => {
       throw error;
     }
   };
+
+
+
+
+
+// Controller to update exchange and payment_method
+exports.updateOrderPayment = async (req, res) => {
+  const { orderId } = req.params;  // Get order ID from request parameters
+  const { exchange, paymentMethod } = req.body;  // Get exchange and payment method from request body
+
+  try {
+    // Find the order by ID and update the exchange and payment method
+    const order = await Order.findByIdAndUpdate(
+      orderId, 
+      { exchange, payment_method: paymentMethod }, 
+      { new: true }
+    );
+
+    // If no order is found, return a 404 error
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Send the updated order back to the client
+    res.status(200).json(order);
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
   

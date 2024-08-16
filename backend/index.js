@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const cartRoute = require('./routes/cartRoute');
+const orderRoute = require('./routes/orderRoute');
 
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -34,7 +35,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.119:4000',
+        origin: 'http://192.168.1.149:4000',
 
         methods: ["GET", "POST"],
     },
@@ -192,6 +193,8 @@ app.use('/api/referrals', referralRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/carts', cartRoute);
+app.use('/api/orders', orderRoute);
+
 
 // Start server
 const PORT = process.env.PORT || 4000;
