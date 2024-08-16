@@ -4,6 +4,7 @@ const addressSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   address_line: { type: String, required: true },
   building: String,
+  localisation: String,
   floor: String,
   door_number: String,
   digicode: String,

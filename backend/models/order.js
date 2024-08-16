@@ -8,6 +8,7 @@ const orderSchema = new mongoose.Schema({
   status: { type: String, enum: ['pending', 'approved', 'in_progress', 'delivered', 'cancelled'], required: true },
   active: { type: Boolean, default: false },
   total_price: { type: Number, required: true },
+  exchange: { type: Number, required: true },
   payment_method: { type: String, enum: ['cash', 'TPE'], required: false },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
