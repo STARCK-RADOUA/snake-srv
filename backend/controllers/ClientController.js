@@ -1,6 +1,6 @@
 const Client = require('../models/Client');
 const User = require('../models/User');
-
+const bcrypt = require("bcrypt");
 // Get all clients
 exports.getClients = async (req, res) => {
     try {
@@ -42,6 +42,24 @@ exports.getClientById = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch client' });
     }
 };
+exports.logoutUser = async(req, res) => {
+    const { deviceId } = req.body;
+
+    // Find the user by their ID and update the isLogin field to false
+    User.findOneAndUpdate({ deviceId: deviceId }, { isLogin: false }, (error, user) => {
+        if (error) {
+            return res.status(500).json({ message: "error", errors: ["Failed to log out user"] });
+        }
+        
+        if (!user) {
+            return res.status(401).json({ message: "error", errors: ["User not found"] });
+        }
+
+        return res.json({ message: "success", user: { userId: user._id, isLogin: false } });
+    });
+};
+
+
 
 // Create a new client
 exports.isClientValid = (newClient) => {
@@ -54,6 +72,9 @@ exports.isClientValid = (newClient) => {
     }
     if (!newClient.phone) {
         errorList.push("Please enter phone");
+    }
+ if (!newClient.password) {
+        errorList.push("Please enter password");
     }
 
     if (errorList.length > 0) {
@@ -76,11 +97,13 @@ exports.saveClient = async (req, res) => {
         });
     } else {
         try {
+            const hashedPassword = await bcrypt.hash(newClient.password, 10);
             const user_idetails = await User.create({
                 phone: newClient.phone,
                 firstName: newClient.firstName,
                 lastName: newClient.lastName,
                 deviceId: newClient.deviceId,
+                password: hashedPassword,
              
                 userType: 'Client',
                 activated: 0,

@@ -5,15 +5,29 @@ const User = require('../models/User');
 const autoLogin = async (socket, { deviceId }) => {
     try {
         // Find the user in the database using the device ID
-        const user = await User.findOne({ deviceId, userType: 'Client', activated: true });
+        const user = await User.findOne({ deviceId, userType: 'Client'});
 
-        if (user) {
-            // If the user is found and is a client, return success
-            socket.emit('loginSuccess', { user });
-        } else {
-            // If the user is not found or not a client, return failure
-            socket.emit('loginFailure', { message: 'Login failed. User not found or not activated.' });
+        if (!user) {
+            // Si l'utilisateur avec cet ID de l'appareil n'est pas trouvé
+            socket.emit('loginFailure', { message: 'Device ID not found' });
+            return;
         }
+
+        if (user.activated === false) {
+            // Si le compte de l'utilisateur est désactivé
+            socket.emit('loginFailure', { message: 'User account is disabled' });
+            return;
+        }   
+        if (user.isLogin === false) {
+            // Si le compte de l'utilisateur est désactivé
+            socket.emit('loginFailure', { message: 'User account is disabled' });
+            return;
+        }
+
+        // Si tout va bien, l'utilisateur est connecté
+        socket.emit('loginSuccess', { userId: user._id, message: 'Login successful' });
+
+   
     } catch (error) {
         console.error('Error during auto-login:', error);
         socket.emit('loginFailure', { message: 'Login failed due to server error.' });

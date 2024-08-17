@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
+const User = require('./models/User'); 
 const bodyParser = require('body-parser');
 const { Server } = require('socket.io');
 require('dotenv').config();
@@ -35,7 +36,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.1.149:4000',
+        origin: 'http://192.168.8.119:4000',
 
         methods: ["GET", "POST"],
     },
@@ -93,10 +94,27 @@ io.on('connection', (socket) => {
         ProductController.sendActiveProducts(socket);
     });
 
-    socket.on('autoLogin', (data) => {
-        loginController.autoLogin(socket, data); // Use the autoLogin function from the controller
+    socket.on('autoLogin', async (data) => {
+        try {
+            const { deviceId } = data;
+    console.log('Auto login data:', data);
+            // Vérification si l'ID de l'appareil est fourni
+            if (!deviceId) {
+                socket.emit('loginFailure', { message: 'Device ID not provided' });
+                return;
+            }
+    
+            loginController.autoLogin(socket, data); 
+            // Si tout va bien, l'utilisateur est connecté
+            socket.emit('loginSuccess', { userId: user._id, message: 'Login successful' });
+    
+        } catch (error) {
+            console.error('Error during auto login:', error);
+            socket.emit('loginFailure', { message: 'An error occurred during login' });
+        }
     });
-
+    
+  
     socket.on('requestNotifications', async (deviceId) => {
         try {
           const notifications = await notificationController.getNotifications(deviceId);
@@ -136,14 +154,33 @@ io.on('connection', (socket) => {
   });
   
   // Quand une nouvelle commande est ajoutée
-socket.on('addOrder', async ( deviceId, totalPrice) => {
+  socket.on('addOrder', async (orderData) => {
     try {
-   
-      const order = await orderController.addOrder( deviceId, totalPrice, io);
-      socket.emit('orderAdded', order); // Optionally emit this back to the client
+     
+
+     const order = await orderController.addOrder(orderData, io);
+  
+      // Afficher l'ordre dans la console
+      console.log('----------////////////////////////////--------------------------');
+      console.log(orderData);
+      console.log('-----------/////////////////////////////-------------------------');
+  
+      // Émettre l'événement 'orderAdded' pour informer le frontend que l'ordre a été ajouté
+     socket.emit('orderAdded', order);
   
     } catch (error) {
+      // Gestion des erreurs
       console.error('Error adding new order:', error);
+    }
+  });
+  socket.on('checkOrderStatus', async ({ clientId }) => {
+    try {
+      const order =await orderController.checkOrderStatus(clientId);
+      if (order) {
+        socket.emit('orderStatusUpdate', { status: order.status });
+      }
+    } catch (error) {
+      console.error('Error checking order status:', error);
     }
   });
   
@@ -183,6 +220,7 @@ app.use('/api/addresses', addressRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/clients', clientRoutes);
+
 app.use('/api/drivers', driverRoutes);
 
 app.use('/api/order-history', orderHistoryRoutes);

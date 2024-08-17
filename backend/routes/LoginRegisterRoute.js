@@ -8,7 +8,7 @@ const {
 
 const {
     loginUser
-} = require('../controllers/LoginController.js')
+} = require('../controllers/clientLoginController.js')
 
 
 

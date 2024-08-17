@@ -4,6 +4,10 @@ const express = require('express');
 const router = express.Router();
 const clientController = require('../controllers/ClientController');
 
+
+const {
+    loginUser
+} = require('../controllers/clientLoginController.js')
 // Route pour obtenir tous les clients
 router.get('/', clientController.getClients);
 
@@ -15,7 +19,8 @@ router.post('/', clientController.saveClient);
 
 // Route pour mettre à jour un client existant
 router.put('/:id', clientController.updateClient);
-
+router.post('/login', loginUser);
+router.post('/logout', clientController.logoutUser); 
 // Route pour supprimer un client
 router.delete('/:id', clientController.deleteClient);
 

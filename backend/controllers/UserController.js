@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/User.js');
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 // Get all users
