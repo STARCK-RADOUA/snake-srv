@@ -36,7 +36,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.119:4000',
+        origin: 'http://192.168.1.149:4000',
 
         methods: ["GET", "POST"],
     },
@@ -173,11 +173,14 @@ io.on('connection', (socket) => {
       console.error('Error adding new order:', error);
     }
   });
-  socket.on('checkOrderStatus', async ({ clientId }) => {
+  socket.on('checkOrderStatus', async ({ order_id }) => {
     try {
-      const order =await orderController.checkOrderStatus(clientId);
+        console.log("ghhhhhhhhhhhhhhhhhhhkkkkkkkkkkkkkkkkkkkkkkh")
+        console.log(order_id)
+
+      const order =await orderController.checkOrderStatus(order_id);
       if (order) {
-        socket.emit('orderStatusUpdate', { status: order.status });
+        socket.emit('orderStatusUpdate', {order});
       }
     } catch (error) {
       console.error('Error checking order status:', error);

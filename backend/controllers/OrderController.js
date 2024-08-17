@@ -146,7 +146,7 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
       // Emit the new order to all connected clients
       io.emit('newOrder', order);
   
-      return order;
+      return order._id;
     } catch (error) {
       console.error('Error adding new order:', error.message);
       throw error;
@@ -184,19 +184,15 @@ exports.updateOrderPayment = async (req, res) => {
 };
 
 
-exports.checkOrderStatus = async (clientId) => {
+exports.checkOrderStatus = async (order_id) => {
 
    try {
     // Fetch the user and client based on deviceId
- 
-
-    const client = await Client.findOne({ _id: clientId });
-    if (!client) {
-      throw new Error('Client not found');
-    }
+    console.log("HHHHHHDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD")
+  console.log(order_id)
 
     // Fetch all orders for the client
-    const orders = await Order.findOne({ client_id: client._id ,active:true});
+    const orders = await Order.find({ _id: order_id ,active:true});
      
 console.log('orders:', orders);
     if (!orders) {
