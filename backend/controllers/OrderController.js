@@ -213,3 +213,73 @@ console.log('orders:', orders);
 };
 
   
+exports.updateOrderFeedback = async (req, res) => {
+  try {
+    const { orderId, stars, comment } = req.body;
+
+    // Debug input validation
+    console.log("Received feedback update request with:", { orderId, stars, comment });
+
+    if (!orderId) {
+      console.error("No orderId provided");
+      return res.status(400).json({ message: 'Order ID is required' });
+    }
+
+    if (typeof stars !== 'number' || stars < 1 || stars > 5) {
+      console.error(`Invalid stars value: ${stars}`);
+      return res.status(400).json({ message: 'Stars rating must be a number between 1 and 5' });
+    }
+
+    if (typeof comment !== 'string' || comment.trim() === '') {
+      console.error("Invalid comment value");
+      return res.status(400).json({ message: 'Comment cannot be empty' });
+    }
+
+    // Log before database interaction
+    console.log(`Updating order ${orderId} with stars: ${stars}, comment: "${comment}"`);
+
+    // Find the order by ID and update the stars and comment
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        stars: stars,
+        comment: comment,
+      },
+      { new: true } // This option ensures the updated document is returned
+    );
+
+    // Log the result of the database operation
+    if (!order) {
+      console.error(`Order with ID ${orderId} not found`);
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    console.log(`Order ${orderId} updated successfully`, order);
+
+    // Send the updated order as a response
+    res.json({ message: 'Feedback updated successfully', order });
+  } catch (error) {
+    console.error('Error updating feedback:', error.message);
+    console.error(error.stack); // Log the full error stack trace for debugging
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+};
+
+
+exports.cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    // Update the 'active' field to false
+    const updatedOrder = await Order.findByIdAndUpdate(orderId, { active: false }, { new: true });
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    res.json({ message: 'Order successfully cancelled', order: updatedOrder });
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};

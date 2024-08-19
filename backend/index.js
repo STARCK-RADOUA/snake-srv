@@ -9,6 +9,7 @@ const clientController = require('./controllers/ClientController');
 const notificationController = require('./controllers/notificationController');
 const loginController = require('./controllers/LoginController');
 const orderController = require('./controllers/orderController');
+
 const ProductController = require('./controllers/productController');
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
@@ -16,6 +17,7 @@ const clientRoutes = require('./routes/clientRoutes');
 const driverRoutes = require('./routes/driverRoutes');
 const cartRoute = require('./routes/cartRoute');
 const orderRoute = require('./routes/orderRoute');
+const chatRoute = require('./routes/chatRoute');
 
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -36,7 +38,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.1.149:4000',
+        origin: 'http://192.168.1.27:4000',
 
         methods: ["GET", "POST"],
     },
@@ -188,34 +190,8 @@ io.on('connection', (socket) => {
   });
   
 
-  socket.on('joinChat', ({ chatId }) => {
-    socket.join(chatId);
-    console.log(`User ${socket.id} joined chat room ${chatId}`);
-});
 
-// Handle message sending
-socket.on('sendMessage', async (data) => {
-  const { chatId, sender, content } = data;
-  try {
-      const chat = await ChatSupport.findById(chatId);
-      if (!chat) {
-          socket.emit('errorMessage', 'Chat not found');
-          return;
-      }
-      chat.messages.push({ sender, content, timestamp: new Date() });
-      await chat.save();
-      io.to(chatId).emit('newMessage', { sender, content, timestamp: new Date() });
-  } catch (error) {
-      socket.emit('errorMessage', 'Error sending message');
-  }
-});
 
-  
-  
-
-    socket.on('disconnect', () => {
-        console.log('User disconnected');
-    });
 });
 
 // Routes
@@ -235,6 +211,8 @@ app.use('/api/sessions', sessionRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/carts', cartRoute);
 app.use('/api/orders', orderRoute);
+app.use('/api/driverChat', chatRoute);
+
 
 
 // Start server

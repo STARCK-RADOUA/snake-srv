@@ -1,75 +1,71 @@
-const Chat = require('../models/Chat');
-const User = require('../models/User');
-const Order = require('../models/Order');
+const ChatSupport = require('../models/Chat');
 
-// Get all chats
-exports.getAllChats = async (req, res) => {
+exports.initiateChat = async (req, res) => {
+    const { driver_id, client_id, order_id } = req.body;
+
+    console.log("Initiating chat with driver:", driver_id, "client:", client_id, "order:", order_id);
+
     try {
-        const chats = await Chat.find().populate('sender_id').populate('receiver_id').populate('order_id');
-        res.status(200).json(chats);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch chats' });
-    }
-};
-
-// Get a chat by ID
-exports.getChatById = async (req, res) => {
-    try {
-        const chat = await Chat.findById(req.params.id).populate('sender_id').populate('receiver_id').populate('order_id');
-        if (!chat) {
-            return res.status(404).json({ error: 'Chat not found' });
-        }
-        res.status(200).json(chat);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch chat' });
-    }
-};
-
-// Create a new chat
-exports.createChat = async (req, res) => {
-    try {
-        const { order_id, sender_id, receiver_id, message } = req.body;
-        const order = await Order.findById(order_id);
-        const sender = await User.findById(sender_id);
-        const receiver = await User.findById(receiver_id);
-
-        if (!order || !sender || !receiver) {
-            return res.status(404).json({ error: 'Order or User not found' });
+        const existingChat = await ChatSupport.findOne({ driver_id, client_id, order_id });
+        if (existingChat) {
+            console.log("Found existing chat:", existingChat);
+            return res.status(200).json(existingChat);
         }
 
-        const newChat = new Chat({ order_id, sender_id, receiver_id, message });
+        const newChat = new ChatSupport({ driver_id, client_id, order_id });
         await newChat.save();
+        console.log("Created new chat:", newChat);
+
         res.status(201).json(newChat);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create chat' });
+        console.error("Error initiating chat:", error.message);
+        res.status(500).json({ error: error.message });
     }
 };
 
-// Update a chat
-exports.updateChat = async (req, res) => {
-    try {
-        const { message } = req.body;
-        const chat = await Chat.findByIdAndUpdate(req.params.id, { message }, { new: true });
+exports.sendMessage = async (req, res) => {
+    const { chatId, sender, content } = req.body;
 
+    console.log("Sending message in chat:", chatId, "from:", sender, "content:", content);
+
+    try {
+        const chat = await ChatSupport.findById(chatId);
         if (!chat) {
+            console.error("Chat not found with ID:", chatId);
             return res.status(404).json({ error: 'Chat not found' });
         }
+
+        chat.messages.push({ sender, content });
+        await chat.save();
+        console.log("Message saved:", chat.messages[chat.messages.length - 1]);
 
         res.status(200).json(chat);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update chat' });
+        console.error("Error sending message:", error.message);
+        res.status(500).json({ error: error.message });
     }
 };
 
-// Delete a chat
-exports.deleteChat = async (req, res) => {
+exports.getChatHistory = async (req, res) => {
+    const { chatId } = req.params;
+    const { order_id } = req.query; // Accept the order_id as a query parameter
+
+    console.log("Fetching chat history for chat ID:", chatId, "and order ID:", order_id);
+
     try {
-        const chat = await Chat.findByIdAndDelete(req.params.id);
+        const chat = await ChatSupport.findOne({ _id: chatId, order_id })
+            .populate('driver_id')
+            .populate('client_id');
+
         if (!chat) {
+            console.error("Chat not found with ID:", chatId);
             return res.status(404).json({ error: 'Chat not found' });
         }
-        res.status(200).json({ message: 'Chat deleted successfully' });
+
+        console.log("Returning chat history:", chat);
+        res.status(200).json(chat);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to delete chat' });
+        console.error("Error fetching chat history:", error.message);
+        res.status(500).json({ error: error.message });
     }
 };
