@@ -36,7 +36,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.1.149:4000',
+        origin: 'http://192.168.8.137:4000',
 
         methods: ["GET", "POST"],
     },
@@ -67,24 +67,88 @@ io.on('connection', (socket) => {
 
     socket.on('registerClient', async (data) => {
         console.log('Register client data:', data);
-
-        const req = { body: data, io: io }; // Simulated request object
+    
+        const req = { body: data, io: io }; // Objet req simulé
         const res = {
             status: (statusCode) => ({
                 json: (responseData) => {
                     console.log('Response data:', responseData);
+                    // Informer le client via socket.io en fonction de la réponse du contrôleur
+                    if (statusCode === 201) {
+                        io.emit('clientRegistered', { message: 'success', details: responseData.details });
+                    } else {
+                        io.emit('clientRegistered', { message: 'error', details: responseData.errors.join(', ') });
+                    }
                 }
             })
         };
-
+    
         try {
             await clientController.saveClient(req, res);
-            io.emit('clientRegistered', { message: 'Client registered successfully!' });
         } catch (error) {
             console.error('Error registering client:', error);
-            io.emit('clientRegistered', { message: 'Error registering client' });
+            io.emit('clientRegistered', { message: 'error', details: 'Error registering client' });
         }
     });
+    
+
+    socket.on('registerClientLC', async (data) => {
+        console.log('Register client data:', data);
+    
+        const req = { body: data, io: io }; // Objet req simulé
+        const res = {
+            status: (statusCode) => ({
+                json: (responseData) => {
+                    console.log('Response data:', responseData);
+                    // Informer le client via socket.io en fonction de la réponse du contrôleur
+                    if (statusCode === 201) {
+                        io.emit('clientRegisteredLC', { message: 'success', details: responseData.details });
+                    } else {
+                        io.emit('clientRegisteredLC', { message: 'error', details: responseData.errors.join(', ') });
+                    }
+                }
+            })
+        };
+    
+        try {
+            await clientController.saveClientLC(req, res);
+        } catch (error) {
+            console.error('Error registering client:', error);
+            io.emit('clientRegisteredLC', { message: 'error', details: 'Error registering client' });
+        }
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    socket.on('getUserByClientId', async ({ clientId }) => {
+        console.log('---------WA L3ADAAAAAAAAAAAAAW---------------------------');
+        console.log('Client ID:', clientId);
+        console.log('------------------------------------');
+       const user= await clientController.getUserByClientId( { clientId });
+       if (user) {
+        socket.emit('userByClientId', {user});
+       }
+    });
+
+
 
     socket.on('checkActivation', async ({ deviceId }) => {
         await loginController.checkUserActivation(socket, { deviceId });
