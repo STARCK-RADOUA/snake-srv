@@ -11,7 +11,7 @@ const orderSchema = new mongoose.Schema({
   exchange: { type: Number, required: false },
   payment_method: { type: String, enum: ['cash', 'TPE'], required: false },
   comment: String,
-  starts: Number,
+  stars: Number,
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 }, {

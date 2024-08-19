@@ -1,20 +1,11 @@
+// routes/chatRoutes.js
+
 const express = require('express');
 const router = express.Router();
 const chatController = require('../controllers/chatController');
 
-// Get all chats
-router.get('/', chatController.getAllChats);
-
-// Get a chat by ID
-router.get('/:id', chatController.getChatById);
-
-// Create a new chat
-router.post('/', chatController.createChat);
-
-// Update a chat
-router.put('/:id', chatController.updateChat);
-
-// Delete a chat
-router.delete('/:id', chatController.deleteChat);
+router.post('/initiate', chatController.initiateChat);
+router.post('/send-message', chatController.sendMessage);
+router.get('/:chatId', chatController.getChatHistory);
 
 module.exports = router;
