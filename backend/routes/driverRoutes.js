@@ -17,5 +17,10 @@ router.put('/:id', driverController.updateDriver);
 // Delete a driver
 router.delete('/:id', driverController.deleteDriver);
 
+router.post('/device', driverController.getDriverByDeviceId);
+
+router.post('/updateAvailability', driverController.updateDriverAvailability);
+
+
 module.exports = router;
 

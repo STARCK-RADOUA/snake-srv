@@ -26,6 +26,7 @@ const profileRoutes = require('./routes/ProfileRoute');
 const referralRoutes = require('./routes/referralRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
+const Order = require('./models/Order'); // Your Order model
 
 const chatRoutes = require('./routes/chatRoutes');
 
@@ -53,6 +54,8 @@ app.use((req, res, next) => {
     next();
 });
 
+
+
 mongoose.set("strictQuery", true);
 mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0', {
     useNewUrlParser: true,
@@ -63,9 +66,51 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
     console.error('Failed to connect to MongoDB:', err);
 });
 
+
+
+  
 // WebSocket connection
 io.on('connection', (socket) => {
     console.log('A user connected');
+
+    socket.on('driverConnected', async (driverId) => {
+        try {
+          // Find the driver's associated orders
+          const order = await Order.findOne({ driver_id: driverId, active: true });
+    
+          if (order) {
+            console.log(`Order found for driver ${driverId}:`, order);
+    
+            // Emit the order details back to the driver, including its active status
+            socket.emit('orderDetails', {
+              orderId: order._id,
+              active: order.active,
+              driverId: order.driver_id,
+            });
+    
+            // Set up a change stream to watch changes to this specific order
+            const orderChangeStream = Order.watch([{ $match: { 'documentKey._id': order._id } }]);
+    
+            orderChangeStream.on('change', (change) => {
+              if (change.updateDescription && 'active' in change.updateDescription.updatedFields) {
+                const updatedFields = change.updateDescription.updatedFields;
+                console.log(`Order ${order._id} updated. Active status: ${updatedFields.active}`);
+                
+                // Emit the updated status to the connected driver
+                io.emit('orderActiveChanged', {
+                  orderId: order._id,
+                  driverId: updatedFields.driver_id,
+                  active: updatedFields.active,
+                });
+              }
+            });
+          } else {
+            console.log(`No active order found for driver ${driverId}`);
+          }
+        } catch (error) {
+          console.error('Error finding order for driver:', error);
+        }
+      });
 
     socket.on('registerClient', async (data) => {
         console.log('Register client data:', data);
@@ -200,7 +245,7 @@ app.use('/api/admins', adminRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/clients', clientRoutes);
 
-app.use('/api/drivers', driverRoutes);
+app.use('/api/driver', driverRoutes);
 
 app.use('/api/order-history', orderHistoryRoutes);
 app.use('/api/order-items', orderItemRoutes);

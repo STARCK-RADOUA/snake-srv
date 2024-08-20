@@ -173,3 +173,47 @@ exports.deleteDriver = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 }
+exports.getDriverByDeviceId = async (req, res) => {
+    const { deviceId } = req.body;  // Extract deviceId from the body
+
+    try {
+        // Find the user by deviceId
+        const user = await User.findOne({ deviceId });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        // Find the driver using user_id
+        const driver = await Driver.findOne({ user_id: user._id });
+        if (!driver) {
+            return res.status(404).json({ message: 'Driver not found.' });
+        }
+
+        // Return driver info
+        return res.status(200).json({ driverId: driver._id, driverInfo: driver });
+    } catch (error) {
+        return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+
+
+exports.updateDriverAvailability = async (req, res) => {
+    const { driverId, isDisponible } = req.body; // Get driverId and new availability status from the request
+  
+    try {
+      const driver = await Driver.findById(driverId); // Find driver by ID
+  
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+  
+      // Update the availability status
+      driver.isDisponible = isDisponible;
+      await driver.save(); // Save the updated driver
+  
+      return res.status(200).json({ message: 'Driver availability updated successfully', driver });
+    } catch (error) {
+      return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  };

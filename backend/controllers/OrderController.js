@@ -283,3 +283,27 @@ exports.cancelOrder = async (req, res) => {
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+// Update driver_id in Order
+exports.updateDriverId = async (req, res) => {
+  try {
+    const { orderId, driverId } = req.body;
+
+    // Find the order and update the driver_id
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { driver_id: driverId },
+      { new: true } // Returns the updated document
+    );
+
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Driver ID updated successfully',
+      updatedOrder,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error });
+  }
+};

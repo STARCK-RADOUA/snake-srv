@@ -1,6 +1,8 @@
 const User = require('../models/User.js');
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
+const bcrypt = require('bcryptjs');
+
 // Get all users
 exports.getAllUsers  = async (req, res) => {
     try {
@@ -159,3 +161,48 @@ exports.editActivatedStatus = async (user_id, newActivatedStatus) => {
         throw error;
     }
 }
+
+
+exports.loginUser = async (req, res) => {
+  try {
+    const { deviceId, phone, password } = req.body;
+
+    // Check if the required fields are provided
+    if (!deviceId || !phone || !password) {
+      return res.status(400).json({ message: 'Please provide deviceId, phone, and password.' });
+    }
+
+    // Find the user by deviceId and phone
+    const user = await User.findOne({ deviceId, phone });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Invalid deviceId or phone.' });
+    }
+
+    // Compare the provided password with the hashed password in the database
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid password.' });
+    }
+
+    // If password matches, return success message
+    user.isLogin = true; // Set login status to true
+    await user.save();    // Save the updated login status
+
+    return res.status(200).json({
+      message: 'Login successful',
+      data: {
+        deviceId: user.deviceId,
+        phone: user.phone,
+        userType: user.userType,
+        activated: user.activated,
+        isLogin: user.isLogin,
+      },
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+

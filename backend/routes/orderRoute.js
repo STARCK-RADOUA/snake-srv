@@ -8,5 +8,8 @@ router.put('/update/:orderId', orderController.updateOrderPayment);
 router.post('/update/feedback', orderController.updateOrderFeedback);
 
 router.patch('/:orderId/cancel', orderController.cancelOrder);
+router.post('/update-driver-id', orderController.updateDriverId);
+
+
 
 module.exports = router;
