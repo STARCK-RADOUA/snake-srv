@@ -1,5 +1,6 @@
 const Client = require('../models/Client');
 const User = require('../models/User');
+const Warn = require('../models/Warn');
 const bcrypt = require("bcrypt");
 // Get all clients
 exports.getClients = async (req, res) => {
@@ -38,6 +39,24 @@ exports.getClientById = async (req, res) => {
             return res.status(404).json({ error: 'Client not found' });
         }
         res.status(200).json(client);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch client' });
+    }
+};
+exports.getUserByClientId = async (req, res) => {
+    try {
+        console.log(req,'ppppppppppppppppppppppppppppppppppppp');
+        const client = await Client.findById(req.clientId).populate('user_id');
+        console.log(client);
+        if (!client) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+        const user = await User.findById(client.user_id);
+        console.log(user);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        return user;
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch client' });
     }
@@ -86,45 +105,99 @@ exports.isClientValid = (newClient) => {
         return { status: true };
     }
 }
-
 exports.saveClient = async (req, res) => {
     let newClient = req.body;
     let ClientValidStatus = this.isClientValid(newClient);
+
     if (!ClientValidStatus.status) {
-        res.status(400).json({
+        return res.status(400).json({
             message: 'error',
             errors: ClientValidStatus.errors
         });
-    } else {
-        try {
-            const hashedPassword = await bcrypt.hash(newClient.password, 10);
-            const user_idetails = await User.create({
-                phone: newClient.phone,
-                firstName: newClient.firstName,
-                lastName: newClient.lastName,
-                deviceId: newClient.deviceId,
-                password: hashedPassword,
-             
-                userType: 'Client',
-                activated: 0,
-            });
-
-            newClient.user_id = user_idetails._id;
-             await Client.create(newClient);
-
-            req.io.emit('clientRegistered', { message: 'Client registered successfully!' });
-            res.status(201).json({ message: 'success' });
-
-        } catch (error) {
-            if (error.message.includes('User validation failed')) {
-                // Cleanup if there was an error creating the client
-                await User.deleteOne({ _id: newClient.user_id });
-                await Client.deleteOne({ user_id: newClient.user_id });
-            }
-            res.status(400).json({ message: 'error', errors: [error.message] });
-        }
     }
-}
+
+    try {
+        // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
+        const existingUser = await User.findOne({ phone: newClient.phone, deviceId: newClient.deviceId });
+
+        if (existingUser) {
+            return res.status(400).json({
+                message: 'error',
+                errors: ['User with this phone number and device ID already exists']
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(newClient.password, 10);
+
+        const user_idetails = await User.create({
+            phone: newClient.phone,
+            firstName: newClient.firstName,
+            lastName: newClient.lastName,
+            deviceId: newClient.deviceId,
+            password: hashedPassword,
+            userType: 'Client',
+            activated: 0,
+        });
+
+        newClient.user_id = user_idetails._id;
+        await Client.create(newClient);
+
+        req.io.emit('clientRegistered', { message: 'success', details: 'Client registered successfully!' });
+
+        return res.status(201).json({ message: 'success', details: 'Client registered successfully!' });
+
+    } catch (error) {
+        if (error.message.includes('User validation failed')) {
+            await User.deleteOne({ _id: newClient.user_id });
+            await Client.deleteOne({ user_id: newClient.user_id });
+        }
+
+        req.io.emit('clientRegistered', { message: 'error', details: error.message });
+
+        return res.status(400).json({ message: 'error', errors: [error.message] });
+    }
+};
+exports.saveClientLC = async (req, res) => {
+    let newClient = req.body;
+    let ClientValidStatus = this.isClientValid(newClient);
+
+    if (!ClientValidStatus.status) {
+        return res.status(400).json({
+            message: 'error',
+            errors: ClientValidStatus.errors
+        });
+    }
+
+    try {
+        // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
+      
+
+
+        const hashedPassword = newClient.password;
+
+        await Warn.create({
+            phone: newClient.phone,
+            firstName: newClient.firstName,
+            lastName: newClient.lastName,
+            deviceId: newClient.deviceId,
+            location: newClient.location.longitude+" "+newClient.location.latitude,
+            password: hashedPassword,
+           
+        });
+
+        
+        req.io.emit('clientRegistered', { message: 'success', details: 'Client registered successfully!' });
+
+        return res.status(201).json({ message: 'success', details: 'Client registered successfully!' });
+
+    } catch (error) {
+       
+
+        req.io.emit('clientRegistered', { message: 'error', details: error.message });
+
+        return res.status(400).json({ message: 'error', errors: [error.message] });
+    }
+};
 
 exports.updateClient = async (req, res) => {
     let newClient = req.body;

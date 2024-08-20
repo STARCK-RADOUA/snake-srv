@@ -1,8 +1,8 @@
-// models/User.js
+// models/Warn.js
 
 const mongoose = require('mongoose');
 
-const UserSchema = new mongoose.Schema({
+const WarnSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   deviceId: { type: String, required: true ,unique:true},
@@ -11,15 +11,16 @@ const UserSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Please provide password'],
+},  location: {
+    type: String,
+    required: [true, 'Please provide location'],
 },
-points_earned: { type: Number, default: 0 },
+
  
-  userType: { type: String, required: true, enum: ['Admin', 'Client', 'Driver'] },
-  activated: { type: Boolean, default: false },
-  isLogin: { type: Boolean, default: false },
+
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
 
-const User = mongoose.model('User', UserSchema);
-module.exports = User;
+const Warn = mongoose.model('Warn', WarnSchema);
+module.exports = Warn;

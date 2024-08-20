@@ -20,7 +20,7 @@ const autoLogin = async (socket, { deviceId }) => {
         }   
         if (user.isLogin === false) {
             // Si le compte de l'utilisateur est désactivé
-            socket.emit('loginFailure', { message: 'User account is disabled' });
+            socket.emit('loginFailure', { message: 'User account is logout' });
             return;
         }
 
