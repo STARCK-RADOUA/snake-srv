@@ -7,10 +7,10 @@ const messageSchema = new mongoose.Schema({
 });
 
 const chatSchema = new mongoose.Schema({
-  order_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
-  driver_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', required: true }, // Corrected reference
-  client_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
-  messages: [messageSchema], // Array of messages between the driver and client
+  order_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },  // The order related to the chat
+  driver_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', required: true },  // Driver participating in the chat
+  client_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },  // Client participating in the chat
+  messages: [messageSchema],  // Array of messages
 }, {
   timestamps: true
 });
