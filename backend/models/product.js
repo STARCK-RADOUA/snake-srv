@@ -10,7 +10,7 @@ const productSchema = new mongoose.Schema({
   description: String,
   price: { type: Number, required: true },
   image_url: String,
-  service_type: { type: String, enum: ['driver', 'food', 'pleasure', 'gift', 'market'], required: true },
+  service_type: { type: String, required: true },
   is_active: { type: Boolean, default: true },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },

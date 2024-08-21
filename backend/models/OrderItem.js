@@ -10,6 +10,7 @@ const orderItemSchema = new mongoose.Schema({
   product_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   cart_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart', required: true },
   active: { type: Boolean, default: true },
+  service_type: { type: String, required: true },
   quantity: { type: Number, required: true },
   price: { type: Number, required: true },
   selected_options: [selectedOptionSchema],  // Liste des options supplémentaires choisies

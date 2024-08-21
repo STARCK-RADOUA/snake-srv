@@ -14,9 +14,9 @@ exports.addProduct = async (req, res) => {
   }
 };
 
-exports.sendActiveProducts = async (socket) => {
+exports.sendActiveProducts = async (socket,serviceName) => {
   try {
-    const products = await Product.find({ is_active: true });
+    const products = await Product.find({ is_active: true ,service_type:serviceName});
     socket.emit('activeProducts', products);
   } catch (err) {
     socket.emit('error', { message: 'Failed to retrieve products', error: err });
