@@ -31,8 +31,9 @@ exports.getOrderItemById = async (req, res) => {
 exports.getOrderItemsByCart = async (req, res) => {
   try {
     const { clientId } = req.params;
+    const { serviceName } = req.params;
     
-    console.log('Received clientId (backend):', clientId); // Check the value of clientId here
+    console.log('Received clientId (backend):', clientId,serviceName); // Check the value of clientId here
 
     if (!clientId) {
       return res.status(400).json({ error: 'clientId is missing in the request' });
@@ -44,7 +45,7 @@ exports.getOrderItemsByCart = async (req, res) => {
       return res.status(404).json({ error: 'Cart not found for this user' });
     }
 
-    const orderItems = await OrderItem.find({ cart_id: cart._id , active : true}).populate('product_id');
+    const orderItems = await OrderItem.find({ cart_id: cart._id , active : true ,service_type : serviceName}).populate('product_id');
 
     res.status(200).json(orderItems);
   } catch (error) {
@@ -56,7 +57,7 @@ exports.getOrderItemsByCart = async (req, res) => {
   
 exports.createOrderItem = async (req, res) => {
     try {
-      const { clientId, productId, quantity, selectedItems } = req.body;
+      const { clientId, productId, quantity, selectedItems,serviceName } = req.body;
   
       // Step 1: Find the cart for the given user (client_id)
       const cart = await Cart.findOne({ client_id: clientId });
@@ -86,6 +87,7 @@ exports.createOrderItem = async (req, res) => {
         cart_id: cart._id,
         quantity,
         price: totalPrice,
+        service_type: serviceName,
         selected_options: selectedItems,
       });
   

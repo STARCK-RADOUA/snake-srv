@@ -9,11 +9,11 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 
 // Array of services to insert
 const services = [
-  { name: 'Service coursier', image: 'https://example.com/drinks.png', test: true },
-  { name: 'J’ai faim', image: 'https://example.com/package.png', test: false },
-  { name: 'Petits plaisirs', image: 'https://example.com/food.png', test: true },
-  { name: 'Boutique cadeaux', image: 'https://example.com/coca-cola.png', test: true },
-  { name: 'Marché', image: 'https://example.com/supermarket.png', test: true },
+  { name: ' coursier', image: 'https://.com/drinks.png', test: true },
+  { name: ' faim', image: 'https://example.com/package.png', test: false },
+  { name: ' plaisirs', image: 'https://.com/food.png', test: true },
+  { name: ' cadeaux', image: 'https://example.com/coca-cola.png', test: false },
+
 ];
 
 // Insert services into the database
