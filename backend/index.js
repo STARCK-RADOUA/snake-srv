@@ -1,7 +1,6 @@
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
-const User = require('./models/User'); 
 const bodyParser = require('body-parser');
 const { Server } = require('socket.io');
 require('dotenv').config();
@@ -303,10 +302,10 @@ io.on('connection', (socket) => {
   });
 
 
-   // Chat initiation
-   socket.on('initiateChat', async ({ adminId, clientId }) => {
+// Chat initiation for client and admin
+socket.on('initiateChat', async ({ adminId, clientId }) => {
     try {
-      // Check if a chat already exists between this admin and client
+      // Check if a chat exists between this admin and client
       let chat = await ChatSupport.findOne({ admin_id: adminId, client_id: clientId });
       if (!chat) {
         // If no chat exists, create a new one
@@ -317,40 +316,57 @@ io.on('connection', (socket) => {
         });
         await chat.save();
       }
-      
+  
       // Join the room for this specific chat
       socket.join(chat._id.toString());
-      
-      // Send the existing chat details to the client
-      socket.emit('chatDetails', { chatId: chat._id, messages: chat.messages });
+  
+      if (socket.handshake.query.isAdmin === 'true') {
+        // For admin: Send all messages (old, new, seen, unseen)
+        socket.emit('chatDetails', { chatId: chat._id, messages: chat.messages });
+      } else {
+        // For client: Filter only unseen messages from the admin
+        const unseenMessages = chat.messages.filter(msg => msg.sender === 'admin' && !msg.seen);
+  
+        // Mark unseen messages as seen when sending to the client
+        unseenMessages.forEach(msg => {
+          msg.seen = true; // Mark as seen
+        });
+        await chat.save(); // Save updated chat with seen messages
+  
+        // Send only the unseen messages to the client
+        socket.emit('chatDetails', { chatId: chat._id, messages: unseenMessages });
+      }
     } catch (error) {
       console.error('Error initiating chat:', error);
     }
   });
-
-  // Handle message sending
+  
+  // Handle message sending (for both client and admin)
   socket.on('sendMessage', async ({ chatId, sender, content }) => {
     try {
-      // Find the chat by chatId
       const chat = await ChatSupport.findById(chatId);
       if (!chat) {
         console.log(`Chat not found for chatId: ${chatId}`);
         return;
       }
-
+  
       // Add the new message to the chat
-      const newMessage = { sender, content, timestamp: new Date() };
+      const newMessage = {
+        sender,
+        content,
+        timestamp: new Date(),
+        seen: sender === 'admin' // Admin messages are marked as seen, client messages are unseen
+      };
       chat.messages.push(newMessage);
       await chat.save();
-
-      // Emit the new message to all clients in this chat room
+  
+      // Emit the new message to everyone in the chat room
       io.to(chatId).emit('newMessage', { message: newMessage });
     } catch (error) {
       console.error('Error sending message:', error);
     }
   });
-
-
+  
 
 });
 
