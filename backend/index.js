@@ -9,7 +9,7 @@ const clientController = require('./controllers/ClientController');
 const notificationController = require('./controllers/notificationController');
 const loginController = require('./controllers/LoginController');
 const orderController = require('./controllers/orderController');
-
+const serviceRoutes = require('./routes/serviceRoutes');
 const ProductController = require('./controllers/productController');
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
@@ -321,7 +321,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/carts', cartRoute);
 app.use('/api/orders', orderRoute);
 app.use('/api/driverChat', chatRoute);
-
+app.use('/api/services', serviceRoutes);
 
 
 // Start server
