@@ -18,6 +18,7 @@ const driverRoutes = require('./routes/driverRoutes');
 const cartRoute = require('./routes/cartRoute');
 const orderRoute = require('./routes/orderRoute');
 const chatRoute = require('./routes/chatRoute');
+const ChatSupport = require('./models/ChatSupport');
 
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -39,7 +40,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.137:4000',
+        origin: 'http://192.168.1.149:4000',
 
         methods: ["GET", "POST"],
     },
@@ -111,6 +112,9 @@ io.on('connection', (socket) => {
           console.error('Error finding order for driver:', error);
         }
       });
+
+
+
 
     socket.on('registerClient', async (data) => {
         console.log('Register client data:', data);
@@ -297,7 +301,54 @@ io.on('connection', (socket) => {
       console.error('Error checking order status:', error);
     }
   });
-  
+
+
+   // Chat initiation
+   socket.on('initiateChat', async ({ adminId, clientId }) => {
+    try {
+      // Check if a chat already exists between this admin and client
+      let chat = await ChatSupport.findOne({ admin_id: adminId, client_id: clientId });
+      if (!chat) {
+        // If no chat exists, create a new one
+        chat = new ChatSupport({
+          admin_id: adminId,
+          client_id: clientId,
+          messages: []  // Initialize with an empty messages array
+        });
+        await chat.save();
+      }
+      
+      // Join the room for this specific chat
+      socket.join(chat._id.toString());
+      
+      // Send the existing chat details to the client
+      socket.emit('chatDetails', { chatId: chat._id, messages: chat.messages });
+    } catch (error) {
+      console.error('Error initiating chat:', error);
+    }
+  });
+
+  // Handle message sending
+  socket.on('sendMessage', async ({ chatId, sender, content }) => {
+    try {
+      // Find the chat by chatId
+      const chat = await ChatSupport.findById(chatId);
+      if (!chat) {
+        console.log(`Chat not found for chatId: ${chatId}`);
+        return;
+      }
+
+      // Add the new message to the chat
+      const newMessage = { sender, content, timestamp: new Date() };
+      chat.messages.push(newMessage);
+      await chat.save();
+
+      // Emit the new message to all clients in this chat room
+      io.to(chatId).emit('newMessage', { message: newMessage });
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  });
 
 
 
