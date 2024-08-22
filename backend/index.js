@@ -18,6 +18,7 @@ const cartRoute = require('./routes/cartRoute');
 const orderRoute = require('./routes/orderRoute');
 const chatRoute = require('./routes/chatRoute');
 const ChatSupport = require('./models/ChatSupport');
+const Chat = require('./models/Chat');
 
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -367,9 +368,100 @@ socket.on('initiateChat', async ({ adminId, clientId }) => {
       console.error('Error sending message:', error);
     }
   });
-  
+
+
+  // Handle message sending
+  socket.on('initiateChats', async ({ orderId, clientId, driverId }) => {
+    try {
+      console.log(`Received initiateChats event with orderId: ${orderId}, clientId: ${clientId}, driverId: ${driverId}`); // Debugging log
+
+      // Check if a chat already exists for the given orderId between this driver and client
+      let chat = await Chat.findOne({ order_id: orderId, client_id: clientId, driver_id: driverId });
+      console.log('Chat found:', chat ? chat._id : 'No existing chat'); // Debugging log
+
+      if (!chat) {
+        // If no chat exists, create a new one
+        console.log('Creating new chat for order:', orderId); // Debugging log for new chat creation
+
+        chat = new Chat({
+          order_id: orderId,
+          driver_id: driverId,  // Get the driver ID from the frontend
+          client_id: clientId,
+          messages: []  // Initialize with an empty messages array
+        });
+        await chat.save();
+        console.log('New chat created with ID:', chat._id); // Debugging log for saved chat
+      }
+      
+      // Join the room for this specific chat
+      socket.join(chat._id.toString());
+      console.log(`Socket joined room for chatId: ${chat._id}`); // Debugging log for joining room
+
+      // Send the existing chat details to the client
+      socket.emit('chatDetailss', { chatId: chat._id, messages: chat.messages });
+      console.log('Emitted chatDetailss event with messages:', chat.messages.length); // Debugging log for emitting chat details
+
+    } catch (error) {
+      console.error('Error initiating chat:', error); // Error handling log
+      socket.emit('error', { message: 'Failed to initiate chat' });
+    }
+  });
+
+  // Handle message sending
+  socket.on('sendMessages', async ({ chatId, sender, content }) => {
+    try {
+      console.log(`Received sendMessages event for chatId: ${chatId}, sender: ${sender}, content: ${content}`); // Debugging log
+
+      // Find the chat by chatId
+      const chat = await Chat.findById(chatId);
+      if (!chat) {
+        console.log(`Chat not found for chatId: ${chatId}`); // Debugging log for missing chat
+        socket.emit('error', { message: 'Chat not found' });
+        return;
+      }
+
+      // Add the new message to the chat
+      const newMessage = { sender, content, timestamp: new Date() };
+      chat.messages.push(newMessage);
+      await chat.save();
+      console.log('New message added to chat:', newMessage); // Debugging log for added message
+
+      // Emit the new message to all clients in this chat room
+      io.to(chatId).emit('newMessages', { message: newMessage });
+      console.log(`Emitted newMessages event for chatId: ${chatId}`); // Debugging log for emitted message
+
+    } catch (error) {
+      console.error('Error sending message:', error); // Error handling log
+      socket.emit('error', { message: 'Failed to send message' });
+    }
+  });
+
+
+  socket.on('watchOrderStatuss', async ({ order_id }) => {
+    try {
+      const order = await Order.findById(order_id);
+      if (order) {
+        // Emit the initial order status to the client
+        socket.emit('orderStatusUpdates', { order });
+
+        // Watch for changes to the order
+        const orderChangeStream = Order.watch([{ $match: { 'documentKey._id': order._id } }]);
+        orderChangeStream.on('change', (change) => {
+          if (change.updateDescription) {
+            const updatedOrder = change.updateDescription.updatedFields;
+            socket.emit('orderStatusUpdates', { order: updatedOrder });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error finding or watching order:', error);
+    }
+  });
+
 
 });
+  
+
 
 // Routes
 app.use('/api/addresses', addressRoutes);
