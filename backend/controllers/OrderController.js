@@ -60,6 +60,8 @@ exports.addOrder = async (orderData,io) => {
     try {
       const exchange = orderData.exchange;
 const paymentMethod = orderData.paymentMethod;
+const serviceTest = orderData.serviceTest;
+const serviceId = orderData.serviceId;
 
 // Accéder aux détails de la commande
 const addressLine = orderData.orderdetaille.data.address_line;
@@ -115,10 +117,12 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
       const order = new Order({
         client_id: client._id,
         address_id: address._id,
-        status: 'pending',
+        service_id: serviceId,
+        status: serviceTest?'test':'pending',
         active: true,
         payment_method: paymentMethod,
         exchange: exchange,
+        service_Test: serviceTest,
         total_price: totalPrice,
       });
   
