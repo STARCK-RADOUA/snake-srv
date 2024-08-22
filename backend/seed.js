@@ -1,32 +1,58 @@
 const mongoose = require('mongoose');
-const Service = require('./models/Service'); // Adjust the path to your Service model
+const User = require('./models/User'); 
+const Driver = require('./models/Driver');
+const Order = require('./models/Order');
+const OrderItem = require('./models/OrderItem');
+const Product = require('./models/Product');
+const Address = require('./models/Address');
+const Referral = require('./models/Referral');
 
-// Connect to MongoDB
 mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => {
+  console.error('Failed to connect to MongoDB:', err);
 });
 
-// Array of services to insert
-const services = [
-  { name: ' coursier', image: 'https://.com/drinks.png', test: true },
-  { name: ' faim', image: 'https://example.com/package.png', test: false },
-  { name: ' plaisirs', image: 'https://.com/food.png', test: true },
-  { name: ' cadeaux', image: 'https://example.com/coca-cola.png', test: false },
-
-];
-
-// Insert services into the database
-const insertServices = async () => {
+async function seed() {
   try {
-    await Service.insertMany(services);
-    console.log('Services inserted successfully');
+    // Génération des objets de test pour chaque modèle
+
+    // 6 Utilisateurs
+
+    // 6 Adresses
+
+
+    // 6 Produits
+    const products = [];
+    for (let i = 0; i < 6; i++) {
+      products.push(new Product({
+        name: `Product ${i + 5}`,
+        description: `Description for product ${i + 1}`,
+        price: 10 + i,
+        image_url: `http://example.com/product${i + 1}.jpg`,
+        
+        is_active: true,
+        
+        service_type: "Service coursier",
+        options: [
+          { name: 'Extra Cheese', price: 1 },
+          { name: 'Extra Sauce', price: 0.5 },
+        ],
+      }));
+    }
+    await Product.insertMany(products);
+    console.log('6 Products inserted');
+
+   
+
   } catch (err) {
-    console.error('Error inserting services:', err);
+    console.error('Error seeding database:', err);
   } finally {
     mongoose.connection.close();
   }
-};
+}
 
-// Run the insertion script
-insertServices();
+seed();
