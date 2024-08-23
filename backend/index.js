@@ -19,6 +19,8 @@ const orderRoute = require('./routes/orderRoute');
 const chatRoute = require('./routes/chatRoute');
 const ChatSupport = require('./models/ChatSupport');
 const Chat = require('./models/Chat');
+const Service = require('./models/Service');
+
 
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -455,6 +457,28 @@ socket.on('initiateChat', async ({ adminId, clientId }) => {
       }
     } catch (error) {
       console.error('Error finding or watching order:', error);
+    }
+  });
+
+
+  socket.on('watchServicePointsStatuss', async ({ serviceID }) => {
+    try {
+      const service = await Service.findById(serviceID);
+      if (service) {
+        // Emit the initial order status to the client
+        socket.emit('oserviceStatusUpdates', { service });
+
+        // Watch for changes to the order
+        const serviceChangeStream = Service.watch([{ $match: { 'documentKey._id': service._id } }]);
+        serviceChangeStream.on('change', (change) => {
+          if (change.updateDescription) {
+            const updatedservice = change.updateDescription.updatedFields;
+            socket.emit('oserviceStatusUpdates', { service: updatedservice });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error finding or watching service:', error);
     }
   });
 
