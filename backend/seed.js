@@ -36,7 +36,7 @@ async function seed() {
         
         is_active: true,
         
-        service_type: "Service coursier",
+        service_type: "J’ai faim",
         options: [
           { name: 'Extra Cheese', price: 1 },
           { name: 'Extra Sauce', price: 0.5 },

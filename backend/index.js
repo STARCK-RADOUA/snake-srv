@@ -19,8 +19,6 @@ const orderRoute = require('./routes/orderRoute');
 const chatRoute = require('./routes/chatRoute');
 const ChatSupport = require('./models/ChatSupport');
 const Chat = require('./models/Chat');
-const Service = require('./models/Service');
-
 
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
@@ -149,22 +147,10 @@ io.on('connection', (socket) => {
         console.log('Register client data:', data);
     
         const req = { body: data, io: io }; // Objet req simulé
-        const res = {
-            status: (statusCode) => ({
-                json: (responseData) => {
-                    console.log('Response data:', responseData);
-                    // Informer le client via socket.io en fonction de la réponse du contrôleur
-                    if (statusCode === 201) {
-                        io.emit('clientRegisteredLC', { message: 'success', details: responseData.details });
-                    } else {
-                        io.emit('clientRegisteredLC', { message: 'error', details: responseData.errors.join(', ') });
-                    }
-                }
-            })
-        };
+       
     
         try {
-            await clientController.saveClientLC(req, res);
+            await clientController.saveClientLC(req, data);
         } catch (error) {
             console.error('Error registering client:', error);
             io.emit('clientRegisteredLC', { message: 'error', details: 'Error registering client' });
@@ -457,28 +443,6 @@ socket.on('initiateChat', async ({ adminId, clientId }) => {
       }
     } catch (error) {
       console.error('Error finding or watching order:', error);
-    }
-  });
-
-
-  socket.on('watchServicePointsStatuss', async ({ serviceID }) => {
-    try {
-      const service = await Service.findById(serviceID);
-      if (service) {
-        // Emit the initial order status to the client
-        socket.emit('oserviceStatusUpdates', { service });
-
-        // Watch for changes to the order
-        const serviceChangeStream = Service.watch([{ $match: { 'documentKey._id': service._id } }]);
-        serviceChangeStream.on('change', (change) => {
-          if (change.updateDescription) {
-            const updatedservice = change.updateDescription.updatedFields;
-            socket.emit('oserviceStatusUpdates', { service: updatedservice });
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error finding or watching service:', error);
     }
   });
 

@@ -157,24 +157,23 @@ exports.saveClient = async (req, res) => {
         return res.status(400).json({ message: 'error', errors: [error.message] });
     }
 };
-exports.saveClientLC = async (req, res) => {
-    let newClient = req.body;
-    let ClientValidStatus = this.isClientValid(newClient);
-
-    if (!ClientValidStatus.status) {
-        return res.status(400).json({
-            message: 'error',
-            errors: ClientValidStatus.errors
-        });
-    }
-
+exports.saveClientLC = async (req,body) => {
+    const newClient = body;
+    console.log('------------------------------------');
+    console.log(newClient);
+    console.log('------------------------------------');
+ 
     try {
-        // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
-      
 
+        const existingUser = await Warn.findOne({ phone: newClient.phone, deviceId: newClient.deviceId });
 
+        if (existingUser) {
+            return  req.io.emit('clientRegisteredLC', { message: 'eroor', details: 'User with this phone number and device ID already exists' });
+        }
         const hashedPassword = newClient.password;
-
+console.log('------------------------------------');
+console.log(hashedPassword);
+console.log('------------------------------------');
         await Warn.create({
             phone: newClient.phone,
             firstName: newClient.firstName,
@@ -186,16 +185,16 @@ exports.saveClientLC = async (req, res) => {
         });
 
         
-        req.io.emit('clientRegistered', { message: 'success', details: 'Client registered successfully!' });
+        req.io.emit('clientRegisteredLC', { message: 'success', details: 'Client registered successfully!' });
 
-        return res.status(201).json({ message: 'success', details: 'Client registered successfully!' });
+     
 
     } catch (error) {
        
 
-        req.io.emit('clientRegistered', { message: 'error', details: error.message });
+        return req.io.emit('clientRegisteredLC', { message: 'error', details: error.message });
 
-        return res.status(400).json({ message: 'error', errors: [error.message] });
+        
     }
 };
 
