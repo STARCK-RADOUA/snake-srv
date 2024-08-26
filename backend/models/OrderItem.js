@@ -15,7 +15,10 @@ const orderItemSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   selected_options: [selectedOptionSchema],  // Liste des options supplémentaires choisies
   created_at: { type: Date, default: Date.now },
-  updated_at: { type: Date, default: Date.now }
+  updated_at: { type: Date, default: Date.now },
+  isFree: { type: Boolean, default: false }
+
+
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
 });
