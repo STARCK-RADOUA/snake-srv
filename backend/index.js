@@ -485,7 +485,6 @@ socket.on('initiateChat', async ({ adminId, clientId }) => {
       const service = await Service.findById(serviceID);
       if (service) {
         // Emit the initial order status to the client
-        socket.emit('oserviceStatusUpdates', { service });
 
         // Watch for changes to the order
         const serviceChangeStream = Service.watch([{ $match: { 'documentKey._id': service._id } }]);
