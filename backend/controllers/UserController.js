@@ -206,3 +206,43 @@ exports.loginUser = async (req, res) => {
   }
 };
 
+ exports.updateUserPoints = async (req, res) => {
+    const { userId, newPoints } = req.body;
+
+    // Log the incoming request body for debugging
+    console.log('Received userId:', userId);
+    console.log('Received newPoints:', newPoints);
+
+    try {
+        // Log the start of the user update process
+        console.log('Attempting to find user and update points');
+
+        // Find the user by ID and update their points
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            { points_earned: newPoints }, 
+            { new: true } // Return the updated document
+        );
+
+        // Log the updated user details for debugging
+        console.log('Updated User:', updatedUser);
+
+        if (!updatedUser) {
+            console.log('User not found');
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Success log
+        console.log('Points updated successfully for user:', userId);
+
+        return res.status(200).json({
+            message: "Points updated successfully",
+            user: updatedUser
+        });
+    } catch (error) {
+        // Log the error message for debugging
+        console.error('Error updating points:', error);
+
+        return res.status(500).json({ message: "Error updating points", error });
+    }
+};

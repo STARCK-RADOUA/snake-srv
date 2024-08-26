@@ -17,6 +17,9 @@ router.put('/:id', orderItemController.updateOrderItem);
 // Delete an order item
 router.delete('/:id', orderItemController.deleteOrderItem);
 
+router.post('/update-order-items', orderItemController.updateOrderItems);
+
+
 router.get('/:clientId/:serviceName/order-items', orderItemController.getOrderItemsByCart);
 
 

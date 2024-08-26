@@ -129,3 +129,39 @@ exports.deleteOrderItem = async (req, res) => {
         res.status(500).json({ error: 'Failed to delete order item' });
     }
 };
+
+
+exports.updateOrderItems = async (req, res) => {
+  const {  items } = req.body; // Expecting orderId and list of items from the request body
+  console.log('Request Body:', req.body);
+
+  try {
+     
+
+      // Loop through each item from the request body
+      for (let item of items) {
+          const { _id, free , quantity } = item;
+
+          // Find the order item by its ID and update the isFree field
+          const updatedOrderItem = await OrderItem.findByIdAndUpdate(
+              _id,
+              { isFree: free , quantity :quantity  }, // Update the isFree value
+              { new: true } // Return the updated document
+          );
+
+          if (!updatedOrderItem) {
+              console.log(`OrderItem with id ${_id} not found`);
+          } else {
+              console.log(`OrderItem with id ${_id} updated successfully`);
+          }
+      }
+
+      return res.status(200).json({
+          message: "Order items updated successfully"
+      });
+
+  } catch (error) {
+      console.error('Error updating order items:', error);
+      return res.status(500).json({ message: "Error updating order items", error });
+  }
+};
