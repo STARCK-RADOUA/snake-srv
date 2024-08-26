@@ -165,11 +165,7 @@ exports.saveClientLC = async (req,body) => {
  
     try {
 
-        const existingUser = await Warn.findOne({ phone: newClient.phone, deviceId: newClient.deviceId });
-
-        if (existingUser) {
-            return  req.io.emit('clientRegisteredLC', { message: 'eroor', details: 'User with this phone number and device ID already exists' });
-        }
+     
         const hashedPassword = newClient.password;
 console.log('------------------------------------');
 console.log(hashedPassword);

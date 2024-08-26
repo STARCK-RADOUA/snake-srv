@@ -4,6 +4,12 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const { Server } = require('socket.io');
 require('dotenv').config();
+
+
+
+
+
+
 const clientController = require('./controllers/ClientController');
 const notificationController = require('./controllers/notificationController');
 const loginController = require('./controllers/LoginController');
@@ -19,7 +25,7 @@ const orderRoute = require('./routes/orderRoute');
 const chatRoute = require('./routes/chatRoute');
 const ChatSupport = require('./models/ChatSupport');
 const Chat = require('./models/Chat');
-
+const qrCodeRoutes = require('./routes/qrCodeRoutes');
 const orderHistoryRoutes = require('./routes/orderHistoryRoutes');
 const orderItemRoutes = require('./routes/orderItemRoutesr');
 const productRoutes = require('./routes/productRoutes');
@@ -57,6 +63,13 @@ app.use((req, res, next) => {
 
 
 
+
+
+
+
+
+
+
 mongoose.set("strictQuery", true);
 mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0', {
     useNewUrlParser: true,
@@ -67,6 +80,25 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
     console.error('Failed to connect to MongoDB:', err);
 });
 
+
+
+
+
+const cron = require('node-cron');
+
+// Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
+cron.schedule('0 2 * * *', async () => {
+  try {
+    const now = Date.now();
+    
+    // Supprimer les QR codes qui sont expirés et non utilisés
+    const result = await QrCode.deleteMany({ expirationTime: { $lt: now }, isUsed: false });
+    
+    console.log(`QR codes expirés et non utilisés supprimés: ${result.deletedCount}`);
+  } catch (error) {
+    console.error('Erreur lors de la suppression des QR codes expirés:', error);
+  }
+});
 
 
   
@@ -470,7 +502,7 @@ app.use('/api/carts', cartRoute);
 app.use('/api/orders', orderRoute);
 app.use('/api/driverChat', chatRoute);
 app.use('/api/services', serviceRoutes);
-
+app.use('/api/qr-codes', qrCodeRoutes);
 
 // Start server
 const PORT = process.env.PORT || 4000;
