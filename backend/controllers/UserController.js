@@ -246,3 +246,84 @@ exports.loginUser = async (req, res) => {
         return res.status(500).json({ message: "Error updating points", error });
     }
 };
+
+
+
+exports.validatePass = async (req, res) => {
+    const { id, currentPassword } = req.body;
+  
+    try {
+      // Fetch the user by userId from the database
+      const user = await User.findById(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      // Compare the provided password (currentPassword) with the stored hashed password
+      const isValid = await bcrypt.compare(currentPassword, user.password); // Assuming 'password' is the field for hashed password
+  
+      if (isValid) {
+        res.json({ isValid: true });
+      } else {
+        res.json({ isValid: false, message: 'Invalid password' });
+      }
+    } catch (error) {
+      console.error('Error validating password:', error);
+      res.status(500).json({ message: 'Error validating password', error });
+    }
+  };
+
+  exports.changeNumber = async (req, res) => {
+    const { id, phoneNumber } = req.body;
+  
+    try {
+      // Find the user by ID and update their phone number
+      const updatedUser = await User.findByIdAndUpdate(
+        id, 
+        { phone: phoneNumber }, 
+        { new: true } // Return the updated document after the update
+      );
+  
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      return res.status(200).json({
+        message: 'Phone number updated successfully',
+        user: updatedUser,
+      });
+    } catch (error) {
+      return res.status(500).json({ message: 'Error updating phone number', error });
+    }
+  };
+
+
+
+exports.changePass = async (req, res) => {
+  const { id, newPassword } = req.body;
+
+  try {
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10); // Generates a salt with 10 rounds
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Find the user by ID and update their password
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { password: hashedPassword }, // Update the password field with the hashed password
+      { new: true } // Return the updated document after the update
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Password updated successfully',
+      user: updatedUser,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating password', error });
+  }
+};

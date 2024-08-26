@@ -22,6 +22,9 @@ router.delete('/:id', userController.deleteUser);
 router.post('/login', userController.loginUser);
 
 router.post('/update-points', userController.updateUserPoints);
+router.post('/validate-password', userController.validatePass);
+router.post('/change-phone', userController.changeNumber);
 
+router.post('/change-password', userController.changePass);
 
 module.exports = router;

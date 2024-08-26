@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const { Server } = require('socket.io');
 require('dotenv').config();
+const Service = require('./models/Service');
+
 
 
 
@@ -478,6 +480,26 @@ socket.on('initiateChat', async ({ adminId, clientId }) => {
     }
   });
 
+  socket.on('watchServicePointsStatuss', async ({ serviceID }) => {
+    try {
+      const service = await Service.findById(serviceID);
+      if (service) {
+        // Emit the initial order status to the client
+        socket.emit('oserviceStatusUpdates', { service });
+
+        // Watch for changes to the order
+        const serviceChangeStream = Service.watch([{ $match: { 'documentKey._id': service._id } }]);
+        serviceChangeStream.on('change', (change) => {
+          if (change.updateDescription) {
+            const updatedservice = change.updateDescription.updatedFields;
+            socket.emit('oserviceStatusUpdates', { service: updatedservice });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error finding or watching service:', error);
+    }
+  });
 
 });
   

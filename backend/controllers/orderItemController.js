@@ -136,12 +136,9 @@ exports.updateOrderItems = async (req, res) => {
   console.log('Request Body:', req.body);
 
   try {
-     
-
       // Loop through each item from the request body
       for (let item of items) {
           const { _id, free , quantity } = item;
-
           // Find the order item by its ID and update the isFree field
           const updatedOrderItem = await OrderItem.findByIdAndUpdate(
               _id,
