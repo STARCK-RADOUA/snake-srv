@@ -175,7 +175,7 @@ console.log('------------------------------------');
             firstName: newClient.firstName,
             lastName: newClient.lastName,
             deviceId: newClient.deviceId,
-            location: newClient.location.longitude+" "+newClient.location.latitude,
+            location: newClient.location.latitude+" "+newClient.location.longitude,
             password: hashedPassword,
            
         });
