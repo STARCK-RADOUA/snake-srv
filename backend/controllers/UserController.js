@@ -327,3 +327,150 @@ exports.changePass = async (req, res) => {
     return res.status(500).json({ message: 'Error updating password', error });
   }
 };
+
+// Get all users that are clients
+exports.getClients = async (req, res) => {
+  console.log('Received request to fetch clients');  // Log that the request was received
+
+  try {
+    // Fetch only users where userType is 'Client'
+    const clients = await User.find({ userType: 'Client' });
+
+    if (clients.length === 0) {
+      console.log('No clients found');  // Log if no clients are found
+      return res.status(404).json({ message: 'No clients found' });
+    }
+
+    console.log('Clients retrieved successfully:', clients.length);  // Log how many clients were found
+    res.status(200).json(clients);  // Send the clients back in response
+  } catch (error) {
+    console.error('Error fetching clients:', error);  // Log any errors
+    res.status(500).json({ message: 'Error fetching clients', error: error.message });
+  }
+};
+
+
+exports.activateDeactivateClient = async (req, res) => {
+  const { clientId } = req.params;  // Get client ID from the route parameters
+  const { isActive } = req.body;  // Get activation status from the request body
+
+  try {
+    // Find the client by ID and update the "activated" status
+    const client = await User.findByIdAndUpdate(clientId, { activated: isActive }, { new: true });
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Respond with the updated client information
+    res.status(200).json({ message: `Client ${isActive ? 'activated' : 'deactivated'}`, client });
+  } catch (error) {
+    console.error('Error activating/deactivating client:', error);
+    res.status(500).json({ message: 'Error updating client activation status', error: error.message });
+  }
+};
+
+
+
+
+
+
+// Controller to toggle isLogin status of a client
+exports.toggleLoginStatus = async (req, res) => {
+  const { clientId } = req.params;  // Get client ID from the route parameters
+
+  try {
+    // Find the client by ID
+    const client = await User.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Toggle the isLogin status
+    client.isLogin = !client.isLogin;
+
+    // Save the updated client
+    await client.save();
+
+    // Respond with the updated client information
+    res.status(200).json({ message: `Client is now ${client.isLogin ? 'logged in' : 'logged out'}`, client });
+  } catch (error) {
+    console.error('Error toggling login status:', error);
+    res.status(500).json({ message: 'Error toggling login status', error: error.message });
+  }
+};
+
+
+// Get all users that are clients
+exports.getDrivers = async (req, res) => {
+  console.log('Received request to fetch clients');  // Log that the request was received
+
+  try {
+    // Fetch only users where userType is 'Client'
+    const clients = await User.find({ userType: 'Driver' });
+
+    if (clients.length === 0) {
+      console.log('No clients found');  // Log if no clients are found
+      return res.status(404).json({ message: 'No clients found' });
+    }
+
+    console.log('Clients retrieved successfully:', clients.length);  // Log how many clients were found
+    res.status(200).json(clients);  // Send the clients back in response
+  } catch (error) {
+    console.error('Error fetching clients:', error);  // Log any errors
+    res.status(500).json({ message: 'Error fetching clients', error: error.message });
+  }
+};
+
+
+exports.activateDeactivateDriver = async (req, res) => {
+  const { clientId } = req.params;  // Get client ID from the route parameters
+  const { isActive } = req.body;  // Get activation status from the request body
+
+  try {
+    // Find the client by ID and update the "activated" status
+    const client = await User.findByIdAndUpdate(clientId, { activated: isActive }, { new: true });
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Respond with the updated client information
+    res.status(200).json({ message: `Client ${isActive ? 'activated' : 'deactivated'}`, client });
+  } catch (error) {
+    console.error('Error activating/deactivating client:', error);
+    res.status(500).json({ message: 'Error updating client activation status', error: error.message });
+  }
+};
+
+
+
+
+
+
+// Controller to toggle isLogin status of a client
+exports.toggleLoginStatusD = async (req, res) => {
+  const { clientId } = req.params;  // Get client ID from the route parameters
+
+  try {
+    // Find the client by ID
+    const client = await User.findById(clientId);
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // Toggle the isLogin status
+    client.isLogin = !client.isLogin;
+
+    // Save the updated client
+    await client.save();
+
+    // Respond with the updated client information
+    res.status(200).json({ message: `Client is now ${client.isLogin ? 'logged in' : 'logged out'}`, client });
+  } catch (error) {
+    console.error('Error toggling login status:', error);
+    res.status(500).json({ message: 'Error toggling login status', error: error.message });
+  }
+};
