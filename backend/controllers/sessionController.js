@@ -79,13 +79,16 @@ exports.getUserIdByDeviceId = async (req, res) => {
 
         // Find the user with the provided device ID
         const user = await User.findOne({ deviceId: deviceId });
+        const client = await Client.findOne({ user_id: user._id });
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
+        } if (!client) {
+            return res.status(404).json({ error: 'client not found' });
         }
 
         // Return the user_id
-        res.status(200).json({ userId: user._id });
+        res.status(200).json({ userId: client._id });
     } catch (error) {
         console.error('Error fetching user ID:', error);
         res.status(500).json({ error: 'Failed to fetch user ID' });

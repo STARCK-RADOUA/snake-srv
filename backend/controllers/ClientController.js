@@ -118,9 +118,11 @@ exports.saveClient = async (req, res) => {
 
     try {
         // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
-        const existingUser = await User.findOne({ phone: newClient.phone, deviceId: newClient.deviceId });
-
-        if (existingUser) {
+        const existingUser =  User.findOne({ phone: newClient.phone, deviceId: newClient.deviceId });
+console.log('------------------------------------');
+console.log(existingUser);
+console.log('------------------------------------');
+        if (existingUser || existingUser.deviceId === newClient.deviceId) {
             return res.status(400).json({
                 message: 'error',
                 errors: ['User with this phone number and device ID already exists']
