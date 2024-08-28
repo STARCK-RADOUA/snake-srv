@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 
 const qrCodeSchema = new mongoose.Schema({
   clientId: { type: String, required: true },
-  newclientId: { type: String, required: false },
+  newclientDeviceId: { type: String, required: false },
   deviceId: { type: String, required: true },
   uniqueId: { type: String, required: true, unique: true },
   timestamp: { type: Date, required: true },
