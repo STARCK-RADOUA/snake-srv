@@ -108,7 +108,7 @@ exports.isClientValid = (newClient) => {
 exports.saveClient = async (req, res) => {
     let newClient = req.body;
     let ClientValidStatus = this.isClientValid(newClient);
-
+console.log(newClient)
     if (!ClientValidStatus.status) {
         return res.status(400).json({
             message: 'error',
@@ -118,14 +118,25 @@ exports.saveClient = async (req, res) => {
 
     try {
         // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
-        const existingUser =  User.findOne({ phone: newClient.phone, deviceId: newClient.deviceId });
+        let existingUser = await User.findOne({ phone: newClient.phone });
+        let existingUser1 =  await User.findOne({ deviceId: newClient.deviceId });
+
+        
 console.log('------------------------------------');
-console.log(existingUser);
+console.log(newClient.phone);
 console.log('------------------------------------');
-        if (existingUser || existingUser.deviceId === newClient.deviceId) {
+        if (existingUser ) {
             return res.status(400).json({
                 message: 'error',
-                errors: ['User with this phone number and device ID already exists']
+                errors: ['User with this phone num']
+            });
+        }
+
+
+        if (existingUser1) {
+            return res.status(400).json({
+                message: 'error',
+                errors: ['User with this device  already exists']
             });
         }
 
