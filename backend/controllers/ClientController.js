@@ -1,6 +1,7 @@
 const Client = require('../models/Client');
 const User = require('../models/User');
 const Warn = require('../models/Warn');
+const QrCode = require('../models/QrCode');
 const bcrypt = require("bcrypt");
 // Get all clients
 exports.getClients = async (req, res) => {
@@ -107,8 +108,12 @@ exports.isClientValid = (newClient) => {
 }
 exports.saveClient = async (req, res) => {
     let newClient = req.body;
-    let ClientValidStatus = this.isClientValid(newClient);
+    const uniqueId  = newClient.token;
 
+    let ClientValidStatus = this.isClientValid(newClient);
+console.log(newClient)
+
+console.log(uniqueId)
     if (!ClientValidStatus.status) {
         return res.status(400).json({
             message: 'error',
@@ -118,12 +123,25 @@ exports.saveClient = async (req, res) => {
 
     try {
         // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
-        const existingUser = await User.findOne({ phone: newClient.phone, deviceId: newClient.deviceId });
+        let existingUser = await User.findOne({ phone: newClient.phone });
+        let existingUser1 =  await User.findOne({ deviceId: newClient.deviceId });
 
-        if (existingUser) {
+        
+console.log('------------------------------------');
+console.log(req.body);
+console.log('------------------------------------');
+        if (existingUser ) {
             return res.status(400).json({
                 message: 'error',
-                errors: ['User with this phone number and device ID already exists']
+                errors: ['User with this phone num']
+            });
+        }
+
+
+        if (existingUser1) {
+            return res.status(400).json({
+                message: 'error',
+                errors: ['User with this device  already exists']
             });
         }
 
@@ -141,6 +159,38 @@ exports.saveClient = async (req, res) => {
 
         newClient.user_id = user_idetails._id;
         await Client.create(newClient);
+
+
+
+
+console.log('------------------------------------');
+   // Assuming pointsToAdd is the number of points you want to add
+   const qrCode = await QrCode.findOne({ uniqueId });
+   console.log('------------------------------------');
+   console.log(qrCode);
+   qrCode.newclientDeviceId = newClient.deviceId;
+   await qrCode.save();
+   console.log('------------------------------------');
+   const client = await Client.findOne({ _id: qrCode.clientId });
+   console.log('------------------------------------');
+   console.log(client);
+   console.log('------------------------------------');
+  
+   
+   if (client && qrCode.isUsed ) {
+     await User.findOneAndUpdate(
+       { _id: client.user_id }, // Find the user by their user_id (from Client)
+       { $inc: { points_earned: 1 } }, // Increment points_earned by pointsToAdd
+      
+     );
+   } else {
+     console.log('Client not found');
+   }
+   
+
+
+
+
 
         req.io.emit('clientRegistered', { message: 'success', details: 'Client registered successfully!' });
 

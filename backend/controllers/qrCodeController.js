@@ -1,7 +1,8 @@
 // controllers/qrCodeController.js
 const QrCode = require('../models/QrCode');
 const { v4: uuidv4 } = require('uuid');
-
+const Client = require('../models/Client');
+const User = require('../models/User');
 // Générer un nouveau QR code
 exports.generateQrCode = async (req, res) => {
   try {
@@ -31,8 +32,13 @@ exports.generateQrCode = async (req, res) => {
 // Vérifier un QR code scanné
 exports.verifyQrCode = async (req, res) => {
   try {
-    const { uniqueId } = req.body;
+    const uniqueId  = req.body.uniqueId;
+  
 
+console.log("///////////////////////////////////////////////////////")
+console.log(req.body)
+console.log(uniqueId)
+console.log("//////////////////////laaalaaaaalaaa/////////////////////////////////")
     // Rechercher le QR code dans la base de données
     const qrCode = await QrCode.findOne({ uniqueId });
 
@@ -52,7 +58,11 @@ exports.verifyQrCode = async (req, res) => {
 
     // Marquer le QR code comme utilisé
     qrCode.isUsed = true;
+   
     await qrCode.save();
+
+   // Assuming pointsToAdd is the number of points you want to add
+
 
     // Notifier via Socket.IO que le QR code a été scanné
     req.io.emit('qrCodeScanned', { uniqueId, clientId: qrCode.clientId });
