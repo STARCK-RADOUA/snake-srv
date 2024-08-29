@@ -524,6 +524,8 @@ app.use('/api/orders', orderRoute);
 app.use('/api/driverChat', chatRoute);
 app.use('/api/services', serviceRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
+app.use('/api/products', productRoutes);
+
 
 // Start server
 const PORT = process.env.PORT || 4000;

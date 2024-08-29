@@ -17,6 +17,7 @@ router.post('/clients/:clientId/activate', userController.activateDeactivateClie
 router.post('/clients/:clientId/toggle-login', userController.toggleLoginStatus);
 router.post('/driver/:clientId/activate', userController.activateDeactivateDriver);
 router.post('/driver/:clientId/toggle-login', userController.toggleLoginStatusD);
+router.post('/driver/add', userController.addDriver);
 
 
 // Update a user

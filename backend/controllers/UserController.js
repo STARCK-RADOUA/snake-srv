@@ -474,3 +474,50 @@ exports.toggleLoginStatusD = async (req, res) => {
     res.status(500).json({ message: 'Error toggling login status', error: error.message });
   }
 };
+
+
+// Function to create a new user and driver
+exports.addDriver = async (req, res) => {
+  try {
+    const { firstName, lastName, deviceId, phone, password, points_earned, userType, activated, isLogin } = req.body;
+
+    // Check if user type is 'Driver'
+    if (userType !== 'Driver') {
+      return res.status(400).json({ message: 'User type must be Driver.' });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create a new user
+    const newUser = new User({
+      firstName,
+      lastName,
+      deviceId,
+      phone,
+      password: hashedPassword,
+      points_earned,
+      userType,
+      activated,
+      isLogin,
+    });
+
+    // Save the new user
+    const savedUser = await newUser.save();
+
+    // After creating the user, create a new driver entry with the user's ID
+    const newDriver = new Driver({
+      user_id: savedUser._id,
+      isDisponible: true, // Assuming driver is available when created
+    });
+
+    // Save the new driver
+    await newDriver.save();
+
+    // Return success response
+    res.status(201).json({ message: 'Driver and user created successfully.', user: savedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error. Could not create user and driver.' });
+  }
+};
