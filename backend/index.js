@@ -36,7 +36,7 @@ const referralRoutes = require('./routes/referralRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
 const Order = require('./models/Order'); // Your Order model
-
+const adminController = require('./controllers/adminController');
 const chatRoutes = require('./routes/chatRoutes');
 
 const cors = require('cors');
@@ -48,7 +48,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.131:4000',
+        origin: 'http://192.168.8.137:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -248,6 +248,49 @@ io.on('connection', (socket) => {
         } catch (error) {
             console.error('Error during auto login:', error);
             socket.emit('loginFailure', { message: 'An error occurred during login' });
+        }
+    });  
+    
+    
+    socket.on('adminAutoLogin', async (data) => {
+        try {
+            const { deviceId } = data;
+    console.log('Auto login data:', data);
+            // Vérification si l'ID de l'appareil est fourni
+            if (!deviceId) {
+                socket.emit('loginFailure', { message: 'Device ID not provided' });
+                return;
+            }
+    
+            adminController.adminAutoLogin(socket, data); 
+            // Si tout va bien, l'utilisateur est connecté
+            socket.emit('adminloginSuccess', { userId: user._id, message: 'Login successful' });
+    
+        } catch (error) {
+            console.error('Error during auto login:', error);
+            socket.emit('loginFailure', { message: 'An error occurred during login' });
+        }
+    }); 
+    
+    
+    
+    socket.on('adminRestoreLogin', async (data) => {
+        try {
+            const { deviceId } = data;
+    console.log('Auto login data:', data);
+            // Vérification si l'ID de l'appareil est fourni
+            if (!deviceId) {
+                socket.emit('restoreFailure', { message: 'Device ID not provided' });
+                return;
+            }
+    
+            adminController.adminRestoreLogin(socket, data); 
+            // Si tout va bien, l'utilisateur est connecté
+            socket.emit('adminRestoreSuccess', { userId: user._id, message: 'Login data via email successful' });
+    
+        } catch (error) {
+            console.error('Error during auto login:', error);
+            socket.emit('restoreFailure', { message: 'An error occurred during login' });
         }
     });
     
