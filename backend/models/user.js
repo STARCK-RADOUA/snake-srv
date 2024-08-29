@@ -16,6 +16,7 @@ points_earned: { type: Number, default: 0 },
  
   userType: { type: String, required: true, enum: ['Admin', 'Client', 'Driver'] },
   activated: { type: Boolean, default: false },
+  email: { type: String, required: false , },
   isLogin: { type: Boolean, default: false },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }

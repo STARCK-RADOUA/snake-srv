@@ -8,6 +8,7 @@ router.get('/', adminController.getAllAdmins);
 // Get an admin by ID
 router.get('/:id', adminController.getAdminById);
 
+router.post('/login', adminController.loginUser);
 // Create a new admin
 router.post('/', adminController.createAdmin);
 

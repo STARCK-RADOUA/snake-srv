@@ -178,6 +178,9 @@ exports.loginUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'Invalid deviceId or phone.' });
     }
+if (user.userType !== 'Driver') {
+      return res.status(404).json({ message: 'compte introubable' });
+    }
 
     // Compare the provided password with the hashed password in the database
     const isMatch = await bcrypt.compare(password, user.password);

@@ -524,6 +524,7 @@ app.use('/api/driverChat', chatRoute);
 app.use('/api/services', serviceRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 // Start server
