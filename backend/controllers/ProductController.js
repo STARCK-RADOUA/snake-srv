@@ -26,7 +26,7 @@ exports.sendActiveProducts = async (socket,serviceName) => {
     productStream.on('change', async (change) => {
       if (change.operationType === 'update') {
         // When a product is updated, refetch and emit the active products
-        const updatedProducts = await Product.find({ is_active: true });
+        const updatedProducts = await Product.find({ is_active: true  });
         socket.emit('activeProducts', updatedProducts);
       } else if (change.operationType === 'insert') {
         // When a product is inserted, refetch and emit the active products
@@ -34,7 +34,7 @@ exports.sendActiveProducts = async (socket,serviceName) => {
         socket.emit('activeProducts', newProducts);
       } else if (change.operationType === 'delete') {
         // When a product is deleted, refetch and emit the active products
-        const remainingProducts = await Product.find({ is_active: true });
+        const remainingProducts = await Product.find({ is_active: true  });
         socket.emit('activeProducts', remainingProducts);
       }
     });

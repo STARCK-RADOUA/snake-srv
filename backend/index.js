@@ -36,6 +36,11 @@ const referralRoutes = require('./routes/referralRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
 const Order = require('./models/Order'); // Your Order model
+const Product = require('./models/Product');
+const User = require('./models/User');
+const Client = require('./models/Client');
+const Driver = require('./models/Driver');
+
 
 const chatRoutes = require('./routes/chatRoutes');
 
@@ -48,7 +53,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.131:4000',
+        origin: 'http://192.168.1.29:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -326,69 +331,101 @@ io.on('connection', (socket) => {
 
 
 // Chat initiation for client and admin
-socket.on('initiateChat', async ({ adminId, clientId }) => {
-    try {
-      // Check if a chat exists between this admin and client
-      let chat = await ChatSupport.findOne({ admin_id: adminId, client_id: clientId });
-      if (!chat) {
-        // If no chat exists, create a new one
-        chat = new ChatSupport({
-          admin_id: adminId,
-          client_id: clientId,
-          messages: []  // Initialize with an empty messages array
-        });
-        await chat.save();
+// Assuming you've already set up your socket.io server
+socket.on('initiateChat', async ({ adminId, userId, userType }) => {
+  console.log(adminId, userId, userType);
+  try {
+      let chat = null;
+
+      if (userType === 'Admin') {
+          // First, try to find the user in the Client collection
+          const client = await Client.findOne({ user_id: userId });
+          console.log(client);
+
+          if (client) {
+              // If found in Client, check for existing chat between admin and client
+              chat = await ChatSupport.findOne({ admin_id: adminId, client_id: client._id });
+              if (!chat) {
+                  // If no chat exists, create a new one
+                  chat = new ChatSupport({
+                      admin_id: adminId,
+                      client_id: client._id,
+                      messages: []
+                  });
+                  await chat.save();
+              }
+          } else {
+              // If not found in Client, try to find the user in the Driver collection
+              const driver = await Driver.findOne({ user_id: userId });
+
+              if (driver) {
+                  // If found in Driver, check for existing chat between admin and driver
+                  chat = await ChatSupport.findOne({ admin_id: adminId, client_id: driver._id }); // Assuming client_id is used for drivers too
+                  if (!chat) {
+                      // If no chat exists, create a new one
+                      chat = new ChatSupport({
+                          admin_id: adminId,
+                          client_id: driver._id, // Storing driver._id in client_id for simplicity
+                          messages: []
+                      });
+                      await chat.save();
+                  }
+              } else {
+                  // If not found in both collections, throw an error
+                  throw new Error('User not found in Client or Driver collections');
+              }
+          }
+      } else {
+          // For non-admin users, find the chat as usual (assuming userId is always the clientId here)
+          chat = await ChatSupport.findOne({ admin_id: adminId, client_id: userId });
+
+          if (!chat) {
+              // If no chat exists, create a new one
+              chat = new ChatSupport({
+                  admin_id: adminId,
+                  client_id: userId,
+                  messages: []
+              });
+              await chat.save();
+          }
       }
-  
+
       // Join the room for this specific chat
       socket.join(chat._id.toString());
-  
-      if (socket.handshake.query.isAdmin === 'true') {
-        // For admin: Send all messages (old, new, seen, unseen)
-        socket.emit('chatDetails', { chatId: chat._id, messages: chat.messages });
-      } else {
-        // For client: Filter only unseen messages from the admin
-        const unseenMessages = chat.messages.filter(msg => msg.sender === 'admin' && !msg.seen);
-  
-        // Mark unseen messages as seen when sending to the client
-        unseenMessages.forEach(msg => {
-          msg.seen = true; // Mark as seen
-        });
-        await chat.save(); // Save updated chat with seen messages
-  
-        // Send only the unseen messages to the client
-        socket.emit('chatDetails', { chatId: chat._id, messages: unseenMessages });
-      }
-    } catch (error) {
+
+      // Emit all messages to the client/driver
+      socket.emit('chatDetails', { chatId: chat._id, messages: chat.messages });
+
+  } catch (error) {
       console.error('Error initiating chat:', error);
+      socket.emit('error', { message: 'Error initiating chat: ' + error.message });
+  }
+});
+
+// Handle message sending (for both client and admin)
+socket.on('sendMessage', async ({ chatId, sender, content }) => {
+  try {
+    const chat = await ChatSupport.findById(chatId);
+    if (!chat) {
+      console.log(`Chat not found for chatId: ${chatId}`);
+      return;
     }
-  });
-  
-  // Handle message sending (for both client and admin)
-  socket.on('sendMessage', async ({ chatId, sender, content }) => {
-    try {
-      const chat = await ChatSupport.findById(chatId);
-      if (!chat) {
-        console.log(`Chat not found for chatId: ${chatId}`);
-        return;
-      }
-  
-      // Add the new message to the chat
-      const newMessage = {
-        sender,
-        content,
-        timestamp: new Date(),
-        seen: sender === 'admin' // Admin messages are marked as seen, client messages are unseen
-      };
-      chat.messages.push(newMessage);
-      await chat.save();
-  
-      // Emit the new message to everyone in the chat room
-      io.to(chatId).emit('newMessage', { message: newMessage });
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  });
+
+    // Add the new message to the chat
+    const newMessage = {
+      sender,
+      content,
+      timestamp: new Date(),
+    };
+    chat.messages.push(newMessage);
+    await chat.save();
+
+    // Emit the new message to everyone in the chat room
+    io.to(chatId).emit('newMessage', { message: newMessage });
+  } catch (error) {
+    console.error('Error sending message:', error);
+  }
+});
 
 
   // Handle message sending
@@ -499,8 +536,118 @@ socket.on('initiateChat', async ({ adminId, clientId }) => {
     }
   });
 
+
+  socket.on('watchServices', async () => {
+    try {
+      console.log('Received watchServices event');
+  
+      const services = await Service.find();
+      console.log('Fetched services:', services);
+  
+      if (services) {
+        // Emit the initial list of services to the client
+        socket.emit('servicesUpdated', { services });
+        console.log('Emitted initial services to client');
+  
+        // Watch for changes to the Service collection
+        const serviceChangeStream = Service.watch();
+        console.log('Service change stream started');
+  
+        serviceChangeStream.on('change', async (change) => {
+          console.log('Change detected:', change);
+  
+          if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
+            const updatedServices = await Service.find();
+            console.log('Fetched updated services:', updatedServices);
+  
+            socket.emit('servicesUpdated', { services: updatedServices });
+            console.log('Emitted updated services to client');
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error finding or watching services:', error);
+    }
+  });
+
+  socket.on('watchProducts', async () => {
+    try {
+      const products = await Product.find();
+      if (products) {
+        // Emit the initial list of products to the client
+        socket.emit('productsUpdated', { products });
+
+        // Watch for changes to the Product collection
+        const productChangeStream = Product.watch();
+        productChangeStream.on('change', async (change) => {
+          if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
+            const updatedProducts = await Product.find();
+            socket.emit('productsUpdated', { products: updatedProducts });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error finding or watching products:', error);
+    }
+  });
+
+
+  
+ const User = require('./models/User'); // Make sure to require your User model
+
+socket.on('watchDrivers', async () => {
+    try {
+      // Fetch all users with userType = 'Driver'
+      const drivers = await User.find({ userType: 'Driver' });
+      if (drivers) {
+        // Emit the initial list of drivers to the client
+        socket.emit('driversUpdated', { drivers });
+
+        // Watch for changes to the User collection
+        const userChangeStream = User.watch();
+        userChangeStream.on('change', async (change) => {
+          if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
+            // Fetch the updated list of drivers after the change
+            const updatedDrivers = await User.find({ userType: 'Driver' });
+            socket.emit('driversUpdated', { drivers: updatedDrivers });
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error finding or watching drivers:', error);
+    }
+});
+
+
+socket.on('watchClients', async () => {
+  try {
+    // Fetch all users with userType = 'Client'
+    const clients = await User.find({ userType: 'Client' });
+    if (clients) {
+      // Emit the initial list of clients to the client
+      socket.emit('clientsUpdated', { clients });
+
+      // Watch for changes to the User collection
+      const userChangeStream = User.watch();
+      userChangeStream.on('change', async (change) => {
+        if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
+          // Fetch the updated list of clients after the change
+          const updatedClients = await User.find({ userType: 'Client' });
+          socket.emit('clientsUpdated', { clients: updatedClients });
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error finding or watching clients:', error);
+  }
+});
+
+
 });
   
+
+
+
 
 
 // Routes

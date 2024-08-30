@@ -6,6 +6,8 @@ const userController = require('../controllers/UserController');
 router.get('/', userController.getAllUsers);
 router.get('/clients', userController.getClients);
 router.get('/drivers', userController.getDrivers);
+router.get('/all', userController.getAllUsersForAdmin);
+
 
 // Get a user by ID
 router.get('/:id', userController.getUserById);
