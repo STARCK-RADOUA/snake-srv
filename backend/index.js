@@ -18,6 +18,8 @@ const loginController = require('./controllers/LoginController');
 const orderController = require('./controllers/orderController');
 const serviceRoutes = require('./routes/serviceRoutes');
 const ProductController = require('./controllers/productController');
+const adminController = require('./controllers/adminController');
+
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
 const clientRoutes = require('./routes/clientRoutes');
@@ -40,6 +42,8 @@ const Product = require('./models/Product');
 const User = require('./models/User');
 const Client = require('./models/Client');
 const Driver = require('./models/Driver');
+
+
 
 
 const chatRoutes = require('./routes/chatRoutes');
