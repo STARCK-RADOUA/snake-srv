@@ -84,22 +84,22 @@ console.log('Device ID:', user_id);
 const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
 
 
-
+   const client = await Client.findOne({ _id: user_id });
+      if (!client) {
+        throw new Error('Client not found');
+      }
+  
 
 
       // Find the user by deviceId
-      const user = await User.findOne({ _id: user_id });
+      const user = await User.findOne({ _id: client.user_id });
       if (!user) {
         console.error('User not found for Device ID:', deviceId);
         throw new Error('User not found');
       }
   
       // Find the client associated with the user
-      const client = await Client.findOne({ user_id: user._id });
-      if (!client) {
-        throw new Error('Client not found');
-      }
-  
+   
       // Fetch the OrderItems from the client's cart (assuming there is a cart collection or order items linked to the client)
   
       const address = new Address({

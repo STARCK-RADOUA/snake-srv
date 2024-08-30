@@ -335,6 +335,10 @@ io.on('connection', (socket) => {
   
   // Quand une nouvelle commande est ajoutée
   socket.on('addOrder', async (orderData) => {
+    console.log(orderData)
+    console.log('------------------------------------');
+    console.log("000000000000000000000000000000000000000000000000000");
+    console.log('------------------------------------');
     try {
      
 
