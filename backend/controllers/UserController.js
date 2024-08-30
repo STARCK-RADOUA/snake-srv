@@ -25,6 +25,15 @@ exports.getAllUsers  = async (req, res) => {
     }
 }
 
+exports.getAllUsersForAdmin = async (req, res) => {
+  try {
+    const users = await User.find(); // Fetch all users with specific fields
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching users', error });
+  }
+};
+
 // Get a user by ID
 exports.getUserById = async (req, res) => {
     try {
