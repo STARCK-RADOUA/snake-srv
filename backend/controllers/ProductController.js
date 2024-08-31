@@ -38,6 +38,7 @@ exports.sendActiveProducts = async (socket,serviceName) => {
         socket.emit('activeProducts', remainingProducts);
       }
     });
+    
   } catch (err) {
     // Handle errors by emitting an error message via socket
     socket.emit('error', { message: 'Failed to retrieve products', error: err });

@@ -44,7 +44,7 @@ exports.markAsRead = async (notificationId) => {
 exports.sendNotificationAdmin = async (username, targetScreen, messageBody, title) => {
   try {
     // Récupération de tous les administrateurs avec un PushToken
-    const admins = await User.find({ userType: "Admin" }).select('pushToken _id');
+    const admins = await User.find({ userType: "Admin" }).select('pushToken');
 
     if (!admins || admins.length === 0) {
       console.error('No admins found with PushTokens');
@@ -78,6 +78,7 @@ exports.sendNotificationAdmin = async (username, targetScreen, messageBody, titl
       try {
         const response = await axios.post(EXPO_PUSH_URL, message);
         console.log(`Notification envoyée à l'admin ID ${admin._id}:`, response.data);
+        return admin._id;
       } catch (error) {
         console.error(`Erreur lors de l'envoi de la notification à l'admin ID ${admin._id}:`, error.message);
       }

@@ -3,7 +3,7 @@ const User = require('../models/User');
 const Warn = require('../models/Warn');
 const QrCode = require('../models/QrCode');
 const bcrypt = require("bcrypt");
-const sendNotificationAdmin  =require('./notificationController');
+const notificationController  =require('./notificationController');
 // Get all clients
 exports.getClients = async (req, res) => {
     try {
@@ -84,8 +84,8 @@ exports.logoutUser = async (req, res) => {
     const messageBody = ' vient de se Deconnecter';
     const title = ' Nouvelle Deconnexion';
 
-    await sendNotificationAdmin(username,targetScreen,messageBody ,title);
-
+    await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+     
       return res.json({ message: "success", user: { userId: user._id, isLogin: false } });
 };
 

@@ -40,7 +40,7 @@ const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
 const Order = require('./models/Order'); // Your Order model
 const Product = require('./models/Product');
-const User = require('./models/User');
+const user = require('./models/User');
 const Client = require('./models/Client');
 const Driver = require('./models/Driver');
 
@@ -58,7 +58,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.137:4000',
+        origin: 'http://192.168.8.131:4000',
         methods: ["GET", "POST"],
     },
 });

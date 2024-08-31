@@ -2,7 +2,8 @@ const User = require('../models/User.js');
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 const bcrypt = require('bcryptjs');
-const sendNotificationAdmin  =require('./notificationController');
+        const notificationController  =require('./notificationController');
+
 // Get all users
 exports.getAllUsers  = async (req, res) => {
     try {
@@ -206,7 +207,7 @@ if (user.userType !== 'Driver') {
     const messageBody = ' vient de se connecter';
     const title = ' Nouvelle Connexion de livreur';
 
-    await sendNotificationAdmin(username,targetScreen,messageBody ,title);
+    await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
     return res.status(200).json({
       message: 'Login successful',
       data: {

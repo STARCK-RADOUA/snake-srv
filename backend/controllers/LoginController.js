@@ -1,5 +1,5 @@
 // controllers/loginController.js
-const sendNotificationAdmin  =require('./notificationController');
+const notificationController  =require('./notificationController');
 const User = require('../models/User');
 
 const autoLogin = async (socket, { deviceId }) => {
@@ -28,8 +28,8 @@ const autoLogin = async (socket, { deviceId }) => {
         const messageBody = ' vient de se connecter';
         const title = ' Nouveau Connexion';
     
-        await sendNotificationAdmin(username,targetScreen,messageBody ,title);
-
+        await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+     
 
 
 
