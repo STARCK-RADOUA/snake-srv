@@ -1,5 +1,5 @@
 // controllers/loginController.js
-
+const sendNotificationAdmin  =require('./notificationController');
 const User = require('../models/User');
 
 const autoLogin = async (socket, { deviceId }) => {
@@ -23,6 +23,15 @@ const autoLogin = async (socket, { deviceId }) => {
             socket.emit('loginFailure', { message: 'User account is logout' });
             return;
         }
+        const username = user.lastName + ' ' + user.firstName;
+        const targetScreen = ' Notifications';
+        const messageBody = ' vient de se connecter';
+        const title = ' Nouveau Connexion';
+    
+        await sendNotificationAdmin(username,targetScreen,messageBody ,title);
+
+
+
 
         // Si tout va bien, l'utilisateur est connecté
         socket.emit('loginSuccess', { userId: user._id, message: 'Login successful' });

@@ -12,10 +12,20 @@ router.post('/login', adminController.loginUser);
 // Create a new admin
 router.post('/', adminController.createAdmin);
 
+
 // Update an admin
 router.put('/:id', adminController.updateAdmin);
 
 // Delete an admin
 router.delete('/:id', adminController.deleteAdmin);
 
+
+
+
+
+
+
+
+
+  
 module.exports = router;

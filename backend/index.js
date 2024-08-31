@@ -35,6 +35,7 @@ const orderItemRoutes = require('./routes/orderItemRoutesr');
 const productRoutes = require('./routes/productRoutes');
 const profileRoutes = require('./routes/ProfileRoute');
 const referralRoutes = require('./routes/referralRoutes');
+const notificationRoute = require('./routes/notificationRoute.js');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
 const Order = require('./models/Order'); // Your Order model
@@ -57,7 +58,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.1.29:4000',
+        origin: 'http://192.168.8.137:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -721,8 +722,9 @@ app.use('/api/orders', orderRoute);
 app.use('/api/driverChat', chatRoute);
 app.use('/api/services', serviceRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
-app.use('/api/products', productRoutes);
+
 app.use('/api/admin', adminRoutes);
+app.use('/api/notification', notificationRoute);
 
 
 // Start server

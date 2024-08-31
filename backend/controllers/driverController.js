@@ -1,6 +1,6 @@
 const Driver = require('../models/Driver');
 const User = require('../models/User');
-
+const sendNotificationAdmin  =require('./notificationController');
 // Get all drivers
 exports.getAllDrivers = async (req, res) => {
     try {
@@ -206,12 +206,23 @@ exports.updateDriverAvailability = async (req, res) => {
   
       if (!driver) {
         return res.status(404).json({ message: 'Driver not found' });
+      } 
+      const user = await User.findById(driver.user_id); // Find driver by ID
+  
+      if (!user) {
+        return res.status(404).json({ message: 'Driver not found' });
       }
   
       // Update the availability status
       driver.isDisponible = isDisponible;
       await driver.save(); // Save the updated driver
+
+      const username = user.lastName + ' ' + user.firstName;
+      const targetScreen = ' Notifications';
+      const messageBody = ' Driver availability updated to ' + (isDisponible ? 'available' : 'unavailable');
+      const title = ' Driver availability updated';
   
+      await sendNotificationAdmin(username,targetScreen,messageBody ,title);
       return res.status(200).json({ message: 'Driver availability updated successfully', driver });
     } catch (error) {
       return res.status(500).json({ message: 'Server error', error: error.message });
