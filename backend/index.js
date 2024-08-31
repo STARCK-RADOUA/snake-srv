@@ -209,7 +209,13 @@ io.on('connection', (socket) => {
 
 
 
+    socket.on('productAdded',  async () => { 
 
+      const products = await Product.find({ is_active: true } );
+      socket.emit('activeProducts', products); // Emit current active products
+  
+
+    });
 
 
 

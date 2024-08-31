@@ -1,4 +1,3 @@
-
 const Product = require('../models/Product');
 
 exports.addProduct = async (req, res) => {
@@ -57,17 +56,12 @@ exports.getProducts =  async (req, res) => {
 
 exports.addProductA = async (req, res) => {
   try {
-    const {productData,socket} =req.body
-    console.log('------------------------------------');
-    console.log(req.body,productData);
-    console.log('------------------------------------');
-    const newProduct = new Product(productData); // Create a new Product instance using the request body data
+    const newProduct = new Product(req.body); // Create a new Product instance using the request body data
     await newProduct.save(); // Save the new product to the database
-    const products = await Product.find({ is_active: true } );
-    socket.emit('activeProducts', products); // Emit current active products
 
     // Return the newly created product as a JSON response
     res.status(201).json(newProduct);
+
   } catch (err) {
     // Handle any errors and return a 500 status with the error message
     res.status(500).json({ message: 'Failed to add product', error: err });
