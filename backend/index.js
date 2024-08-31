@@ -694,6 +694,67 @@ socket.on('watchClients', async () => {
 });
 
 
+socket.on('watchChatMessages', async () => {
+  try {
+    // Fetch all chat supports
+    const chats = await ChatSupport.find().populate('client_id').populate('admin_id');
+
+    if (chats) {
+      const lastMessages = await Promise.all(chats.map(async (chat) => {
+        const lastMessage = chat.messages[chat.messages.length - 1]; // Get the last message
+        if (lastMessage) {
+          const client = await User.findById(chat.client_id.user_id);
+          if (client) {
+            return {
+              clientId: client._id, // Include the clientId
+              clientFullName: `${client.firstName} ${client.lastName}`,
+              userType: client.userType,
+              lastMessage,
+            };
+          }
+        }
+        return null;
+      }));
+
+      // Filter out any null results
+      const validMessages = lastMessages.filter(msg => msg !== null);
+
+      // Emit the last messages to the client
+      socket.emit('chatMessagesUpdated', { messages: validMessages });
+
+      // Watch for changes to the ChatSupport collection
+      const chatChangeStream = ChatSupport.watch();
+      chatChangeStream.on('change', async (change) => {
+        if (['insert', 'update', 'delete'].includes(change.operationType)) {
+          const updatedChats = await ChatSupport.find().populate('client_id').populate('admin_id');
+          const updatedMessages = await Promise.all(updatedChats.map(async (chat) => {
+            const lastMessage = chat.messages[chat.messages.length - 1];
+            if (lastMessage) {
+              const client = await User.findById(chat.client_id.user_id);
+              if (client) {
+                return {
+                  clientId: client._id, // Include the clientId
+                  clientFullName: `${client.firstName} ${client.lastName}`,
+                  userType: client.userType,
+                  lastMessage,
+                };
+              }
+            }
+            return null;
+          }));
+
+          const validUpdatedMessages = updatedMessages.filter(msg => msg !== null);
+          socket.emit('chatMessagesUpdated', { messages: validUpdatedMessages });
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error finding or watching chats:', error);
+  }
+});
+
+
+
 });
   
 
