@@ -1,27 +1,28 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
-const Client = require('../models/Client');
+const Admin = require('../models/Admin');
 const Address = require('../models/Address');
 const Cart = require('../models/Cart');
 
 exports.getOrdersByDeviceId = async (deviceId) => {
   try {
     // Fetch the user and client based on deviceId
-    const user = await User.findOne({ deviceId });
+    const user = await User.findOne({ deviceId: deviceId, userType: 'Admin' });
     if (!user) {
       throw new Error('User not found');
     }
 
-    const client = await Client.findOne({ user_id: user._id });
-    if (!client) {
-      throw new Error('Client not found');
+    const admin = await Admin.findOne({ user_id: user._id });
+    if (!admin) {
+      throw new Error('Admin not found');
     }
 
     // Fetch all orders for the client
-    const orders = await Order.find({ client_id: client._id ,active:true})
-      .populate('address_id')
-      .lean();
+    const orders = await Order.find()
+    .populate('address_id')
+    .lean();
+
 
     if (orders.length === 0) {
       return [];  // Return early if no orders found

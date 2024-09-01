@@ -2,6 +2,7 @@ const User = require('../models/User.js');
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 const bcrypt = require('bcryptjs');
+        const notificationController  =require('./notificationController');
 
 // Get all users
 exports.getAllUsers  = async (req, res) => {
@@ -201,7 +202,12 @@ if (user.userType !== 'Driver') {
     // If password matches, return success message
     user.isLogin = true; // Set login status to true
     await user.save();    // Save the updated login status
+    const username = user.lastName + ' ' + user.firstName;
+    const targetScreen = ' Notifications';
+    const messageBody = ' vient de se connecter';
+    const title = ' Nouvelle Connexion de livreur';
 
+    await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
     return res.status(200).json({
       message: 'Login successful',
       data: {
@@ -289,18 +295,28 @@ exports.validatePass = async (req, res) => {
   exports.changeNumber = async (req, res) => {
     const { id, phoneNumber } = req.body;
   
-    try {
+    try { 
+      const user = await User.findOne(id);
+      const oldNumber = user.phone;
       // Find the user by ID and update their phone number
       const updatedUser = await User.findByIdAndUpdate(
         id, 
         { phone: phoneNumber }, 
         { new: true } // Return the updated document after the update
       );
+     
   
-      if (!updatedUser) {
+      if (!updatedUser || !user) {
         return res.status(404).json({ message: 'User not found' });
       }
-  
+      const username = user.lastName + ' ' + user.firstName;
+      const targetScreen = ' Notifications';
+      const messageBody = `vient de changer son numero de ${oldNumber} vers ${phoneNumber}`;
+      const title = ' Changemment de numero de telephone';
+   
+      await sendNotificationAdmin(username,targetScreen,messageBody ,title);
+   
+   
       return res.status(200).json({
         message: 'Phone number updated successfully',
         user: updatedUser,
@@ -525,7 +541,12 @@ exports.addDriver = async (req, res) => {
 
     // Save the new driver
     await newDriver.save();
+    const username = newUser.lastName + ' ' + newUser.firstName;
+    const targetScreen = ' Notifications';
+    const messageBody = ' est inscrit sur l\'application';
+    const title = ' Nouvelle inscription';
 
+    await sendNotificationAdmin(username,targetScreen,messageBody ,title);
     // Return success response
     res.status(201).json({ message: 'Driver and user created successfully.', user: savedUser });
   } catch (error) {

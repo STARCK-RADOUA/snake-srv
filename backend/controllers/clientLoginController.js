@@ -1,8 +1,8 @@
 
 const User = require("../models/User");
+const notificationController  =require('./notificationController');
 
 const bcrypt = require("bcrypt");
-
 
 const isLoginValid = (phone, password) => {
     const errorList = [];
@@ -63,7 +63,12 @@ const loginUser = (req, res) => {
                             if (updateError) {
                                 return res.status(500).json({ message: "error", errors: ["Failed to update login status"] });
                             }
-
+                            const username = currentUser.lastName + ' ' + currentUser.firstName;
+                            const targetScreen = ' Notifications';
+                            const messageBody = ' vient de se connecter';
+                            const title = ' Nouvelle Connexion';
+                        
+         notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
                             // Send a single response after the update
                             return res.json({ message: "success", user: currentUser });
                         });

@@ -38,6 +38,7 @@ exports.sendActiveProducts = async (socket,serviceName) => {
         socket.emit('activeProducts', remainingProducts);
       }
     });
+    
   } catch (err) {
     // Handle errors by emitting an error message via socket
     socket.emit('error', { message: 'Failed to retrieve products', error: err });
@@ -60,6 +61,7 @@ exports.addProductA = async (req, res) => {
 
     // Return the newly created product as a JSON response
     res.status(201).json(newProduct);
+
   } catch (err) {
     // Handle any errors and return a 500 status with the error message
     res.status(500).json({ message: 'Failed to add product', error: err });

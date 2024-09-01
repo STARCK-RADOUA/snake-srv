@@ -1,25 +1,27 @@
-const fetch = require('node-fetch');
+const axios = require('axios');
 
-const sendPushNotification = async () => {
+async function sendPushNotification() {
+  const expoPushToken = 'ExponentPushToken[Mr7VYfFAoqx5iNNauZNJok]'; // Le token de l'administrateur
   const message = {
-    to: 'ExponentPushToken[XGZPzVDmZznszS2vQadxRt]', // Remplace par ton token Expo
+    to: expoPushToken,
     sound: 'default',
     title: 'Test Notification',
-    body: 'Ceci est une notification de test !',
-    data: { someData: 'Test data' },
+    body: 'This is a test notification sent to the admin!',
+    data: { someData: 'goes here' },
   };
 
-  const response = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(message),
-  });
+  try {
+    const response = await axios.post('https://exp.host/--/api/v2/push/send', message, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
 
-  const responseData = await response.json();
-  console.log(responseData);
-};
+    console.log('Notification envoyée avec succès:', response.data);
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de la notification:', error.response ? error.response.data : error.message);
+  }
+}
 
 sendPushNotification();
