@@ -318,55 +318,42 @@ const Driver = require('../models/Driver');
 const Product = require('../models/Product');
 exports.getOrderHistory = async (req, res) => {
   try {
-      // Find all delivered orders
-      const orders = await Order.find({ status: 'delivered' })
-          .populate({
-              path: 'client_id',
-              populate: {
-                  path: 'user_id',
-                  model: 'User',
-                  select: 'firstName lastName'
-              }
-          })
-          .populate({
-              path: 'driver_id',
-              populate: {
-                  path: 'user_id',
-                  model: 'User',
-                  select: 'firstName lastName'
-              }
-          })
-          .populate({
-              path: 'address_id',
-              select: 'address_line' // Only select the address_line field
-          })
-          .populate({
-              path: '_id',
-              model: 'OrderItem',
-              populate: {
-                  path: 'product_id',
-                  model: 'Product'
-              }
-          });
+    const orders = await Order.find({ status: 'delivered' })
+      .populate({
+        path: 'client_id',
+        populate: {
+          path: 'user_id',
+          model: 'User',
+          select: 'firstName lastName'
+        }
+      })
+      .populate({
+        path: 'driver_id',
+        populate: {
+          path: 'user_id',
+          model: 'User',
+          select: 'firstName lastName'
+        }
+      })
+      .populate({
+        path: 'address_id',
+        select: 'address_line'
+      });
 
-      // Structure the response
     const response = await Promise.all(orders.map(async (order) => {
-    // Fetch the associated order items
-    const orderItems = await OrderItem.find({ Order_id: order._id })
-        .populate('product_id')
-        .exec();
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
 
-    return {
+      return {
         order_number: order._id,
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
         products: orderItems.map(item => ({
-            product: item.product_id ,  // Handle case where product_id might be null
-            quantity: item.quantity,
-            service_type: item.service_type,  // Include the service type
-            price: item.price,
-            selected_options: item.selected_options
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          price: item.price,
+          selected_options: item.selected_options
         })),
         total_price: order.total_price,
         delivery_time: order.updated_at,
@@ -374,16 +361,15 @@ exports.getOrderHistory = async (req, res) => {
         comment: order.comment,
         exchange: order.exchange,
         stars: order.stars,
-        referral_amount: order.exchange, // Assuming referral amount is the same as exchange
+        referral_amount: order.exchange,
         created_at: order.created_at,
         updated_at: order.updated_at,
-    };
-}));
+      };
+    }));
 
-      // Return the response
-      res.status(200).json({ total: orders.length, orders: response });
+    res.status(200).json({ total: orders.length, orders: response });
   } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Error retrieving order history', error: err.message });
+    console.error('Error retrieving order history:', err.message);
+    res.status(500).json({ message: 'Error retrieving order history', error: err.message });
   }
 };

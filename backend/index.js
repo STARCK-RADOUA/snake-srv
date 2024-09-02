@@ -606,7 +606,6 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
     socket.emit('productsUpdated', { products });
   });
 
-
   Order.find({ status: 'delivered' })
   .populate({
     path: 'client_id',
@@ -628,20 +627,9 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
     path: 'address_id',
     select: 'address_line'
   })
-  .populate({
-    path: '_id',
-    model: 'OrderItem',
-    populate: {
-      path: 'product_id',
-      model: 'Product'
-    }
-  })
   .then(async (orders) => {
-    // Structure the response
     const response = await Promise.all(orders.map(async (order) => {
-      const orderItems = await OrderItem.find({ Order_id: order._id })
-        .populate('product_id')
-        .exec();
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
 
       return {
         order_number: order._id,
@@ -667,12 +655,11 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
       };
     }));
 
-    // Emit the order history to the client
+    // Emit the orders with populated details to all connected clients
     socket.emit('orderHistoryUpdated', { total: orders.length, orders: response });
   })
-  .catch((err) => {
+  .catch(err => {
     console.error('Error retrieving order history:', err.message);
-    socket.emit('error', { message: 'Error retrieving order history', error: err.message });
   });
 
   Order.find({ status: 'cancelled' })
@@ -696,20 +683,9 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
     path: 'address_id',
     select: 'address_line'
   })
-  .populate({
-    path: '_id',
-    model: 'OrderItem',
-    populate: {
-      path: 'product_id',
-      model: 'Product'
-    }
-  })
   .then(async (orders) => {
-    // Structure the response
     const response = await Promise.all(orders.map(async (order) => {
-      const orderItems = await OrderItem.find({ Order_id: order._id })
-        .populate('product_id')
-        .exec();
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
 
       return {
         order_number: order._id,
@@ -735,15 +711,13 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
       };
     }));
 
-    // Emit the order history to the client
+    // Emit the orders with populated details to all connected clients
     socket.emit('orderCanceledUpdated', { total: orders.length, orders: response });
   })
-  .catch((err) => {
+  .catch(err => {
     console.error('Error retrieving order history:', err.message);
-    socket.emit('error', { message: 'Error retrieving order history', error: err.message });
   });
 
-  
 
   
 
