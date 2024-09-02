@@ -6,6 +6,7 @@ const orderController = require('../controllers/orderController');
 router.put('/update/:orderId', orderController.updateOrderPayment);
 
 router.post('/update/feedback', orderController.updateOrderFeedback);
+router.get('/all', orderController.getOrderHistory);
 
 router.patch('/:orderId/cancel', orderController.cancelOrder);
 router.post('/update-driver-id', orderController.updateDriverId);

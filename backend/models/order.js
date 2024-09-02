@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const orderSchema = new mongoose.Schema({
 
   client_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
-  driver_id: { type: mongoose.Schema.Types.ObjectId, ref: 'driver', required: false },
+  driver_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', required: false },
   address_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Address', required: false },
   service_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: false },
   status: { type: String, enum: ['pending', 'in_progress', 'delivered', 'cancelled','test'], required: true },

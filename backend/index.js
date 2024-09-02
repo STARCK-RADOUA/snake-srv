@@ -43,6 +43,7 @@ const Product = require('./models/Product');
 const user = require('./models/User');
 const Client = require('./models/Client');
 const Driver = require('./models/Driver');
+const OrderItem = require('./models/OrderItem');
 
 
 
@@ -96,6 +97,7 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 
 
 const cron = require('node-cron');
+const driver = require('./models/Driver');
 
 // Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
 cron.schedule('0 2 * * *', async () => {
@@ -595,110 +597,171 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
   });
 
 
-  socket.on('watchServices', async () => {
-    try {
-      console.log('Received watchServices event');
-  
-      const services = await Service.find();
-      console.log('Fetched services:', services);
-  
-      if (services) {
-        // Emit the initial list of services to the client
-        socket.emit('servicesUpdated', { services });
-        console.log('Emitted initial services to client');
-  
-        // Watch for changes to the Service collection
-        const serviceChangeStream = Service.watch();
-        console.log('Service change stream started');
-  
-        serviceChangeStream.on('change', async (change) => {
-          console.log('Change detected:', change);
-  
-          if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
-            const updatedServices = await Service.find();
-            console.log('Fetched updated services:', updatedServices);
-  
-            socket.emit('servicesUpdated', { services: updatedServices });
-            console.log('Emitted updated services to client');
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error finding or watching services:', error);
-    }
+  Service.find().then((services) => {
+    socket.emit('servicesUpdated', { services });
   });
 
-  socket.on('watchProducts', async () => {
-    try {
-      const products = await Product.find();
-      if (products) {
-        // Emit the initial list of products to the client
-        socket.emit('productsUpdated', { products });
 
-        // Watch for changes to the Product collection
-        const productChangeStream = Product.watch();
-        productChangeStream.on('change', async (change) => {
-          if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
-            const updatedProducts = await Product.find();
-            socket.emit('productsUpdated', { products: updatedProducts });
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error finding or watching products:', error);
-    }
+  Product.find().then((products) => {
+    socket.emit('productsUpdated', { products });
   });
+
+
+  Order.find({ status: 'delivered' })
+  .populate({
+    path: 'client_id',
+    populate: {
+      path: 'user_id',
+      model: 'User',
+      select: 'firstName lastName'
+    }
+  })
+  .populate({
+    path: 'driver_id',
+    populate: {
+      path: 'user_id',
+      model: 'User',
+      select: 'firstName lastName'
+    }
+  })
+  .populate({
+    path: 'address_id',
+    select: 'address_line'
+  })
+  .populate({
+    path: '_id',
+    model: 'OrderItem',
+    populate: {
+      path: 'product_id',
+      model: 'Product'
+    }
+  })
+  .then(async (orders) => {
+    // Structure the response
+    const response = await Promise.all(orders.map(async (order) => {
+      const orderItems = await OrderItem.find({ Order_id: order._id })
+        .populate('product_id')
+        .exec();
+
+      return {
+        order_number: order._id,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+        address_line: order.address_id?.address_line || 'N/A',
+        products: orderItems.map(item => ({
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          price: item.price,
+          selected_options: item.selected_options
+        })),
+        total_price: order.total_price,
+        delivery_time: order.updated_at,
+        payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+      };
+    }));
+
+    // Emit the order history to the client
+    socket.emit('orderHistoryUpdated', { total: orders.length, orders: response });
+  })
+  .catch((err) => {
+    console.error('Error retrieving order history:', err.message);
+    socket.emit('error', { message: 'Error retrieving order history', error: err.message });
+  });
+
+  Order.find({ status: 'cancelled' })
+  .populate({
+    path: 'client_id',
+    populate: {
+      path: 'user_id',
+      model: 'User',
+      select: 'firstName lastName'
+    }
+  })
+  .populate({
+    path: 'driver_id',
+    populate: {
+      path: 'user_id',
+      model: 'User',
+      select: 'firstName lastName'
+    }
+  })
+  .populate({
+    path: 'address_id',
+    select: 'address_line'
+  })
+  .populate({
+    path: '_id',
+    model: 'OrderItem',
+    populate: {
+      path: 'product_id',
+      model: 'Product'
+    }
+  })
+  .then(async (orders) => {
+    // Structure the response
+    const response = await Promise.all(orders.map(async (order) => {
+      const orderItems = await OrderItem.find({ Order_id: order._id })
+        .populate('product_id')
+        .exec();
+
+      return {
+        order_number: order._id,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+        address_line: order.address_id?.address_line || 'N/A',
+        products: orderItems.map(item => ({
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          price: item.price,
+          selected_options: item.selected_options
+        })),
+        total_price: order.total_price,
+        delivery_time: order.updated_at,
+        payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+      };
+    }));
+
+    // Emit the order history to the client
+    socket.emit('orderCanceledUpdated', { total: orders.length, orders: response });
+  })
+  .catch((err) => {
+    console.error('Error retrieving order history:', err.message);
+    socket.emit('error', { message: 'Error retrieving order history', error: err.message });
+  });
+
+  
+
+  
 
 
   
  const User = require('./models/User'); // Make sure to require your User model
 
-socket.on('watchDrivers', async () => {
-    try {
-      // Fetch all users with userType = 'Driver'
-      const drivers = await User.find({ userType: 'Driver' });
-      if (drivers) {
-        // Emit the initial list of drivers to the client
-        socket.emit('driversUpdated', { drivers });
-
-        // Watch for changes to the User collection
-        const userChangeStream = User.watch();
-        userChangeStream.on('change', async (change) => {
-          if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
-            // Fetch the updated list of drivers after the change
-            const updatedDrivers = await User.find({ userType: 'Driver' });
-            socket.emit('driversUpdated', { drivers: updatedDrivers });
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error finding or watching drivers:', error);
-    }
+ User.find({ userType: 'Driver' }).then((drivers) => {
+  socket.emit('driversUpdated', { drivers });
 });
 
 
-socket.on('watchClients', async () => {
-  try {
-    // Fetch all users with userType = 'Client'
-    const clients = await User.find({ userType: 'Client' });
-    if (clients) {
-      // Emit the initial list of clients to the client
-      socket.emit('clientsUpdated', { clients });
 
-      // Watch for changes to the User collection
-      const userChangeStream = User.watch();
-      userChangeStream.on('change', async (change) => {
-        if (change.operationType === 'insert' || change.operationType === 'update' || change.operationType === 'delete') {
-          // Fetch the updated list of clients after the change
-          const updatedClients = await User.find({ userType: 'Client' });
-          socket.emit('clientsUpdated', { clients: updatedClients });
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Error finding or watching clients:', error);
-  }
+User.find({ userType: 'Client' }).then((clients) => {
+  socket.emit('clientsUpdated', { clients });
 });
+
+
 
 
 socket.on('watchChatMessages', async () => {
@@ -710,8 +773,19 @@ socket.on('watchChatMessages', async () => {
       const lastMessages = await Promise.all(chats.map(async (chat) => {
         const lastMessage = chat.messages[chat.messages.length - 1]; // Get the last message
         if (lastMessage) {
-          const client = await User.findById(chat.client_id.user_id);
-          if (client) {
+          const cliento = await Client.findById(chat.client_id);
+          if (cliento) {
+            const client = await User.findById(cliento.user_id )
+            return {
+              clientId: client._id, // Include the clientId
+              clientFullName: `${client.firstName} ${client.lastName}`,
+              userType: client.userType,
+              lastMessage,
+            };
+          }else{
+            const bb = await Driver.findById(chat.client_id);
+            console.log(bb)
+            const client = await User.findById(bb.user_id )
             return {
               clientId: client._id, // Include the clientId
               clientFullName: `${client.firstName} ${client.lastName}`,
@@ -737,8 +811,19 @@ socket.on('watchChatMessages', async () => {
           const updatedMessages = await Promise.all(updatedChats.map(async (chat) => {
             const lastMessage = chat.messages[chat.messages.length - 1];
             if (lastMessage) {
-              const client = await User.findById(chat.client_id.user_id);
-              if (client) {
+              const cliento = await Client.findById(chat.client_id);
+              if (cliento) {
+                const client = await User.findById(cliento.user_id )
+                return {
+                  clientId: client._id, // Include the clientId
+                  clientFullName: `${client.firstName} ${client.lastName}`,
+                  userType: client.userType,
+                  lastMessage,
+                };
+              }else{
+                const bb = await Driver.findById(chat.client_id);
+                console.log(bb)
+                const client = await User.findById(bb.user_id )
                 return {
                   clientId: client._id, // Include the clientId
                   clientFullName: `${client.firstName} ${client.lastName}`,
@@ -794,8 +879,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notification', notificationRoute);
 
 
+
+
+
 // Start server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+module.exports = { io, server };

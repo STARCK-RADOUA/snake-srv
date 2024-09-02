@@ -12,7 +12,7 @@ const messageSchema = new mongoose.Schema({
 
 const chatSupportSchema = new mongoose.Schema({
   admin_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
-  client_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
+  client_id: { type: mongoose.Schema.Types.ObjectId},
   messages: [messageSchema] // Define messages as an array of messageSchema
 }, {
   timestamps: true
