@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const { Server } = require('socket.io');
 require('dotenv').config();
 const Service = require('./models/Service');
+const Warn = require('./models/Warn');
 
 
 
@@ -19,6 +20,7 @@ const orderController = require('./controllers/orderController');
 const serviceRoutes = require('./routes/serviceRoutes');
 const ProductController = require('./controllers/productController');
 const adminController = require('./controllers/adminController');
+const warnController = require('./controllers/warnController');
 
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
@@ -59,7 +61,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.131:4000',
+        origin: 'http://192.168.8.137:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -282,7 +284,7 @@ io.on('connection', (socket) => {
     
             adminController.adminAutoLogin(socket, data); 
             // Si tout va bien, l'utilisateur est connecté
-            socket.emit('adminloginSuccess', { userId: user._id, message: 'Login successful' });
+          
     
         } catch (error) {
             console.error('Error during auto login:', error);
@@ -654,6 +656,34 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
         updated_at: order.updated_at,
       };
     }));
+
+
+
+    socket.on('requestAllWarns', async () => {
+      try {
+        const warns = await Warn.find(); // Ou utilisez getAllWarns sans `res`
+        socket.emit('warnsData', warns); // Envoyer les données récupérées au client spécifique
+      } catch (error) {
+        console.error('Error fetching warns on socket connection:', error);
+      }
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Emit the orders with populated details to all connected clients
     socket.emit('orderHistoryUpdated', { total: orders.length, orders: response });
