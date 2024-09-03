@@ -5,6 +5,7 @@ const Admin = require('../models/Admin');
 const Address = require('../models/Address');
 const Cart = require('../models/Cart');
 
+
 exports.getOrdersByDeviceId = async (deviceId) => {
   try {
     // Fetch the user and client based on deviceId
@@ -371,5 +372,43 @@ exports.getOrderHistory = async (req, res) => {
   } catch (err) {
     console.error('Error retrieving order history:', err.message);
     res.status(500).json({ message: 'Error retrieving order history', error: err.message });
+  }
+};
+
+
+
+
+
+
+exports.affectOrderToDriver = async (req, res) => {
+  const { orderId, driverId } = req.body;
+
+  console.log('Received request to assign order:', { orderId, driverId });
+
+  try {
+    // Find the order by order number
+    const order = await Order.findOne({ _id: orderId });
+    if (!order) {
+      console.log('Order not found:', orderId);
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Find the driver by ID
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      console.log('Driver not found:', driverId);
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    // Assign the driver to the order
+    order.driver_id = driverId;
+    order.status = "in_progress"
+    await order.save();
+
+    console.log('Order successfully assigned to driver:', { orderId, driverId });
+    res.status(200).json({ message: 'Order successfully assigned', order });
+  } catch (error) {
+    console.error('Error assigning order to driver:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

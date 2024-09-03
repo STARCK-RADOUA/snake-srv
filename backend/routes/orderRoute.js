@@ -10,6 +10,7 @@ router.get('/all', orderController.getOrderHistory);
 
 router.patch('/:orderId/cancel', orderController.cancelOrder);
 router.post('/update-driver-id', orderController.updateDriverId);
+router.put('/affect-order', orderController.affectOrderToDriver);
 
 
 
