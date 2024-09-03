@@ -259,7 +259,7 @@ io.on('connection', (socket) => {
     
             loginController.autoLogin(socket, data); 
             // Si tout va bien, l'utilisateur est connecté
-            socket.emit('loginSuccess', { userId: user._id, message: 'Login successful' });
+           
     
         } catch (error) {
             console.error('Error during auto login:', error);
