@@ -64,29 +64,32 @@ exports.getUserByClientId = async (req, res) => {
     }
 };
 exports.logoutUser = async (req, res) => {
-    const { deviceId } = req.body;
+    try {
+        const { deviceId } = req.body;
 
-    // Find the user by their ID and update the isLogin field to false
-   const user=  await User.findOneAndUpdate({ deviceId: deviceId }, { isLogin: false }, (error, user) => {
-        if (error) {
-            return res.status(500).json({ message: "error", errors: ["Failed to log out user"] });
-        }
-        
+        // Trouver l'utilisateur par son deviceId et mettre à jour le champ isLogin à false
+        const user = await User.findOneAndUpdate(
+            { deviceId: deviceId },
+            { isLogin: false },
+            { new: true } // Retourne l'utilisateur mis à jour
+        );
+
         if (!user) {
             return res.status(401).json({ message: "error", errors: ["User not found"] });
         }
-       
-      
-    });
 
-    const username = user.lastName + ' ' + user.firstName;
-    const targetScreen = ' Notifications';
-    const messageBody = ' vient de se Deconnecter';
-    const title = ' Nouvelle Deconnexion';
+        const username = user.lastName + ' ' + user.firstName;
+        const targetScreen = ' Notifications';
+        const messageBody = ' vient de se Deconnecter';
+        const title = ' Nouvelle Deconnexion';
 
-    await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
-     
-      return res.json({ message: "success", user: { userId: user._id, isLogin: false } });
+        await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
+
+        return res.json({ message: "success", user: { userId: user._id, isLogin: false } });
+    } catch (error) {
+        console.error("Error during logout:", error);
+        return res.status(500).json({ message: "error", errors: ["Failed to log out user"] });
+    }
 };
 
 

@@ -390,6 +390,10 @@ exports.activateDeactivateClient = async (req, res) => {
       return res.status(404).json({ message: 'Client not found' });
     }
 
+    const { io } = require('../index');
+    const clients = await User.find({userType : 'Client'});
+    io.emit('clientsUpdated', { clients });
+
     // Respond with the updated client information
     res.status(200).json({ message: `Client ${isActive ? 'activated' : 'deactivated'}`, client });
   } catch (error) {
@@ -420,6 +424,10 @@ exports.toggleLoginStatus = async (req, res) => {
 
     // Save the updated client
     await client.save();
+
+    const { io } = require('../index');
+    const clients = await User.find({userType : 'Client'});
+    io.emit('clientsUpdated', { clients });
 
     // Respond with the updated client information
     res.status(200).json({ message: `Client is now ${client.isLogin ? 'logged in' : 'logged out'}`, client });
@@ -463,7 +471,9 @@ exports.activateDeactivateDriver = async (req, res) => {
     if (!client) {
       return res.status(404).json({ message: 'Client not found' });
     }
-
+    const { io } = require('../index');
+    const drivers = await User.find({userType : 'Driver'});
+    io.emit('driversUpdated', { drivers });
     // Respond with the updated client information
     res.status(200).json({ message: `Client ${isActive ? 'activated' : 'deactivated'}`, client });
   } catch (error) {
@@ -495,6 +505,9 @@ exports.toggleLoginStatusD = async (req, res) => {
     // Save the updated client
     await client.save();
 
+    const { io } = require('../index');
+    const drivers = await User.find({userType : 'Driver'});
+    io.emit('driversUpdated', { drivers });
     // Respond with the updated client information
     res.status(200).json({ message: `Client is now ${client.isLogin ? 'logged in' : 'logged out'}`, client });
   } catch (error) {
@@ -541,6 +554,11 @@ exports.addDriver = async (req, res) => {
 
     // Save the new driver
     await newDriver.save();
+    
+    const { io } = require('../index');
+    const drivers = await User.find({userType : 'Driver'});
+    io.emit('driversUpdated', { drivers });
+
     const username = newUser.lastName + ' ' + newUser.firstName;
     const targetScreen = ' Notifications';
     const messageBody = ' est inscrit sur l\'application';

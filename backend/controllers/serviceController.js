@@ -42,6 +42,8 @@ exports.createService = async (req, res) => {
   
   try {
     const newService = await service.save();
+     // Delay importing `io` until after the service is saved
+    
     res.status(201).json(newService);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -58,6 +60,15 @@ exports.addService = async (req, res) => {
   try {
     // Save the service to the database
     const newService = await service.save();
+
+    // Import the io instance dynamically
+    const { io } = require('../index');
+
+    // Emit the updated services event to all connected clients
+    const services = await Service.find();
+
+    io.emit('servicesUpdated', { services });
+
     // Respond with the newly created service
     res.status(201).json(newService);
   } catch (err) {
@@ -65,6 +76,7 @@ exports.addService = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 exports.updateService = async (req, res) => {
   const { id } = req.params;
@@ -88,6 +100,15 @@ exports.updateService = async (req, res) => {
     // Save the updated service to the database
     const updatedService = await service.save();
 
+        // Import the io instance dynamically
+        const { io } = require('../index');
+
+        // Emit the updated services event to all connected clients
+        const services = await Service.find();
+    
+        io.emit('servicesUpdated', { services });
+    
+
     // Respond with the updated service
     res.status(200).json(updatedService);
   } catch (err) {
@@ -108,6 +129,16 @@ exports.deleteService = async (req, res) => {
     if (!deletedService) {
       return res.status(404).json({ message: 'Service not found' });
     }
+
+
+        // Import the io instance dynamically
+        const { io } = require('../index');
+
+        // Emit the updated services event to all connected clients
+        const services = await Service.find();
+    
+        io.emit('servicesUpdated', { services });
+    
 
     res.status(200).json({ message: 'Service deleted successfully', service: deletedService });
   } catch (error) {

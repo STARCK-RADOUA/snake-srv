@@ -178,7 +178,7 @@ exports.adminAutoLogin = async (socket, { deviceId }) => {
             socket.emit('adminloginFailure', { message: 'User account is disabled' });
             return;
         }   
-        if (user.isLogin === false) {
+        if (user.isLogin == false) {
             // Si le compte de l'utilisateur est désactivé
             socket.emit('adminloginFailure', { message: 'User account is logout' });
             return;

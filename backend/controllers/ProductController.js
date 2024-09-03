@@ -59,6 +59,10 @@ exports.addProductA = async (req, res) => {
     const newProduct = new Product(req.body); // Create a new Product instance using the request body data
     await newProduct.save(); // Save the new product to the database
 
+
+    const { io } = require('../index');
+    const products = await Product.find();
+    io.emit('productsUpdated', { products });
     // Return the newly created product as a JSON response
     res.status(201).json(newProduct);
 
@@ -86,6 +90,10 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: 'Product not found' });
     }
 
+    const { io } = require('../index');
+    const products = await Product.find();
+    io.emit('productsUpdated', { products });
+
     // Send the updated product back to the client
     res.status(200).json(updatedProduct);
   } catch (err) {
@@ -93,6 +101,7 @@ exports.updateProduct = async (req, res) => {
     res.status(500).json({ message: 'Failed to update product', error: err.message });
   }
 };
+
 
 
 
@@ -107,6 +116,10 @@ exports.deleteProduct = async (req, res) => {
     if (!deletedProduct) {
       return res.status(404).json({ message: 'Product not found.' });
     }
+
+    const { io } = require('../index');
+    const products = await Product.find();
+    io.emit('productsUpdated', { products });
 
     res.status(200).json({ message: 'Product deleted successfully.', product: deletedProduct });
   } catch (error) {
