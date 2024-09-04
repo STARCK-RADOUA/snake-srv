@@ -568,7 +568,7 @@ exports.addDriver = async (req, res) => {
     const messageBody = ' est inscrit sur l\'application';
     const title = ' Nouvelle inscription';
 
-    await sendNotificationAdmin(username,targetScreen,messageBody ,title);
+    await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
     // Return success response
     res.status(201).json({ message: 'Driver and user created successfully.', user: savedUser });
   } catch (error) {
