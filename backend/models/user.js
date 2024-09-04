@@ -4,7 +4,7 @@ const UserSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   deviceId: { type: String, required: true, unique: true },
-  phone: { type: Number, required: [true, 'Please provide phone'], unique: true },
+  phone: { type: Number, required: [true, 'Please provide phone']},
   password: { type: String, required: [true, 'Please provide password'] },
   points_earned: { type: Number, default: 0 },
   pushToken: { type: String }, // Rendu optionnel pour plus de flexibilité

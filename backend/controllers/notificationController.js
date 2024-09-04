@@ -51,6 +51,8 @@ exports.sendNotificationAdmin = async (username, targetScreen, messageBody, titl
       return;
     }
 
+    console.log(admins);
+
     // Boucle sur chaque administrateur trouvé
     for (const admin of admins) {
       if (!admin.pushToken) {
@@ -78,15 +80,17 @@ exports.sendNotificationAdmin = async (username, targetScreen, messageBody, titl
       try {
         const response = await axios.post(EXPO_PUSH_URL, message);
         console.log(`Notification envoyée à l'admin ID ${admin._id}:`, response.data);
-        return admin._id;
       } catch (error) {
         console.error(`Erreur lors de l'envoi de la notification à l'admin ID ${admin._id}:`, error.message);
       }
     }
+
+    return 'Notifications envoyées à tous les administrateurs';
   } catch (error) {
     console.error('Erreur lors de la récupération des administrateurs ou de l\'envoi des notifications:', error.message);
   }
 };
+
 
 // Fonction générique pour envoyer des notifications
 exports.sendNotification = async (username, targetScreen, messageBody, title,userType) => {

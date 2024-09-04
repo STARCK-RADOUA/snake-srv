@@ -2,7 +2,7 @@ const User = require('../models/User.js');
 const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 const bcrypt = require('bcryptjs');
-        const notificationController  =require('./notificationController');
+const notificationController  =require('./notificationController');
 
 // Get all users
 exports.getAllUsers  = async (req, res) => {
@@ -272,7 +272,8 @@ exports.validatePass = async (req, res) => {
   
     try {
       // Fetch the user by userId from the database
-      const user = await User.findById(id);
+      const client = await Client.findById(id);
+      const user = await User.findById(client.user_id);
       
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -293,14 +294,17 @@ exports.validatePass = async (req, res) => {
   };
 
   exports.changeNumber = async (req, res) => {
-    const { id, phoneNumber } = req.body;
+    const { phoneNumber,id } = req.body;
+    console.log("ffffff",phoneNumber,id)
   
     try { 
-      const user = await User.findOne(id);
-      const oldNumber = user.phone;
+      const client = await Client.findById(id);
+      const user = await User.findById(client.user_id);
+      const oldNumber =  user.phone;
+      console.log(oldNumber,"hhhhhh")
       // Find the user by ID and update their phone number
       const updatedUser = await User.findByIdAndUpdate(
-        id, 
+        user._id, 
         { phone: phoneNumber }, 
         { new: true } // Return the updated document after the update
       );
@@ -314,7 +318,7 @@ exports.validatePass = async (req, res) => {
       const messageBody = `vient de changer son numero de ${oldNumber} vers ${phoneNumber}`;
       const title = ' Changemment de numero de telephone';
    
-      await sendNotificationAdmin(username,targetScreen,messageBody ,title);
+      await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
    
    
       return res.status(200).json({

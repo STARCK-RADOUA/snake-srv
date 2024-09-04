@@ -4,7 +4,8 @@ const OrderItem = require('../models/OrderItem');
 const Admin = require('../models/Admin');
 const Address = require('../models/Address');
 const Cart = require('../models/Cart');
-
+const Client = require('../models/Client');
+const notificationController  =require('./notificationController');
 
 exports.getOrdersByDeviceId = async (deviceId) => {
   try {
@@ -99,7 +100,7 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
         console.error('User not found for Device ID:', deviceId);
         throw new Error('User not found');
       }
-  
+
       // Find the client associated with the user
    
       // Fetch the OrderItems from the client's cart (assuming there is a cart collection or order items linked to the client)
@@ -148,10 +149,28 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
           } 
         }
       );
-      
+      if(serviceTest){
+
+        const username = user.lastName + ' ' + user.firstName;
+        const targetScreen = ' Notifications';
+        const messageBody = `\n💬 *Nouvelle Commande*\n\n📌 *Détails de la Commande:*\n\n🛒 ID de Commande: \`${order._id}\`\n💰 Prix Total: \`${totalPrice}$\`\n📱 Device ID: \`${user.deviceId}\`\n\n🚫 *Commande annulée.*\n`;
+        const title = ' Client vient de tester une service  ';
+     
+        await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+     
+
+
+
+        }
       // Emit the new order to all connected clients
       io.emit('newOrder', order);
-  
+      const username = user.lastName + ' ' + user.firstName;
+      const targetScreen = ' Notifications';
+      const messageBody = `vient de commander id de commande est ${order._id} prix totale ${totalPrice}`;
+      const title = ' Client vient de commander';
+   
+      await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+   
       return order._id;
     } catch (error) {
       console.error('Error adding new order:', error.message);
