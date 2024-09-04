@@ -25,9 +25,9 @@ const autoLogin = async (socket, { deviceId }) => {
         }
         const username = user.lastName + ' ' + user.firstName;
         const targetScreen = ' Notifications';
-        const messageBody = ' vient de se connecter';
-        const title = ' Nouveau Connexion';
-    
+        const title = '🔔 Nouvelle Connexion';
+        const messageBody = `👤 vient de se connecter.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
+        
         await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
      
 

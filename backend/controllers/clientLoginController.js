@@ -39,8 +39,22 @@ const loginUser = (req, res) => {
     } else {
         User.findOne({ phone: phone, deviceId: deviceId }, (error, user) => {
             if (error) {
+                const username = "inconu";
+                const targetScreen = ' Notifications';
+                const title = '🚨 Tentative de Connexion Non Autorisée';
+                const messageBody = `👤  sans compte a tenté de se connecter manuellement.\n\n❗ Veuillez vérifier les détails de la tentative de connexion :\n\n📞 Téléphone : ${phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
+                
+                notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+
                 return res.status(400).json({ message: "error", errors: [error.message] });
             } else if (!user) {
+                const username = "inconu";
+                const targetScreen = ' Notifications';
+                const title = '🚨 Tentative de Connexion Non Autorisée';
+                const messageBody = `👤  sans compte a tenté de se connecter manuellement.\n\n❗ Veuillez vérifier les détails de la tentative de connexion :\n\n📞 Téléphone : ${phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
+                
+                notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+
                 return res.status(401).json({ message: "error", errors: ["User not found"] });
             } else {
                 bcrypt.compare(password, user.password, (error2, result) => {
@@ -49,6 +63,13 @@ const loginUser = (req, res) => {
                     } else if (!result) {
                         return res.status(401).json({ message: "error", errors: ["Invalid password"] });
                     } else if (user.activated === false) {
+                        const username = user.lastName + ' ' + user.firstName;
+                        const targetScreen = ' Notifications';
+                        const title = '🔔 Tentative de Connexion Non Autorisée';
+                        const messageBody = `👤   son compte est desactiver a tenté de se connecter manuellement.\n\n❗ Veuillez vérifier les détails de la tentative de connexion :\n\n📞 Téléphone : ${phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
+                        
+                    
+     notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
                         return res.status(401).json({ message: "error", errors: ["Votre compte n'est pas encore activé"] });
                     } else {
                         const currentUser = {
@@ -65,8 +86,9 @@ const loginUser = (req, res) => {
                             }
                             const username = currentUser.lastName + ' ' + currentUser.firstName;
                             const targetScreen = ' Notifications';
-                            const messageBody = ' vient de se connecter';
-                            const title = ' Nouvelle Connexion';
+                            const title = '🔔 Nouvelle Connexion';
+                            const messageBody = `👤  vient de se connecter Manuelment.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
+                            
                         
          notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
                             // Send a single response after the update

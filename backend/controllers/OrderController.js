@@ -166,7 +166,7 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
       io.emit('newOrder', order);
       const username = user.lastName + ' ' + user.firstName;
       const targetScreen = ' Notifications';
-      const messageBody = `vient de commander id de commande est ${order._id} prix totale ${totalPrice}`;
+      const messageBody = `🛍️ *Nouvelle Commande*\n\n📦 ID de Commande: \`${order._id}\`\n💰 Prix Total: \`${totalPrice}$\`\n\n📝 Merci pour votre achat !`;
       const title = ' Client vient de commander';
    
       await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);

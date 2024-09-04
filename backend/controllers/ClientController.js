@@ -78,12 +78,25 @@ exports.logoutUser = async (req, res) => {
             return res.status(401).json({ message: "error", errors: ["User not found"] });
         }
 
-        const username = user.lastName + ' ' + user.firstName;
-        const targetScreen = ' Notifications';
-        const messageBody = ' vient de se Deconnecter';
-        const title = ' Nouvelle Deconnexion';
+  
+        if (user.userType==="Client") {
+            const username = user.lastName + ' ' + user.firstName;
+            const targetScreen = ' Notifications';
+            const title = '🚨 Déconnexion de Client';
+            const messageBody = `👤 client vient de se déconnecter.\n`;
+                 
+            await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);        }
 
-        await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
+
+
+            if (user.userType==="Driver") {
+                const username = user.lastName + ' ' + user.firstName;
+                const targetScreen = ' Notifications';
+                const title = '🚨 Déconnexion de Livreur';
+                const messageBody = `👤 livreur vient de se déconnecter.\n\n📞 Téléphone : ${phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
+                      
+                await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);        }
+    
 
         return res.json({ message: "success", user: { userId: user._id, isLogin: false } });
     } catch (error) {
@@ -206,7 +219,7 @@ console.log('------------------------------------');
    const messageBody = ' vient de se registrer';
    const title = ' Nouvelle Registration';
 
-   await sendNotificationAdmin(username,targetScreen,messageBody ,title);
+   await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
 
 
 
@@ -249,10 +262,10 @@ console.log('------------------------------------');
         });
         const username = newClient.lastName + ' ' + newClient.firstName;
         const targetScreen = ' Notifications';
-        const messageBody = ' essaye de se registrer';
-        const title = ' Nouvelle  fake Registration';
-     
-        await sendNotificationAdmin(username,targetScreen,messageBody ,title);
+        const title = '🚨 Tentative de Registrement Non Autorisée';
+        const messageBody = `👤  Warn a tenté de se registrer manuellement.\n\n❗ Veuillez vérifier les détails de la tentative de registrement :\n\n📞 Téléphone : ${newClient.phone}\n📱 Device ID : ${newClient.deviceId}\n📍 Localisation : latitude :${newClient.location.latitude}, longitude : ${newClient.location.longitude}\n\nPrenez les mesures nécessaires.`;
+        
+        await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
      
      
         
