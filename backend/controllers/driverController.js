@@ -190,7 +190,7 @@ exports.getDriverByDeviceId = async (req, res) => {
         }
 
         // Return driver info
-        return res.status(200).json({ driverId: driver._id, driverInfo: driver });
+        return res.status(200).json({ driverId: driver._id, driverInfo: driver , user: user});
     } catch (error) {
         return res.status(500).json({ message: 'Server error', error: error.message });
     }

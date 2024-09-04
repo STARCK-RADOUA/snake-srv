@@ -8,9 +8,39 @@ const autoLogin = async (socket, { deviceId }) => {
         const user = await User.findOne({ deviceId, userType: 'Client'});
 
         if (!user) {
-            // Si l'utilisateur avec cet ID de l'appareil n'est pas trouvé
-            socket.emit('loginFailure', { message: 'Device ID not found' });
-            return;
+            const driverUser = await User.findOne({ deviceId, userType: 'Driver'});
+
+            if(!driverUser){
+                socket.emit('loginFailure', { message: 'Device ID not found' });
+                return;
+            }
+
+
+
+            if (driverUser.activated === false) {
+                // Si le compte de l'utilisateur est désactivé
+                socket.emit('loginFailure', { message: 'User account is disabled' });
+                return;
+            }   
+            if (driverUser.isLogin === false) {
+                // Si le compte de l'utilisateur est désactivé
+                socket.emit('loginFailure', { message: 'User account is logout' });
+                return;
+            }
+            const username = driverUser.lastName + ' ' + driverUser.firstName;
+            const targetScreen = ' Notifications';
+            const title = '🔔 Nouvelle Connexion de Livreur🚚  ';
+            const messageBody = `🚚 Livreur vient de se connecter.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
+            
+            await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+         
+    
+    
+    
+            // Si tout va bien, l'utilisateur est connecté
+            socket.emit('loginSuccess', { userId: driverUser._id, message: 'Login successful' });
+    
+         
         }
 
         if (user.activated === false) {
