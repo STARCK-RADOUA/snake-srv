@@ -7,7 +7,7 @@ exports.addProduct = async (req, res) => {
 
     // Émettre l'événement pour informer les clients connectés qu'un nouveau produit a été ajouté
     req.io.emit('newProduct', newProduct);
-
+    io.emit('newactiveProducts', );
     res.status(201).json(newProduct);
   } catch (err) {
     res.status(500).json({ message: 'Failed to add product', error: err });
@@ -78,7 +78,7 @@ exports.updateProduct = async (req, res) => {
     const { io } = require('../index');
     const products = await Product.find();
     io.emit('productsUpdated', { products });
-
+    io.emit('newactiveProducts', );
     // Send the updated product back to the client
     res.status(200).json(updatedProduct);
   } catch (err) {
@@ -105,7 +105,7 @@ exports.deleteProduct = async (req, res) => {
     const { io } = require('../index');
     const products = await Product.find();
     io.emit('productsUpdated', { products });
-
+    io.emit('newactiveProducts', );
     res.status(200).json({ message: 'Product deleted successfully.', product: deletedProduct });
   } catch (error) {
     console.error('Error deleting product:', error);
