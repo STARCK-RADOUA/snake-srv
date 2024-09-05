@@ -57,3 +57,57 @@ exports.getChatHistory = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.markSeenFA = async (req, res) => {
+  const { chatId } = req.body; // Expecting chatId in the request body
+
+  try {
+    // Find the chat by ID
+    const chat = await ChatSupport.findById(chatId);
+
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    // Loop through the messages and mark client messages as seen
+    chat.messages.forEach((message) => {
+      if (message.sender === 'client' && !message.seen) {
+        message.seen = true;
+      }
+    });
+
+    // Save the updated chat
+    await chat.save();
+
+    return res.status(200).json({ message: 'All client messages marked as seen', messages: chat.messages });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error marking messages as seen' });
+  }
+};
+
+exports.markSeenFC = async (req, res) => {
+  const { chatId } = req.body; // Expecting chatId in the request body
+
+  try {
+    // Find the chat by ID
+    const chat = await ChatSupport.findById(chatId);
+
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+
+    // Loop through the messages and mark client messages as seen
+    chat.messages.forEach((message) => {
+      if (message.sender === 'admin' && !message.seen) {
+        message.seen = true;
+      }
+    });
+
+    // Save the updated chat
+    await chat.save();
+
+    return res.status(200).json({ message: 'All client messages marked as seen', messages: chat.messages });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error marking messages as seen' });
+  }
+};
