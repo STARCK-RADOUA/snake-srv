@@ -457,6 +457,7 @@ socket.on('initiateChat', async ({ adminId, userId, userType }) => {
 
       // Emit all messages to the client/driver
       socket.emit('chatDetails', { chatId: chat._id, messages: chat.messages });
+      console.log("chat.messages")
 
   } catch (error) {
       console.error('Error initiating chat:', error);
