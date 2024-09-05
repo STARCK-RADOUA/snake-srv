@@ -6,6 +6,7 @@ const { Server } = require('socket.io');
 require('dotenv').config();
 const Service = require('./models/Service');
 const Warn = require('./models/Warn');
+const QrCode = require('./models/QrCode');
 
 
 
@@ -220,6 +221,21 @@ io.on('connection', (socket) => {
   
 
     });
+
+
+
+
+
+
+
+
+
+    socket.on('driverLocationUpdate', ({ driverId, latitude, longitude }) => {
+      // Store or broadcast this location to the admin app
+      io.emit('locationUpdateForAdmin', { driverId, latitude, longitude });
+    });
+
+
 
 
 
