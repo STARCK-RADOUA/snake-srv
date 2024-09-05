@@ -40,7 +40,7 @@ const autoLogin = async (socket, { deviceId }) => {
             // Si tout va bien, l'utilisateur est connecté
             socket.emit('loginSuccess', { userId: driverUser._id, message: 'Login successful' });
     
-         
+         return;
         }
 
         if (user.activated === false) {

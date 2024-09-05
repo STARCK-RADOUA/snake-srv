@@ -229,12 +229,109 @@ io.on('connection', (socket) => {
 
 
 
+    socket.on('driverLocationUpdate', async ({ deviceId, latitude, longitude }) => {
+      try {
+        console.log('Driver location update received:', { deviceId, latitude, longitude });
 
-    socket.on('driverLocationUpdate', ({ driverId, latitude, longitude }) => {
-      // Store or broadcast this location to the admin app
-      io.emit('locationUpdateForAdmin', { driverId, latitude, longitude });
+        // Find the user associated with the deviceId
+        const user = await User.findOne({ deviceId: deviceId });
+        if (!user) {
+          console.log('User not found for deviceId:', deviceId);
+          return;
+        }
+    
+        // Find the driver based on the user_id
+        const driver = await Driver.findOne({ user_id: user._id });
+        if (!driver) {
+          console.log('Driver not found for user_id:', user._id);
+          return;
+        }
+    
+        // Update the driver's location and set isConnected to true
+        driver.location = {
+          latitude: latitude,
+          longitude: longitude,
+          isConnected: true
+        };
+        
+        // Save the updated driver information
+        await driver.save();
+    
+        // Emit the updated location to the admin app
+      
+      } catch (error) {
+        console.error('Error updating driver location:', error);
+      }
+    });
+    
+    // Handle driver disconnects
+    socket.on('disconnect', async () => {
+      try {
+        // Optionally, update the driver's `isConnected` status to false upon disconnect
+        const user = await User.findOne({ deviceId: socket.handshake.query.deviceId });
+        if (user) {
+          const driver = await Driver.findOne({ user_id: user._id });
+          if (driver) {
+            driver.location.isConnected = false;
+            await driver.save();
+    
+            io.emit('locationUpdateForAdmin', {
+              driverId: user.deviceId,
+              latitude: driver.location.latitude,
+              longitude: driver.location.longitude,
+              isConnected: driver.location.isConnected
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error handling disconnect:', error);
+      }
     });
 
+
+
+    
+    socket.on('locationUpdateForAdminRequest', async (deviceId1) => {
+      try {
+        const deviceId = deviceId1.deviceId;
+        console.log('locationUpdateForAdminRequest', deviceId);
+        // Find the user associated with the deviceId
+        const user = await User.findOne({ deviceId: deviceId });
+        if (!user) {
+          console.log('User not found for deviceId:', deviceId);
+          return;
+        }
+    
+        // Find the driver based on the user_id
+        const driver = await Driver.findOne({ user_id: user._id });
+        if (!driver) {
+          console.log('Driver not found for user_id:', user._id);
+          return;
+        }
+    
+        // Check if the driver has location data and return it
+        if (driver.location && driver.location.latitude && driver.location.longitude) {
+          // Emit the last known location to the admin
+          socket.emit('locationUpdateForAdmin', {
+            deviceId: user.deviceId,
+            latitude: driver.location.latitude,
+            longitude: driver.location.longitude,
+            isConnected: driver.location.isConnected
+          });
+          console.log('Driver sedb to admn location:', driver.location);
+        } else {
+          console.log('No location data available for the driver');
+          socket.emit('locationUpdateForAdmin', {
+            deviceId: user.deviceId,
+            message: 'No location data available',
+            isConnected: false
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching driver location:', error);
+      }
+    });
+    
 
 
 

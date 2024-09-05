@@ -216,12 +216,18 @@ exports.updateDriverAvailability = async (req, res) => {
       // Update the availability status
       driver.isDisponible = isDisponible;
       await driver.save(); // Save the updated driver
+   
+      if (driver) {
+        driver.location.isConnected = isDisponible;
+        await driver.save();
 
+      
+      }
       const username = user.lastName + ' ' + user.firstName;
       const targetScreen = ' Notifications';
-      const messageBody = ' Driver availability updated to ' + (isDisponible ? 'available' : 'unavailable');
-      const title = ' Driver availability updated';
-  
+      const messageBody = `🚗 Driver availability updated to ${isDisponible ? '✅ Available' : '❌ Unavailable'}`;
+      const title = `🔔 Driver Availability Update`;
+      
       await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
       return res.status(200).json({ message: 'Driver availability updated successfully', driver });
     } catch (error) {
