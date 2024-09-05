@@ -7,44 +7,28 @@ exports.addProduct = async (req, res) => {
 
     // Émettre l'événement pour informer les clients connectés qu'un nouveau produit a été ajouté
     req.io.emit('newProduct', newProduct);
-
+    io.emit('newactiveProducts', );
     res.status(201).json(newProduct);
   } catch (err) {
     res.status(500).json({ message: 'Failed to add product', error: err });
   }
 };
-exports.sendActiveProducts = async (socket,serviceName) => {
+exports.sendActiveProducts = async (socket, serviceName) => {
   try {
-    // Fetch all active products when the connection is established
-    const products = await Product.find({ is_active: true ,service_type:serviceName} );
-    socket.emit('activeProducts', products); // Emit current active products
-
-    // Set up a change stream to watch for all changes in the Product collection
-    const productStream = Product.watch();
-
-    // Listen for changes (insert, update, delete) across the entire Product collection
-    productStream.on('change', async (change) => {
-      if (change.operationType === 'update') {
-        // When a product is updated, refetch and emit the active products
-        const updatedProducts = await Product.find({ is_active: true ,service_type:serviceName });
-        socket.emit('activeProducts', updatedProducts);
-      } else if (change.operationType === 'insert') {
-        // When a product is inserted, refetch and emit the active products
-        const newProducts = await Product.find({ is_active: true ,service_type:serviceName });
-        socket.emit('activeProducts', newProducts);
-      } else if (change.operationType === 'delete') {
-        // When a product is deleted, refetch and emit the active products
-        const remainingProducts = await Product.find({ is_active: true  ,service_type:serviceName });
-        socket.emit('activeProducts', remainingProducts);
-      }
-    });
+    // Fetch all active products based on the service type
+    const products = await Product.find({ is_active: true, service_type: serviceName });
     
+    // Emit the active products back to the client
+    socket.emit('activeProducts', { products });
+
+    // Optional: Handle socket disconnection if needed
+ 
+
   } catch (err) {
     // Handle errors by emitting an error message via socket
     socket.emit('error', { message: 'Failed to retrieve products', error: err });
   }
 };
-
 exports.getProducts =  async (req, res) => {
   try {
     const products = await Product.find(); // Fetch all products
@@ -63,6 +47,7 @@ exports.addProductA = async (req, res) => {
     const { io } = require('../index');
     const products = await Product.find();
     io.emit('productsUpdated', { products });
+    io.emit('newactiveProducts', );
     // Return the newly created product as a JSON response
     res.status(201).json(newProduct);
 
@@ -93,7 +78,7 @@ exports.updateProduct = async (req, res) => {
     const { io } = require('../index');
     const products = await Product.find();
     io.emit('productsUpdated', { products });
-
+    io.emit('newactiveProducts', );
     // Send the updated product back to the client
     res.status(200).json(updatedProduct);
   } catch (err) {
@@ -120,7 +105,7 @@ exports.deleteProduct = async (req, res) => {
     const { io } = require('../index');
     const products = await Product.find();
     io.emit('productsUpdated', { products });
-
+    io.emit('newactiveProducts', );
     res.status(200).json({ message: 'Product deleted successfully.', product: deletedProduct });
   } catch (error) {
     console.error('Error deleting product:', error);

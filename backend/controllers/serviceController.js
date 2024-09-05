@@ -42,6 +42,12 @@ exports.createService = async (req, res) => {
   
   try {
     const newService = await service.save();
+    const { io } = require('../index');
+
+    // Emit the updated services event to all connected clients
+    const services = await Service.find();
+
+    io.emit('servicesUpdated', { services });
      // Delay importing `io` until after the service is saved
     
     res.status(201).json(newService);
