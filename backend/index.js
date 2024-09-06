@@ -42,6 +42,7 @@ const Driver = require('./models/Driver');
 const OrderItem = require('./models/OrderItem');
 const chatRoutes = require('./routes/chatRoutes');
 const cors = require('cors');
+const fetchPendingOrders  = require('./controllers/orderController.js');
 
 
 // Initialize express and create HTTP server
@@ -80,7 +81,6 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 const cron = require('node-cron');
 const driver = require('./models/Driver');
 const { handleChatInitiation, handleSendMessage } = require('./controllers/ChatSupportController.js');
-const { fetchPendingOrders } = require('./controllers/OrderController.js');
 
 
 // Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
