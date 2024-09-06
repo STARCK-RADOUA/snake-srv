@@ -7,13 +7,7 @@ require('dotenv').config();
 const Service = require('./models/Service');
 const Warn = require('./models/Warn');
 const QrCode = require('./models/QrCode');
-
-
-
-
-
-
-
+const User = require('./models/User'); // Make sure to require your User model
 const clientController = require('./controllers/ClientController');
 const notificationController = require('./controllers/notificationController');
 const loginController = require('./controllers/LoginController');
@@ -22,7 +16,6 @@ const serviceRoutes = require('./routes/serviceRoutes');
 const ProductController = require('./controllers/productController');
 const adminController = require('./controllers/adminController');
 const warnController = require('./controllers/warnController');
-
 const addressRoutes = require('./routes/addressRoute');
 const adminRoutes = require('./routes/adminRoutes');
 const clientRoutes = require('./routes/clientRoutes');
@@ -47,13 +40,9 @@ const user = require('./models/User');
 const Client = require('./models/Client');
 const Driver = require('./models/Driver');
 const OrderItem = require('./models/OrderItem');
-
-
-
-
 const chatRoutes = require('./routes/chatRoutes');
-
 const cors = require('cors');
+
 
 // Initialize express and create HTTP server
 const app = express();
@@ -77,14 +66,6 @@ app.use((req, res, next) => {
 });
 
 
-
-
-
-
-
-
-
-
 mongoose.set("strictQuery", true);
 mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mongodb.net/ExpressApp?retryWrites=true&w=majority&appName=Cluster0', {
     useNewUrlParser: true,
@@ -96,11 +77,11 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 });
 
 
-
-
-
 const cron = require('node-cron');
 const driver = require('./models/Driver');
+const { handleChatInitiation, handleSendMessage } = require('./controllers/ChatSupportController.js');
+const { fetchPendingOrders } = require('./controllers/OrderController.js');
+
 
 // Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
 cron.schedule('0 2 * * *', async () => {
@@ -162,8 +143,6 @@ io.on('connection', (socket) => {
       });
 
 
-
-
     socket.on('registerClient', async (data) => {
         console.log('Register client data:', data);
     
@@ -206,14 +185,6 @@ io.on('connection', (socket) => {
     });
 
 
-
-
-
-
-
-
-
-
     socket.on('productAdded',  async () => { 
 
       const products = await Product.find({ is_active: true } );
@@ -221,11 +192,6 @@ io.on('connection', (socket) => {
   
 
     });
-
-
-
-
-
 
 
 
@@ -300,15 +266,6 @@ io.on('connection', (socket) => {
     });
     
 
-
-
-
-
-
-
-
-
-    
 
     socket.on('getUserByClientId', async ({ clientId }) => {
         console.log('---------WA L3ADAAAAAAAAAAAAAW---------------------------');
@@ -475,99 +432,12 @@ io.on('connection', (socket) => {
 // Chat initiation for client and admin
 // Assuming you've already set up your socket.io server
 socket.on('initiateChat', async ({ adminId, userId, userType }) => {
-  console.log(adminId, userId, userType);
-  try {
-      let chat = null;
-
-      if (userType === 'Admin') {
-          // First, try to find the user in the Client collection
-          const client = await Client.findOne({ user_id: userId });
-          console.log(client);
-
-          if (client) {
-              // If found in Client, check for existing chat between admin and client
-              chat = await ChatSupport.findOne({ admin_id: adminId, client_id: client._id });
-              if (!chat) {
-                  // If no chat exists, create a new one
-                  chat = new ChatSupport({
-                      admin_id: adminId,
-                      client_id: client._id,
-                      messages: []
-                  });
-                  await chat.save();
-              }
-          } else {
-              // If not found in Client, try to find the user in the Driver collection
-              const driver = await Driver.findOne({ user_id: userId });
-
-              if (driver) {
-                  // If found in Driver, check for existing chat between admin and driver
-                  chat = await ChatSupport.findOne({ admin_id: adminId, client_id: driver._id }); // Assuming client_id is used for drivers too
-                  if (!chat) {
-                      // If no chat exists, create a new one
-                      chat = new ChatSupport({
-                          admin_id: adminId,
-                          client_id: driver._id, // Storing driver._id in client_id for simplicity
-                          messages: []
-                      });
-                      await chat.save();
-                  }
-              } else {
-                  // If not found in both collections, throw an error
-                  throw new Error('User not found in Client or Driver collections');
-              }
-          }
-      } else {
-          // For non-admin users, find the chat as usual (assuming userId is always the clientId here)
-          chat = await ChatSupport.findOne({ admin_id: adminId, client_id: userId });
-
-          if (!chat) {
-              // If no chat exists, create a new one
-              chat = new ChatSupport({
-                  admin_id: adminId,
-                  client_id: userId,
-                  messages: []
-              });
-              await chat.save();
-          }
-      }
-
-      // Join the room for this specific chat
-      socket.join(chat._id.toString());
-
-      // Emit all messages to the client/driver
-      socket.emit('chatDetails', { chatId: chat._id, messages: chat.messages });
-      console.log("chat.messages")
-
-  } catch (error) {
-      console.error('Error initiating chat:', error);
-      socket.emit('error', { message: 'Error initiating chat: ' + error.message });
-  }
+  await handleChatInitiation({ adminId, userId, userType, socket }); 
 });
 
 // Handle message sending (for both client and admin)
 socket.on('sendMessage', async ({ chatId, sender, content }) => {
-  try {
-    const chat = await ChatSupport.findById(chatId);
-    if (!chat) {
-      console.log(`Chat not found for chatId: ${chatId}`);
-      return;
-    }
-
-    // Add the new message to the chat
-    const newMessage = {
-      sender,
-      content,
-      timestamp: new Date(),
-    };
-    chat.messages.push(newMessage);
-    await chat.save();
-
-    // Emit the new message to everyone in the chat room
-    io.to(chatId).emit('newMessage', { message: newMessage });
-  } catch (error) {
-    console.error('Error sending message:', error);
-  }
+ await handleSendMessage({ chatId, sender, content, io }) ;
 });
 
 
@@ -639,45 +509,10 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
 
 
   socket.on('watchOrderStatuss', async ({ order_id }) => {
-    try {
-      const order = await Order.findById(order_id);
-      if (order) {
-        // Emit the initial order status to the client
-        socket.emit('orderStatusUpdates', { order });
-
-        // Watch for changes to the order
-        const orderChangeStream = Order.watch([{ $match: { 'documentKey._id': order._id } }]);
-        orderChangeStream.on('change', (change) => {
-          if (change.updateDescription) {
-            const updatedOrder = change.updateDescription.updatedFields;
-            socket.emit('orderStatusUpdates', { order: updatedOrder });
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error finding or watching order:', error);
-    }
+    socket.join(order_id);
+   await orderController.OnOrderStatusUpdated({order_id , io})
   });
 
-  socket.on('watchServicePointsStatuss', async ({ serviceID }) => {
-    try {
-      const service = await Service.findById(serviceID);
-      if (service) {
-        // Emit the initial order status to the client
-
-        // Watch for changes to the order
-        const serviceChangeStream = Service.watch([{ $match: { 'documentKey._id': service._id } }]);
-        serviceChangeStream.on('change', (change) => {
-          if (change.updateDescription) {
-            const updatedservice = change.updateDescription.updatedFields;
-            socket.emit('oserviceStatusUpdates', { service: updatedservice });
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error finding or watching service:', error);
-    }
-  });
 
 
   Service.find().then((services) => {
@@ -689,212 +524,41 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
     socket.emit('productsUpdated', { products });
   });
 
-  Order.find({ status: 'delivered' })
-  .populate({
-    path: 'client_id',
-    populate: {
-      path: 'user_id',
-      model: 'User',
-      select: 'firstName lastName'
-    }
-  })
-  .populate({
-    path: 'driver_id',
-    populate: {
-      path: 'user_id',
-      model: 'User',
-      select: 'firstName lastName'
-    }
-  })
-  .populate({
-    path: 'address_id',
-    select: 'address_line'
-  })
-  .then(async (orders) => {
-    const response = await Promise.all(orders.map(async (order) => {
-      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
-
-      return {
-        order_number: order._id,
-        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
-        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
-        address_line: order.address_id?.address_line || 'N/A',
-        products: orderItems.map(item => ({
-          product: item.product_id,
-          quantity: item.quantity,
-          service_type: item.service_type,
-          price: item.price,
-          selected_options: item.selected_options
-        })),
-        total_price: order.total_price,
-        delivery_time: order.updated_at,
-        payment_method: order.payment_method,
-        comment: order.comment,
-        exchange: order.exchange,
-        stars: order.stars,
-        referral_amount: order.exchange,
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-      };
-    }));
+  
 
 
-
-    socket.on('requestAllWarns', async () => {
-      try {
+ socket.on('requestAllWarns', async () => {
+       try {
         const warns = await Warn.find(); // Ou utilisez getAllWarns sans `res`
         socket.emit('warnsData', warns); // Envoyer les données récupérées au client spécifique
       } catch (error) {
         console.error('Error fetching warns on socket connection:', error);
       }
-    });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // Emit the orders with populated details to all connected clients
-    socket.emit('orderHistoryUpdated', { total: orders.length, orders: response });
-  })
-  .catch(err => {
-    console.error('Error retrieving order history:', err.message);
   });
 
-
-
-  Order.find({ status: 'cancelled' })
-  .populate({
-    path: 'client_id',
-    populate: {
-      path: 'user_id',
-      model: 'User',
-      select: 'firstName lastName'
-    }
-  })
-  .populate({
-    path: 'driver_id',
-    populate: {
-      path: 'user_id',
-      model: 'User',
-      select: 'firstName lastName'
-    }
-  })
-  .populate({
-    path: 'address_id',
-    select: 'address_line'
-  })
-  .then(async (orders) => {
-    const response = await Promise.all(orders.map(async (order) => {
-      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
-
-      return {
-        order_number: order._id,
-        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
-        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
-        address_line: order.address_id?.address_line || 'N/A',
-        products: orderItems.map(item => ({
-          product: item.product_id,
-          quantity: item.quantity,
-          service_type: item.service_type,
-          price: item.price,
-          selected_options: item.selected_options
-        })),
-        total_price: order.total_price,
-        delivery_time: order.updated_at,
-        payment_method: order.payment_method,
-        comment: order.comment,
-        exchange: order.exchange,
-        stars: order.stars,
-        referral_amount: order.exchange,
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-      };
-    }));
-
-    // Emit the orders with populated details to all connected clients
-    socket.emit('orderCanceledUpdated', { total: orders.length, orders: response });
-  })
-  .catch(err => {
-    console.error('Error retrieving order history:', err.message);
-  });
-
-
-
-  Order.find({ status: 'pending' })
-  .populate({
-    path: 'client_id',
-    populate: {
-      path: 'user_id',
-      model: 'User',
-      select: 'firstName lastName'
-    }
-  })
-  .populate({
-    path: 'address_id',
-    select: 'address_line'
-  })
-  .then(async (orders) => {
-    const response = await Promise.all(orders.map(async (order) => {
-      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
-
-      return {
-        order_number: order._id,
-        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
-        address_line: order.address_id?.address_line || 'N/A',
-        products: orderItems.map(item => ({
-          product: item.product_id,
-          quantity: item.quantity,
-          service_type: item.service_type,
-          price: item.price,
-          selected_options: item.selected_options
-        })),
-        total_price: order.total_price,
-        delivery_time: order.updated_at,
-        payment_method: order.payment_method,
-        exchange: order.exchange,
-        referral_amount: order.exchange,
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-      };
-    }));
-
-    // Emit the orders with populated details to all connected clients
-    socket.emit('orderCanceledUpdated', { total: orders.length, orders: response });
-  })
-  .catch(err => {
-    console.error('Error retrieving order history:', err.message);
-  });
-
-  
-
-
-  
- const User = require('./models/User'); // Make sure to require your User model
+ 
 
  User.find({ userType: 'Driver' }).then((drivers) => {
   socket.emit('driversUpdated', { drivers });
 });
 
 
-
 User.find({ userType: 'Client' }).then((clients) => {
   socket.emit('clientsUpdated', { clients });
 });
 
+  socket.on('getPendingOrders', async () => {
+     await fetchPendingOrders(socket);
+  });
 
+
+  socket.on('getCancelledOrders', async () => {
+    await orderController.fetchCancelledgOrders(socket);
+ });
+
+ socket.on('getDeliveredOrders', async () => {
+  await orderController.fetchDilevredOrders(socket);
+ });
 
 
 socket.on('watchChatMessages', async () => {
@@ -1012,12 +676,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notification', notificationRoute);
 
 
-
-
-
 // Start server
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-module.exports = { io, server };
+module.exports = { io, server  };
