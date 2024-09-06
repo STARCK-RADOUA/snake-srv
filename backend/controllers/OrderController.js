@@ -424,10 +424,207 @@ exports.affectOrderToDriver = async (req, res) => {
     order.status = "in_progress"
     await order.save();
 
+
     console.log('Order successfully assigned to driver:', { orderId, driverId });
+
+    const { io } = require('../index');
+    await this.fetchPendingOrders(io) ;
+    
     res.status(200).json({ message: 'Order successfully assigned', order });
   } catch (error) {
     console.error('Error assigning order to driver:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+
+
+
+
+exports.fetchPendingOrders = async (socket) => {
+  try {
+    const orders = await Order.find({ status: 'pending' })
+    .populate({
+      path: 'client_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'driver_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'address_id',
+      select: 'address_line'
+    }) ;
+    const response = await Promise.all(orders.map(async (order) => {
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
+
+      return {
+        order_number: order._id,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+        address_line: order.address_id?.address_line || 'N/A',
+        products: orderItems.map(item => ({
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          price: item.price,
+          selected_options: item.selected_options
+        })),
+        total_price: order.total_price,
+        delivery_time: order.updated_at,
+        payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+      };
+    }));
+;
+
+    // Emit the orders with populated details to all connected clients
+    socket.emit('orderPendingUpdated', { total: orders.length, orders: response });
+  } catch (err) {
+    console.error('Error retrieving order history:', err.message);
+  }
+};
+
+
+exports.fetchDilevredOrders = async (socket) => {
+  try {
+    const orders = await Order.find({ status: 'delivered' })
+    .populate({
+      path: 'client_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'driver_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'address_id',
+      select: 'address_line'
+    }) ;
+    const response = await Promise.all(orders.map(async (order) => {
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
+
+      return {
+        order_number: order._id,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+        address_line: order.address_id?.address_line || 'N/A',
+        products: orderItems.map(item => ({
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          price: item.price,
+          selected_options: item.selected_options
+        })),
+        total_price: order.total_price,
+        delivery_time: order.updated_at,
+        payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+      };
+    }));
+;
+
+    // Emit the orders with populated details to all connected clients
+    socket.emit('orderDeliverredUpdated', { total: orders.length, orders: response });
+  } catch (err) {
+    console.error('Error retrieving order history:', err.message);
+  }
+};
+
+exports.fetchCancelledgOrders = async (socket) => {
+  try {
+    const orders = await Order.find({ status: 'cancelled' })
+    .populate({
+      path: 'client_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'driver_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'address_id',
+      select: 'address_line'
+    }) ;
+    const response = await Promise.all(orders.map(async (order) => {
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
+
+      return {
+        order_number: order._id,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+        address_line: order.address_id?.address_line || 'N/A',
+        products: orderItems.map(item => ({
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          price: item.price,
+          selected_options: item.selected_options
+        })),
+        total_price: order.total_price,
+        delivery_time: order.updated_at,
+        payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+      };
+    }));
+;
+    socket.emit('orderCanceledUpdated', { total: orders.length, orders: response });
+  } catch (err) {
+    console.error('Error retrieving order history:', err.message);
+  }
+};
+
+
+exports.OnOrderStatusUpdated = async (order_id, io)=>{
+  try {
+    const order = await Order.findById(order_id);
+    if (order) {
+      // Emit the initial order status to the client
+      io.to(order_id).emit('orderStatusUpdates', { order });
+
+    }
+  } catch (error) {
+    console.error('Error finding or watching order:', error);
+  }
+}
