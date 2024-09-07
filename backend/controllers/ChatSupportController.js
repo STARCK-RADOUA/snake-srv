@@ -4,6 +4,7 @@ const Admin = require('../models/Admin');
 const ChatSupport = require('../models/ChatSupport');
 const Client = require('../models/Client');
 const Driver = require('../models/Driver');
+const User = require('../models/User');
 
 
 exports.initiateChat = async (req, res) => {
@@ -37,7 +38,7 @@ exports.sendMessage = async (req, res) => {
 
     chat.messages.push({ sender, content });
     await chat.save();
-
+    
     res.status(200).json(chat);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -205,7 +206,8 @@ exports.handleSendMessage = async ({ chatId, sender, content, io }) => {
     };
     chat.messages.push(newMessage);
     await chat.save();
-
+    const { io } = require('../index');
+    await this.watchMessages({socket : io}) ; 
     // Emit the new message to everyone in the chat room
     io.to(chatId).emit('newMessage', { message: newMessage });
   } catch (error) {
@@ -214,3 +216,48 @@ exports.handleSendMessage = async ({ chatId, sender, content, io }) => {
 };
 
 // Socket event listener
+
+
+exports.watchMessages = async ({socket}) => {
+  try {
+    // Fetch all chat supports
+    const chats = await ChatSupport.find().populate('client_id').populate('admin_id');
+
+    if (chats) {
+      const lastMessages = await Promise.all(chats.map(async (chat) => {
+        const lastMessage = chat.messages[chat.messages.length - 1]; // Get the last message
+        if (lastMessage) {
+          const cliento = await Client.findById(chat.client_id);
+          if (cliento) {
+            const client = await User.findById(cliento.user_id )
+            return {
+              clientId: client._id, // Include the clientId
+              clientFullName: `${client.firstName} ${client.lastName}`,
+              userType: client.userType,
+              lastMessage,
+            };
+          }else{
+            const bb = await Driver.findById(chat.client_id);
+            console.log(bb)
+            const client = await User.findById(bb.user_id )
+            return {
+              clientId: client._id, // Include the clientId
+              clientFullName: `${client.firstName} ${client.lastName}`,
+              userType: client.userType,
+              lastMessage,
+            };
+          }
+        }
+        return null;
+      }));
+
+      // Filter out any null results
+      const validMessages = lastMessages.filter(msg => msg !== null);
+
+      // Emit the last messages to the client
+      socket.emit('chatMessagesUpdated', { messages: validMessages });
+    }
+  } catch (error) {
+    console.error('Error finding or watching chats:', error);
+  }
+};

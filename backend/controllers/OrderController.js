@@ -616,15 +616,15 @@ exports.fetchCancelledgOrders = async (socket) => {
 };
 
 
-exports.OnOrderStatusUpdated = async (order_id, io)=>{
+exports.OnOrderStatusUpdated = async ({ order_id, io }) => {
   try {
+    console.log(order_id) ;
     const order = await Order.findById(order_id);
     if (order) {
-      // Emit the initial order status to the client
+      // Emit the updated order status to the room
       io.to(order_id).emit('orderStatusUpdates', { order });
-
     }
   } catch (error) {
     console.error('Error finding or watching order:', error);
   }
-}
+};
