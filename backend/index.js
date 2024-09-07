@@ -80,7 +80,9 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 
 const cron = require('node-cron');
 const driver = require('./models/Driver');
-const { handleChatInitiation, handleSendMessage } = require('./controllers/ChatSupportController.js');
+const { handleChatInitiation, handleSendMessage, watchMessages } = require('./controllers/ChatSupportController.js');
+const { fetchPendingOrders } = require('./controllers/OrderController.js');
+const { handleSendMessageCD, handleChatInitiationDC } = require('./controllers/chatController.js');
 
 
 // Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
@@ -443,68 +445,13 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
 
   // Handle message sending
   socket.on('initiateChats', async ({ orderId, clientId, driverId }) => {
-    try {
-      console.log(`Received initiateChats event with orderId: ${orderId}, clientId: ${clientId}, driverId: ${driverId}`); // Debugging log
+    await handleChatInitiationDC({ orderId, clientId, driverId , socket }); 
 
-      // Check if a chat already exists for the given orderId between this driver and client
-      let chat = await Chat.findOne({ order_id: orderId, client_id: clientId, driver_id: driverId });
-      console.log('Chat found:', chat ? chat._id : 'No existing chat'); // Debugging log
-
-      if (!chat) {
-        // If no chat exists, create a new one
-        console.log('Creating new chat for order:', orderId); // Debugging log for new chat creation
-
-        chat = new Chat({
-          order_id: orderId,
-          driver_id: driverId,  // Get the driver ID from the frontend
-          client_id: clientId,
-          messages: []  // Initialize with an empty messages array
-        });
-        await chat.save();
-        console.log('New chat created with ID:', chat._id); // Debugging log for saved chat
-      }
-      
-      // Join the room for this specific chat
-      socket.join(chat._id.toString());
-      console.log(`Socket joined room for chatId: ${chat._id}`); // Debugging log for joining room
-
-      // Send the existing chat details to the client
-      socket.emit('chatDetailss', { chatId: chat._id, messages: chat.messages });
-      console.log('Emitted chatDetailss event with messages:', chat.messages.length); // Debugging log for emitting chat details
-
-    } catch (error) {
-      console.error('Error initiating chat:', error); // Error handling log
-      socket.emit('error', { message: 'Failed to initiate chat' });
-    }
   });
 
   // Handle message sending
   socket.on('sendMessages', async ({ chatId, sender, content }) => {
-    try {
-      console.log(`Received sendMessages event for chatId: ${chatId}, sender: ${sender}, content: ${content}`); // Debugging log
-
-      // Find the chat by chatId
-      const chat = await Chat.findById(chatId);
-      if (!chat) {
-        console.log(`Chat not found for chatId: ${chatId}`); // Debugging log for missing chat
-        socket.emit('error', { message: 'Chat not found' });
-        return;
-      }
-
-      // Add the new message to the chat
-      const newMessage = { sender, content, timestamp: new Date() };
-      chat.messages.push(newMessage);
-      await chat.save();
-      console.log('New message added to chat:', newMessage); // Debugging log for added message
-
-      // Emit the new message to all clients in this chat room
-      io.to(chatId).emit('newMessages', { message: newMessage });
-      console.log(`Emitted newMessages event for chatId: ${chatId}`); // Debugging log for emitted message
-
-    } catch (error) {
-      console.error('Error sending message:', error); // Error handling log
-      socket.emit('error', { message: 'Failed to send message' });
-    }
+   await handleSendMessageCD({ chatId, sender, content, io }) ;
   });
 
 
@@ -525,8 +472,6 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
   });
 
   
-
-
  socket.on('requestAllWarns', async () => {
        try {
         const warns = await Warn.find(); // Ou utilisez getAllWarns sans `res`
@@ -562,94 +507,11 @@ User.find({ userType: 'Client' }).then((clients) => {
 
 
 socket.on('watchChatMessages', async () => {
-  try {
-    // Fetch all chat supports
-    const chats = await ChatSupport.find().populate('client_id').populate('admin_id');
-
-    if (chats) {
-      const lastMessages = await Promise.all(chats.map(async (chat) => {
-        const lastMessage = chat.messages[chat.messages.length - 1]; // Get the last message
-        if (lastMessage) {
-          const cliento = await Client.findById(chat.client_id);
-          if (cliento) {
-            const client = await User.findById(cliento.user_id )
-            return {
-              clientId: client._id, // Include the clientId
-              clientFullName: `${client.firstName} ${client.lastName}`,
-              userType: client.userType,
-              lastMessage,
-            };
-          }else{
-            const bb = await Driver.findById(chat.client_id);
-            console.log(bb)
-            const client = await User.findById(bb.user_id )
-            return {
-              clientId: client._id, // Include the clientId
-              clientFullName: `${client.firstName} ${client.lastName}`,
-              userType: client.userType,
-              lastMessage,
-            };
-          }
-        }
-        return null;
-      }));
-
-      // Filter out any null results
-      const validMessages = lastMessages.filter(msg => msg !== null);
-
-      // Emit the last messages to the client
-      socket.emit('chatMessagesUpdated', { messages: validMessages });
-
-      // Watch for changes to the ChatSupport collection
-      const chatChangeStream = ChatSupport.watch();
-      chatChangeStream.on('change', async (change) => {
-        if (['insert', 'update', 'delete'].includes(change.operationType)) {
-          const updatedChats = await ChatSupport.find().populate('client_id').populate('admin_id');
-          const updatedMessages = await Promise.all(updatedChats.map(async (chat) => {
-            const lastMessage = chat.messages[chat.messages.length - 1];
-            if (lastMessage) {
-              const cliento = await Client.findById(chat.client_id);
-              if (cliento) {
-                const client = await User.findById(cliento.user_id )
-                return {
-                  clientId: client._id, // Include the clientId
-                  clientFullName: `${client.firstName} ${client.lastName}`,
-                  userType: client.userType,
-                  lastMessage,
-                };
-              }else{
-                const bb = await Driver.findById(chat.client_id);
-                console.log(bb)
-                const client = await User.findById(bb.user_id )
-                return {
-                  clientId: client._id, // Include the clientId
-                  clientFullName: `${client.firstName} ${client.lastName}`,
-                  userType: client.userType,
-                  lastMessage,
-                };
-              }
-            }
-            return null;
-          }));
-
-          const validUpdatedMessages = updatedMessages.filter(msg => msg !== null);
-          socket.emit('chatMessagesUpdated', { messages: validUpdatedMessages });
-        }
-      });
-    }
-  } catch (error) {
-    console.error('Error finding or watching chats:', error);
-  }
+  await  watchMessages({socket}) ;
 });
-
-
 
 });
   
-
-
-
-
 
 // Routes
 app.use('/api/addresses', addressRoutes);
