@@ -3,6 +3,7 @@ const QrCode = require('../models/QrCode');
 const { v4: uuidv4 } = require('uuid');
 const Client = require('../models/Client');
 const User = require('../models/User');
+const Driver = require('../models/Driver');
 // Générer un nouveau QR code
 exports.generateQrCode = async (req, res) => {
   try {
@@ -10,11 +11,52 @@ exports.generateQrCode = async (req, res) => {
     const uniqueId = uuidv4(); // Générer un ID unique
     const timestamp = Date.now();
     const expirationTime = timestamp + 15 * 60 * 1000; // Expire après 15 minutes
+    const type = "Client"
 
     // Créer et sauvegarder le QR code dans MongoDB
     const qrCode = new QrCode({
       clientId,
       deviceId,
+      uniqueId,
+      type,
+      timestamp,
+      expirationTime,
+      isUsed: false,
+    });
+    await qrCode.save();
+
+    // Répondre avec les données du QR code
+    res.status(201).json({ uniqueId, timestamp, expirationTime });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la génération du QR code' });
+  }
+};
+exports.generateQrCodeDriver = async (req, res) => {
+  try {
+    const { deviceId } = req.body;
+    const uniqueId = uuidv4(); // Générer un ID unique
+    const timestamp = Date.now();
+    const expirationTime = timestamp + 15 * 60 * 1000; 
+    console.log(deviceId,"22222222222222222222222")// Expire après 15 minutes
+      const user = await User.findOne({ deviceId: deviceId });
+      if(!user){
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const driver = await Driver.findOne({ user_id: user._id });
+      if(!driver){
+        return res.status(404).json({ error: 'Driver not found' });
+      }
+
+
+
+const clientId = driver._id
+
+const type = "Driver"
+    // Créer et sauvegarder le QR code dans MongoDB
+    const qrCode = new QrCode({
+      clientId,
+      deviceId,
+      type,
       uniqueId,
       timestamp,
       expirationTime,

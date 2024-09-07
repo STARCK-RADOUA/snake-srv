@@ -42,6 +42,7 @@ const Driver = require('./models/Driver');
 const OrderItem = require('./models/OrderItem');
 const chatRoutes = require('./routes/chatRoutes');
 const cors = require('cors');
+const fetchPendingOrders  = require('./controllers/orderController.js');
 
 
 // Initialize express and create HTTP server
@@ -51,7 +52,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.113:4000',
+        origin: 'http:// 192.168.8.113:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -260,40 +261,7 @@ io.on('connection', (socket) => {
     
     socket.on('locationUpdateForAdminRequest', async (deviceId1) => {
       try {
-        const deviceId = deviceId1.deviceId;
-        console.log('locationUpdateForAdminRequest', deviceId);
-        // Find the user associated with the deviceId
-        const user = await User.findOne({ deviceId: deviceId });
-        if (!user) {
-          console.log('User not found for deviceId:', deviceId);
-          return;
-        }
-    
-        // Find the driver based on the user_id
-        const driver = await Driver.findOne({ user_id: user._id });
-        if (!driver) {
-          console.log('Driver not found for user_id:', user._id);
-          return;
-        }
-    
-        // Check if the driver has location data and return it
-        if (driver.location && driver.location.latitude && driver.location.longitude) {
-          // Emit the last known location to the admin
-          socket.emit('locationUpdateForAdmin', {
-            deviceId: user.deviceId,
-            latitude: driver.location.latitude,
-            longitude: driver.location.longitude,
-            isConnected: driver.location.isConnected
-          });
-          console.log('Driver sedb to admn location:', driver.location);
-        } else {
-          console.log('No location data available for the driver');
-          socket.emit('locationUpdateForAdmin', {
-            deviceId: user.deviceId,
-            message: 'No location data available',
-            isConnected: false
-          });
-        }
+       await warnController.d
       } catch (error) {
         console.error('Error fetching driver location:', error);
       }
