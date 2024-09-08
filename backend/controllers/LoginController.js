@@ -31,8 +31,10 @@ const autoLogin = async (socket, { deviceId }) => {
             const targetScreen = ' Notifications';
             const title = '🔔 Nouvelle Connexion de Livreur🚚  ';
             const messageBody = `🚚 Livreur vient de se connecter.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
-            
+            const userType = 'Driver';
+
             await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+            await notificationController.sendNotification(username,targetScreen,messageBody ,title,userType);
          
     
     

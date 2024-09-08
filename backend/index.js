@@ -81,7 +81,6 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 const cron = require('node-cron');
 const driver = require('./models/Driver');
 const { handleChatInitiation, handleSendMessage, watchMessages } = require('./controllers/ChatSupportController.js');
-const { fetchPendingOrders } = require('./controllers/OrderController.js');
 const { handleSendMessageCD, handleChatInitiationDC } = require('./controllers/chatController.js');
 
 
@@ -150,6 +149,7 @@ io.on('connection', (socket) => {
     
         const req = { body: data, io: io }; // Objet req simulé
         const res = {
+
             status: (statusCode) => ({
                 json: (responseData) => {
                     console.log('Response data:', responseData);
@@ -410,7 +410,8 @@ io.on('connection', (socket) => {
   
       // Émettre l'événement 'orderAdded' pour informer le frontend que l'ordre a été ajouté
      socket.emit('orderAdded', order);
-  
+     await this.fetchPendingOrders(io) ;
+
     } catch (error) {
       // Gestion des erreurs
       console.error('Error adding new order:', error);
@@ -424,6 +425,8 @@ io.on('connection', (socket) => {
       const order =await orderController.checkOrderStatus(order_id);
       if (order) {
         socket.emit('orderStatusUpdate', {order});
+        await fetchPendingOrders(socket);
+        console.log('Order status updated:', order);
       }
     } catch (error) {
       console.error('Error checking order status:', error);

@@ -99,7 +99,7 @@ exports.sendNotification = async (username, targetScreen, messageBody, title,use
     const user = await User.findOne({ userType: userType }).select('pushToken');
 
     if (!user || !user.pushToken) {
-      console.error('Admin PushToken not found');
+      console.error('User PushToken not found');
       return;
     }
 
