@@ -52,7 +52,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http:// 192.168.8.113:4000',
+        origin: 'http:// 192.168.8.129:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -261,7 +261,7 @@ io.on('connection', (socket) => {
     
     socket.on('locationUpdateForAdminRequest', async (deviceId1) => {
       try {
-       await warnController.d
+       await adminController.locationUpdateForAdminRequest(socket, { deviceId1 });
       } catch (error) {
         console.error('Error fetching driver location:', error);
       }

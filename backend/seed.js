@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // Your Expo Push Token
-const expoPushToken = 'ExponentPushToken[omhe2EDDcmAS2wfCtiDxxF]'; // Replace with a real token
+const expoPushToken = 'ExponentPushToken[GMMI84HNPcA41y5S_I489v]'; // Replace with a real token
 
 // Function to send the test notification
 async function sendPushNotification() {

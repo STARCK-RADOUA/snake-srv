@@ -1,4 +1,5 @@
 const Admin = require('../models/Admin');
+const Driver = require('../models/Driver');
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
@@ -152,9 +153,9 @@ exports.deleteAdmin = async (req, res) => {
         res.status(500).json({ error: 'Failed to delete admin' });
     }
 };
-exports.deleteAdmin = async (deviceId1) => {
+exports.locationUpdateForAdminRequest = async (socket, { deviceId1 }) => {
     const deviceId = deviceId1.deviceId;
-    console.log('locationUpdateForAdminRequest', deviceId);
+    console.log('locationUpdatedddddddddddddddddForAdminRequest', deviceId);
     // Find the user associated with the deviceId
     const user = await User.findOne({ deviceId: deviceId });
     if (!user) {
