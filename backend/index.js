@@ -496,7 +496,7 @@ User.find({ userType: 'Client' }).then((clients) => {
 });
 
   socket.on('getPendingOrders', async () => {
-     await fetchPendingOrders(socket);
+     await fetchPendingOrders({socket});
   });
 
 
