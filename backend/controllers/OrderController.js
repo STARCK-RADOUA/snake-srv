@@ -429,6 +429,8 @@ exports.affectOrderToDriver = async (req, res) => {
 
     const { io } = require('../index');
     await this.fetchPendingOrders(io) ;
+    await this.fetchInProgressOrders(io) ;
+
     
     res.status(200).json({ message: 'Order successfully assigned', order });
   } catch (error) {
@@ -554,6 +556,65 @@ exports.fetchDilevredOrders = async (socket) => {
 
     // Emit the orders with populated details to all connected clients
     socket.emit('orderDeliverredUpdated', { total: orders.length, orders: response });
+  } catch (err) {
+    console.error('Error retrieving order history:', err.message);
+  }
+};
+
+
+exports.fetchInProgressOrders = async (socket) => {
+  try {
+    const orders = await Order.find({ status: 'in_progress' })
+    .populate({
+      path: 'client_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'driver_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'address_id',
+      select: 'address_line'
+    }) ;
+    const response = await Promise.all(orders.map(async (order) => {
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
+
+      return {
+        order_number: order._id,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+        address_line: order.address_id?.address_line || 'N/A',
+        products: orderItems.map(item => ({
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          price: item.price,
+          selected_options: item.selected_options
+        })),
+        total_price: order.total_price,
+        delivery_time: order.updated_at,
+        payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+      };
+    }));
+;
+
+    // Emit the orders with populated details to all connected clients
+    socket.emit('orderInprogressUpdated', { total: orders.length, orders: response });
   } catch (err) {
     console.error('Error retrieving order history:', err.message);
   }

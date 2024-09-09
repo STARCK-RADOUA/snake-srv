@@ -1,4 +1,7 @@
 const Chat = require('../models/Chat');
+const Client = require('../models/Client');
+const Driver = require('../models/Driver');
+const User = require('../models/User');
 
 exports.initiateChat = async (req, res) => {
     const { driver_id, client_id, order_id } = req.body;
@@ -74,32 +77,32 @@ exports.getChatHistory = async (req, res) => {
 
 exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
     try {
-        console.log(`Received sendMessages event for chatId: ${chatId}, sender: ${sender}, content: ${content}`); // Debugging log
-  
+        console.log(`Received sendMessages event for chatId: ${chatId}, sender: ${sender}, content: ${content}`);
+
         // Find the chat by chatId
         const chat = await Chat.findById(chatId);
         if (!chat) {
-          console.log(`Chat not found for chatId: ${chatId}`); // Debugging log for missing chat
-          socket.emit('error', { message: 'Chat not found' });
+          console.log(`Chat not found for chatId: ${chatId}`);
+          io.to(chatId).emit('error', { message: 'Chat not found' }); // Corrected this line
           return;
         }
-  
+
         // Add the new message to the chat
         const newMessage = { sender, content, timestamp: new Date() };
         chat.messages.push(newMessage);
         await chat.save();
-        console.log('New message added to chat:', newMessage); // Debugging log for added message
-  
+        console.log('New message added to chat:', newMessage);
+
         // Emit the new message to all clients in this chat room
         io.to(chatId).emit('newMessages', { message: newMessage });
-        console.log(`Emitted newMessages event for chatId: ${chatId}`); // Debugging log for emitted message
-  
-      } catch (error) {
-        console.error('Error sending message:', error); // Error handling log
-        socket.emit('error', { message: 'Failed to send message' });
-      }
-  };
-  
+        console.log(`Emitted newMessages event for chatId: ${chatId}`);
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+        io.to(chatId).emit('error', { message: 'Failed to send message' }); // Corrected this line
+    }
+};
+
 
 
 
@@ -138,4 +141,65 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
         socket.emit('error', { message: 'Failed to initiate chat' });
       }
   }
+  
+
+
+  exports.watchOrderMessages = async ({ socket }) => {
+    try {
+      // Fetch all chat supports and populate related fields
+      const chats = await Chat.find().populate('client_id').populate('driver_id').populate('order_id');
+      
+      if (chats) {
+        const lastMessages = await Promise.all(chats.map(async (chat) => {
+          const lastMessage = chat.messages[chat.messages.length - 1]; // Get the last message
+          let clientFullName = '';
+          let driverFullName = '';
+          let clientId = '';
+          let driverId = '';
+  
+          // Fetch client details
+          const clientObj = await Client.findById(chat.client_id);
+          if (clientObj) {
+            const clientUser = await User.findById(clientObj.user_id);
+            if (clientUser) {
+              clientFullName = `${clientUser.firstName} ${clientUser.lastName}`;
+              clientId = clientUser._id; // Get the clientId
+            }
+          }
+  
+          // Fetch driver details
+          const driverObj = await Driver.findById(chat.driver_id);
+          if (driverObj) {
+            const driverUser = await User.findById(driverObj.user_id);
+            if (driverUser) {
+              driverFullName = `${driverUser.firstName} ${driverUser.lastName}`;
+              driverId = driverUser._id; // Get the driverId
+            }
+          }
+  
+          // Fetch order status
+          const orderStatus = chat.order_id ? chat.order_id.status : 'Unknown';
+  
+          return {
+            chatId: chat._id,        // Include chat ID
+            orderId: chat.order_id._id,
+            orderStatus,
+            clientFullName,
+            driverFullName,
+            clientId,                // Include clientId
+            driverId,                // Include driverId
+            lastMessage,
+          };
+        }));
+  
+        // Filter out any null results
+        const validMessages = lastMessages.filter(msg => msg !== null);
+  
+        // Emit the last messages to the client
+        socket.emit('OrderchatMessagesUpdated', { messages: validMessages });
+      }
+    } catch (error) {
+      console.error('Error finding or watching chats:', error);
+    }
+  };
   
