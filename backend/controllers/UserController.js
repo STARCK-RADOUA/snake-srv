@@ -524,32 +524,32 @@ exports.getDrivers = async (req, res) => {
 };
 
 
-exports.activateDeactivateDriver = async (req, res) => {
-  const { clientId } = req.params;  // Get client ID from the route parameters
-  const { isActive } = req.body;  // Get activation status from the request body
-
+exports.activateDeactivateDriver = async  (io, driverId, isActive, deviceId) => {
   try {
-    // Find the client by ID and update the "activated" status
-    const client = await User.findByIdAndUpdate(clientId, { activated: isActive }, { new: true });
+    console.log('Received request to activate/deactivate driver:', driverId, isActive);
+    const driver = await User.findByIdAndUpdate(driverId, { activated: isActive }, { new: true });
 
-    if (!client) {
-      return res.status(404).json({ message: 'Client not found' });
+    if (!driver) {
+      io.to(deviceId).emit('error', { message: 'Driver not found' });
+      return;
     }
-    const { io } = require('../index');
-    const drivers = await User.find({userType : 'Driver'});
+
+    // Notify the specific driver of the activation/deactivation
+    if (isActive) {
+      io.to(deviceId).emit('adminActivateDriver');  // Emit only to the specific driver
+    } else {
+      io.to(deviceId).emit('adminDeactivateDriver');  // Emit only to the specific driver
+    }
+
+    // Optionally, notify all drivers about the update
+    const drivers = await User.find({ userType: 'Driver' });
     io.emit('driversUpdated', { drivers });
 
-if(!isActive){
-  io.emit('adminDeactivateDriver',);
-
-}
-
-
-    // Respond with the updated client information
-    res.status(200).json({ message: `Client ${isActive ? 'activated' : 'deactivated'}`, client });
+    // Notify the admin that the operation was successful
+    io.emit('operationSuccess', `Driver ${isActive ? 'activated' : 'deactivated'} successfully.`);
   } catch (error) {
-    console.error('Error activating/deactivating client:', error);
-    res.status(500).json({ message: 'Error updating client activation status', error: error.message });
+    console.error('Error activating/deactivating driver:', error);
+    io.to(deviceId).emit('error', { message: 'Error updating driver activation status' });
   }
 };
 
@@ -559,36 +559,34 @@ if(!isActive){
 
 
 // Controller to toggle isLogin status of a client
-exports.toggleLoginStatusD = async (req, res) => {
-  const { clientId } = req.params;  // Get client ID from the route parameters
-
+exports.toggleLoginStatusD = async (io, driverId)=> {
   try {
-    // Find the client by ID
-    const client = await User.findById(clientId);
+    const driver = await User.findById(driverId);
 
-    if (!client) {
-      return res.status(404).json({ message: 'Client not found' });
+    if (!driver) {
+      io.emit('error', { message: 'Driver not found' });
+      return;
     }
-const isLogin = !client.isLogin;
-    // Toggle the isLogin status
-    client.isLogin = isLogin;
 
-    // Save the updated client
-    await client.save();
+    driver.isLogin = !driver.isLogin;
+    await driver.save();
 
-    const { io } = require('../index');
-    const drivers = await User.find({userType : 'Driver'});
+    // Notify the specific driver about the login status change
+    if (driver.isLogin) {
+      io.to(driver.deviceId).emit('adminActivateDriver');  // Emit only to the specific driver
+    } else {
+      io.to(driver.deviceId).emit('adminDeactivateDriver');  // Emit only to the specific driver
+    }
+
+    // Optionally, notify all drivers about the update
+    const drivers = await User.find({ userType: 'Driver' });
     io.emit('driversUpdated', { drivers });
 
-    if(!isLogin){
-      io.emit('adminDeactivateDriver',);
-    
-    }
-    // Respond with the updated client information
-    res.status(200).json({ message: `Client is now ${client.isLogin ? 'logged in' : 'logged out'}`, client });
+    // Notify the admin that the operation was successful
+    io.emit('operationSuccess', `Driver login status changed successfully.`);
   } catch (error) {
-    console.error('Error toggling login status:', error);
-    res.status(500).json({ message: 'Error toggling login status', error: error.message });
+    console.error('Error toggling driver login status:', error);
+    io.emit('error', { message: 'Error toggling driver login status' });
   }
 };
 

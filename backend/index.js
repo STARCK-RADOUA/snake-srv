@@ -400,8 +400,17 @@ socket.on('adminToggleLoginStatus', async ({ clientId,deviceId}) => {
 });
 
 
+socket.on('adminActivateDeactivateDriver', async ({ driverId, isActive, deviceId }) => {
+
+    await userController.activateDeactivateDriver(io, driverId, isActive, deviceId);
+  });
+
+  // Admin toggles the login status of a driver
+  socket.on('adminToggleDriverLoginStatus', async ({ driverId }) => {
+    await userController.toggleLoginStatusD(io, driverId);});
 
 
+ 
 
 
 
