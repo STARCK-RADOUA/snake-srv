@@ -177,15 +177,19 @@ exports.locationUpdateForAdminRequest = async (socket, { deviceId1 }) => {
         deviceId: user.deviceId,
         latitude: driver.location.latitude,
         longitude: driver.location.longitude,
-        isConnected: driver.location.isConnected
+        isConnected: driver.location.isConnected,
+        isDisponible: driver.isDisponible
       });
       console.log('Driver sedb to admn location:', driver.location);
     } else {
       console.log('No location data available for the driver');
       socket.emit('locationUpdateForAdmin', {
         deviceId: user.deviceId,
-        message: 'No location data available',
-        isConnected: false
+        latitude: driver.location? driver.location.latitude : null,
+        longitude: driver.location? driver.location.longitude : null,
+        isConnected: false,
+        isDisponible: driver.isDisponible
+
       });
     }
 };

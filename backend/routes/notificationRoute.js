@@ -5,7 +5,8 @@ const router = express.Router();
 // Route pour enregistrer le token push
 router.post('/save-push-token', async (req, res) => {
   const { userType, pushToken,deviceId } = req.body;
-
+console.log("llllllllllllll",userType, pushToken,deviceId)
+console.log("hhhhhhhhhhhhhhhhhh",req.body)
   if (!userType || !pushToken || !deviceId) {
     return res.status(400).json({ error: 'userType and pushToken are required' });
   }

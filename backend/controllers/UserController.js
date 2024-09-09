@@ -34,6 +34,56 @@ exports.getAllUsersForAdmin = async (req, res) => {
     res.status(500).json({ message: 'Error fetching users', error });
   }
 };
+exports.getAllUsersAndDriversForAdmin = async (socket) => {
+  try {
+    // Récupérer uniquement les utilisateurs dont le userType est Driver
+    const drivers = await User.find({ userType: 'Driver' }, 'firstName lastName pushToken');
+
+    // Récupérer uniquement les utilisateurs dont le userType est Client
+    const clients = await User.find({ userType: 'Client' }, 'firstName lastName pushToken');
+
+    // Créer un Set pour stocker les `pushToken` déjà utilisés (pour éviter les doublons si nécessaire)
+    const usedPushTokens = new Set();
+
+    // Formater les données des drivers
+    const formattedDrivers = drivers
+      .filter(driver => driver.pushToken && !usedPushTokens.has(driver.pushToken))
+      .map(driver => {
+        usedPushTokens.add(driver.pushToken);
+        return {
+          id: driver._id,
+          name: `${driver.firstName} ${driver.lastName}`,
+          pushToken: driver.pushToken,
+          userType: 'Driver',
+        };
+      });
+
+    // Formater les données des clients
+    const formattedClients = clients
+      .filter(client => client.pushToken && !usedPushTokens.has(client.pushToken))
+      .map(client => {
+        usedPushTokens.add(client.pushToken);
+        return {
+          id: client._id,
+          name: `${client.firstName} ${client.lastName}`,
+          pushToken: client.pushToken,
+          userType: 'Client',
+        };
+      });
+
+    // Émettre la réponse avec les clients et livreurs sans doublons
+    socket.emit('responseUsersAndDrivers', { clients: formattedClients, drivers: formattedDrivers });
+  } catch (error) {
+    // Envoyer une réponse d'erreur détaillée au client
+    socket.emit('error', {
+      message: 'Erreur lors de la récupération des utilisateurs.',
+      details: error.message,
+    });
+  }
+};
+
+
+
 
 // Get a user by ID
 exports.getUserById = async (req, res) => {
@@ -382,27 +432,32 @@ exports.getClients = async (req, res) => {
 };
 
 
-exports.activateDeactivateClient = async (req, res) => {
-  const { clientId } = req.params;  // Get client ID from the route parameters
-  const { isActive } = req.body;  // Get activation status from the request body
+exports.activateDeactivateClient = async ( io,clientId , isActive,deviceId) => {
 
   try {
-    // Find the client by ID and update the "activated" status
+    console.log('Received request to activate/deactivate client:', clientId, isActive);
     const client = await User.findByIdAndUpdate(clientId, { activated: isActive }, { new: true });
-
     if (!client) {
-      return res.status(404).json({ message: 'Client not found' });
+      io.emit('error', { message: 'Client not found' });
+      return;
     }
 
-    const { io } = require('../index');
-    const clients = await User.find({userType : 'Client'});
+    // Notify the specific client of the activation/deactivation
+    if (isActive) {
+      io.to(deviceId).emit('adminActivateClient');  // Emit only to the specific client
+    } else {
+      io.to(deviceId).emit('adminDeactivateClient');  // Emit only to the specific client
+    }
+
+    // Optionally, notify all clients about the update
+    const clients = await User.find({ userType: 'Client' });
     io.emit('clientsUpdated', { clients });
 
-    // Respond with the updated client information
-    res.status(200).json({ message: `Client ${isActive ? 'activated' : 'deactivated'}`, client });
+    // Notify the admin that the operation was successful
+    io.emit('operationSuccess', `Client ${isActive ? 'activated' : 'deactivated'} successfully.`);
   } catch (error) {
     console.error('Error activating/deactivating client:', error);
-    res.status(500).json({ message: 'Error updating client activation status', error: error.message });
+    io.emit('error', { message: 'Error updating client activation status' });
   }
 };
 
@@ -412,33 +467,38 @@ exports.activateDeactivateClient = async (req, res) => {
 
 
 // Controller to toggle isLogin status of a client
-exports.toggleLoginStatus = async (req, res) => {
-  const { clientId } = req.params;  // Get client ID from the route parameters
+exports.toggleLoginStatus = async (io,clientId,deviceId) => {
+  // Get client ID from the route parameters
 
   try {
-    // Find the client by ID
     const client = await User.findById(clientId);
 
     if (!client) {
-      return res.status(404).json({ message: 'Client not found' });
+      io.emit('error', { message: 'Client not found' });
+      return;
     }
 
-    // Toggle the isLogin status
     client.isLogin = !client.isLogin;
-
-    // Save the updated client
     await client.save();
 
-    const { io } = require('../index');
-    const clients = await User.find({userType : 'Client'});
+    // Notify the specific client of the login status change
+    if (client.isLogin) {
+      io.to(deviceId).emit('adminActivateClient');  // Emit only to the specific client
+    } else {
+      io.to(deviceId).emit('adminDeactivateClient');  // Emit only to the specific client
+    }
+
+    // Optionally, notify all clients about the update
+    const clients = await User.find({ userType: 'Client' });
     io.emit('clientsUpdated', { clients });
 
-    // Respond with the updated client information
-    res.status(200).json({ message: `Client is now ${client.isLogin ? 'logged in' : 'logged out'}`, client });
+    // Notify the admin that the operation was successful
+    io.emit('operationSuccess', `Client login status changed successfully.`);
   } catch (error) {
     console.error('Error toggling login status:', error);
-    res.status(500).json({ message: 'Error toggling login status', error: error.message });
+    io.emit('error', { message: 'Error toggling login status' });
   }
+
 };
 
 
@@ -478,6 +538,13 @@ exports.activateDeactivateDriver = async (req, res) => {
     const { io } = require('../index');
     const drivers = await User.find({userType : 'Driver'});
     io.emit('driversUpdated', { drivers });
+
+if(!isActive){
+  io.emit('adminDeactivateDriver',);
+
+}
+
+
     // Respond with the updated client information
     res.status(200).json({ message: `Client ${isActive ? 'activated' : 'deactivated'}`, client });
   } catch (error) {
@@ -502,9 +569,9 @@ exports.toggleLoginStatusD = async (req, res) => {
     if (!client) {
       return res.status(404).json({ message: 'Client not found' });
     }
-
+const isLogin = !client.isLogin;
     // Toggle the isLogin status
-    client.isLogin = !client.isLogin;
+    client.isLogin = isLogin;
 
     // Save the updated client
     await client.save();
@@ -512,6 +579,11 @@ exports.toggleLoginStatusD = async (req, res) => {
     const { io } = require('../index');
     const drivers = await User.find({userType : 'Driver'});
     io.emit('driversUpdated', { drivers });
+
+    if(!isLogin){
+      io.emit('adminDeactivateDriver',);
+    
+    }
     // Respond with the updated client information
     res.status(200).json({ message: `Client is now ${client.isLogin ? 'logged in' : 'logged out'}`, client });
   } catch (error) {

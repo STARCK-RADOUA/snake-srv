@@ -34,7 +34,6 @@ const autoLogin = async (socket, { deviceId }) => {
             const userType = 'Driver';
 
             await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
-            await notificationController.sendNotification(username,targetScreen,messageBody ,title,userType);
          
     
     

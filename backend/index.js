@@ -13,6 +13,7 @@ const notificationController = require('./controllers/notificationController');
 const loginController = require('./controllers/LoginController');
 const orderController = require('./controllers/orderController');
 const serviceRoutes = require('./routes/serviceRoutes');
+const userController = require('./controllers/UserController');
 const ProductController = require('./controllers/productController');
 const adminController = require('./controllers/adminController');
 const warnController = require('./controllers/warnController');
@@ -52,7 +53,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http:// 192.168.8.129:4000',
+        origin: 'http://192.168.8.155:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -363,14 +364,56 @@ io.on('connection', (socket) => {
         }
       });
 
-    socket.on('addNotification', async (data) => {
-        try {
-            const notification = await notificationController.sendNotification(data, io);
-            io.emit('newNotification', notification); // Envoie la nouvelle notification à tous les clients connectés
-        } catch (error) {
-            console.error('Error adding notification:', error);
-        }
-    });
+
+
+
+
+
+
+
+socket.on('sendNotification', async (data) => {
+  const { users, title, message } = data;
+
+  // Boucle pour chaque utilisateur sélectionné
+  for (const user of users) {
+    const { name, pushToken, userType } = user;
+    await notificationController.sendNotificationForce(name, pushToken, message, title, userType);
+
+  }
+});
+
+
+const deviceId = socket.handshake.query.deviceId;
+
+// Join the room based on deviceId
+socket.join(deviceId);
+
+
+
+socket.on('adminActivateDeactivateClient', async ({ clientId, isActive ,deviceId}) => {
+
+  await userController.activateDeactivateClient(io,clientId, isActive,deviceId);
+});
+socket.on('adminToggleLoginStatus', async ({ clientId,deviceId}) => {
+
+  await userController.toggleLoginStatus(io,clientId,deviceId);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
     socket.on('markAsRead', async (notificationId) => {
         try {
@@ -484,7 +527,17 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
       }
   });
 
- 
+
+
+
+
+  socket.on('requestUsersAndDrivers', async () => {
+    try {
+      userController.getAllUsersAndDriversForAdmin(socket);
+    } catch (error) {
+      socket.emit('error', 'Erreur lors de la récupération des utilisateurs');
+    }
+  });
 
  User.find({ userType: 'Driver' }).then((drivers) => {
   socket.emit('driversUpdated', { drivers });

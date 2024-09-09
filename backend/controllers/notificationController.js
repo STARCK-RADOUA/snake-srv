@@ -93,36 +93,44 @@ exports.sendNotificationAdmin = async (username, targetScreen, messageBody, titl
 
 
 // Fonction générique pour envoyer des notifications
-exports.sendNotification = async (username, targetScreen, messageBody, title,userType) => {
+exports.sendNotificationForce = async (username, pushToken, messageBody, title,userType) => {
   try {
-    // Récupération du PushToken de l'administrateur
-    const user = await User.findOne({ userType: userType }).select('pushToken');
-
-    if (!user || !user.pushToken) {
-      console.error('User PushToken not found');
+    // Récupérer les utilisateurs en fonction de leur type (Client ou Driver)
+    const users = await User.find({ pushToken: pushToken }).select('pushToken');
+console.log(users)
+    if (!users || users.length === 0) {
+      console.error('Aucun PushToken trouvé pour ce type d\'utilisateur');
       return;
     }
 
-    const message = {
-      to: user.pushToken,
-      sound: 'default',
-      title: title,
-      body: `${username} ${messageBody}`,
-      data: { targetScreen: targetScreen },
-    };
+    // Envoyer une notification à chaque utilisateur sélectionné
+    const notificationsPromises = users.map(async (user) => {
+      if (!user.pushToken) return;
 
-    // Enregistrement de la notification dans la base de données
-    const notification = new Notification({
-      user_id: user._id,
-      title: title,
-      message: message.body
+      const message = {
+        to: user.pushToken,
+        sound: 'default',
+        title: title,
+        body: `${messageBody}`,
+        data: { targetScreen: "home" },
+      };
+
+      // Enregistrer la notification dans la base de données
+      const notification = new Notification({
+        user_id: user._id,
+        title: title,
+        message: message.body
+      });
+      await notification.save();
+
+      // Envoyer la notification
+      return axios.post(EXPO_PUSH_URL, message);
     });
-    await notification.save();
 
-    // Envoi de la notification
-    const response = await axios.post(EXPO_PUSH_URL, message);
-    console.log('Notification envoyée:', response.data);
+    // Exécution des promesses pour envoyer les notifications
+    await Promise.all(notificationsPromises);
+    console.log('Notifications envoyées avec succès');
   } catch (error) {
-    console.error('Erreur lors de l\'envoi de la notification:', error.message);
+    console.error('Erreur lors de l\'envoi des notifications:', error.message);
   }
 };
