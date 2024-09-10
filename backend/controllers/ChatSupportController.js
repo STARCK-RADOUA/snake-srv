@@ -234,6 +234,7 @@ exports.watchMessages = async ({socket}) => {
               clientId: client._id, // Include the clientId
               clientFullName: `${client.firstName} ${client.lastName}`,
               userType: client.userType,
+              role : "client",
               lastMessage,
             };
           }else{
@@ -244,6 +245,7 @@ exports.watchMessages = async ({socket}) => {
               clientId: client._id, // Include the clientId
               clientFullName: `${client.firstName} ${client.lastName}`,
               userType: client.userType,
+              role :"driver" ,
               lastMessage,
             };
           }
