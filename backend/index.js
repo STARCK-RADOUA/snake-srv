@@ -52,7 +52,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.155:4000',
+        origin: 'http://192.168.8.137:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -301,6 +301,25 @@ io.on('connection', (socket) => {
             }
     
             loginController.autoLogin(socket, data); 
+            // Si tout va bien, l'utilisateur est connecté
+           
+    
+        } catch (error) {
+            console.error('Error during auto login:', error);
+            socket.emit('loginFailure', { message: 'An error occurred during login' });
+        }
+    });
+       socket.on('autoLoginDriver', async (data) => {
+        try {
+            const { deviceId } = data;
+    console.log('Auto login data:', data);
+            // Vérification si l'ID de l'appareil est fourni
+            if (!deviceId) {
+                socket.emit('loginFailure', { message: 'Device ID not provided' });
+                return;
+            }
+    
+            loginController.autoLoginDriver(socket, data); 
             // Si tout va bien, l'utilisateur est connecté
            
     
