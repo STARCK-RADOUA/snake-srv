@@ -284,10 +284,13 @@ if (user.userType !== 'Driver') {
     try {
         // Log the start of the user update process
         console.log('Attempting to find user and update points');
-
+const client = await Client.findById(userId);
+if (!client) {
+    return res.status(404).json({ message: "Client not found" });
+}
         // Find the user by ID and update their points
         const updatedUser = await User.findByIdAndUpdate(
-            userId, 
+            client.user_id, 
             { points_earned: newPoints }, 
             { new: true } // Return the updated document
         );
@@ -301,7 +304,7 @@ if (user.userType !== 'Driver') {
         }
 
         // Success log
-        console.log('Points updated successfully for user:', userId);
+        console.log('Points updated successfully for user:', client.user_id);
 
         return res.status(200).json({
             message: "Points updated successfully",
@@ -386,13 +389,15 @@ exports.changePass = async (req, res) => {
   const { id, newPassword } = req.body;
 
   try {
+    console.log("newPassword",newPassword)
+    console.log("id",id)
     // Hash the new password
     const salt = await bcrypt.genSalt(10); // Generates a salt with 10 rounds
     const hashedPassword = await bcrypt.hash(newPassword, salt);
-
+const client = await Client.findById(id);
     // Find the user by ID and update their password
     const updatedUser = await User.findByIdAndUpdate(
-      id,
+      client.user_id,
       { password: hashedPassword }, // Update the password field with the hashed password
       { new: true } // Return the updated document after the update
     );

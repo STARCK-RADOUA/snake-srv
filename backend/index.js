@@ -52,7 +52,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.137:4000',
+        origin: 'http://192.168.8.159:4000',
         methods: ["GET", "POST"],
     },
 });
@@ -586,6 +586,9 @@ User.find({ userType: 'Client' }).then((clients) => {
 
  socket.on('getDeliveredOrders', async () => {
   await orderController.fetchDilevredOrders(socket);
+ });
+ socket.on('fetchDriverOrdersForCountUpdated', async () => {
+  await orderController.fetchDriverOrdersForCount(socket);
  });
 
 

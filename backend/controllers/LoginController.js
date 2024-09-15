@@ -1,9 +1,14 @@
 // controllers/loginController.js
 const notificationController  =require('./notificationController');
+const historiqueUtils  =require('./historiqueUtils');
 const User = require('../models/User');
 
-const autoLogin = async (socket, { deviceId }) => {
+const autoLogin = async (socket, { deviceId ,location }) => {
     try {
+        console.log('Auto Login :', deviceId);
+        console.log('------------------------------------');
+        console.log(location);
+        console.log('------------------------------------');
         // Find the user in the database using the device ID
         const user = await User.findOne({ deviceId, userType: 'Client'});
 
@@ -28,7 +33,13 @@ const autoLogin = async (socket, { deviceId }) => {
         const messageBody = `👤 vient de se connecter.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
         
         await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
-     
+        await historiqueUtils.enregistrerAction({
+            actionType: 'Connexion',
+            description:  user.lastName + ' ' + user.firstName+'👤 vient de se connecter.\n\n🔑',
+            utilisateurId: user._id, // Remplacez par un ID valide
+            location: location.latitude+" "+location.longitude, // Remplacez par un ID valide
+            objetType: 'Client'
+        });
 
 
 
@@ -91,7 +102,7 @@ const checkUserActivation = async (socket, { deviceId }) => {
         if (user) {
             if (user.activated) {
                 console.log(user.activated)
-                socket.emit('activat2ionStatus', { activated: true, message: 'User is activated.' });
+                socket.emit('activationStatus', { activated: true, message: 'User is activated.' });
             } else {
                 socket.emit('activationStatus', { activated: false, message: 'User is not activated.' });
             }

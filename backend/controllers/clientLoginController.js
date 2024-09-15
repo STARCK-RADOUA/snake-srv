@@ -1,6 +1,7 @@
 
 const User = require("../models/User");
 const notificationController  =require('./notificationController');
+const historiqueUtils  =require('./historiqueUtils');
 
 const bcrypt = require("bcrypt");
 
@@ -31,7 +32,7 @@ const isLoginValid = (phone, password) => {
     }
 };
 const loginUser = (req, res) => {
-    const { phone, password, deviceId } = req.body;
+    const { phone, password, deviceId, location } = req.body;
 
     const loginValidStatus = isLoginValid(phone, password);
     if (!loginValidStatus.status) {
@@ -87,10 +88,18 @@ const loginUser = (req, res) => {
                             const username = currentUser.lastName + ' ' + currentUser.firstName;
                             const targetScreen = ' Notifications';
                             const title = '🔔 Nouvelle Connexion';
-                            const messageBody = `👤  vient de se connecter Manuelment.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
+                            const messageBody = `👤votre Client vient de se connecter Manuelment.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
                             
                         
          notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+          historiqueUtils.enregistrerAction({
+            actionType: 'Connexion',
+            description:  currentUser.lastName + ' ' + currentUser.firstName+'👤 vient de se connecter.\n\n🔑',
+            utilisateurId: currentUser._id, // Remplacez par un ID valide
+            location: location.latitude+" "+location.longitude, // Remplacez par un ID valide
+            objetType: 'Client'
+        });
+
                             // Send a single response after the update
                             return res.json({ message: "success", user: currentUser });
                         });

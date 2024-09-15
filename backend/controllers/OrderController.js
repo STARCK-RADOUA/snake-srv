@@ -6,7 +6,10 @@ const Address = require('../models/Address');
 const Cart = require('../models/Cart');
 const Client = require('../models/Client');
 const notificationController  =require('./notificationController');
-
+const ExcelJS = require('exceljs');
+const fs = require('fs');
+const { promisify } = require('util');
+const writeFile = promisify(fs.writeFile);
 exports.getOrdersByDeviceId = async (deviceId) => {
   try {
     // Fetch the user and client based on deviceId
@@ -373,6 +376,7 @@ exports.getOrderHistory = async (req, res) => {
           quantity: item.quantity,
           service_type: item.service_type,
           price: item.price,
+          isFree: item.isFree,
           selected_options: item.selected_options
         })),
         total_price: order.total_price,
@@ -479,6 +483,8 @@ exports.fetchPendingOrders = async (socket) => {
           product: item.product_id,
           quantity: item.quantity,
           service_type: item.service_type,
+          isFree: item.isFree,
+
           price: item.price,
           selected_options: item.selected_options
         })),
@@ -539,6 +545,7 @@ exports.fetchDilevredOrders = async (socket) => {
           quantity: item.quantity,
           service_type: item.service_type,
           price: item.price,
+          isFree: item.isFree,
           selected_options: item.selected_options
         })),
         total_price: order.total_price,
@@ -597,6 +604,7 @@ exports.fetchInProgressOrders = async (socket) => {
           product: item.product_id,
           quantity: item.quantity,
           service_type: item.service_type,
+          isFree: item.isFree,
           price: item.price,
           selected_options: item.selected_options
         })),
@@ -656,6 +664,7 @@ exports.fetchCancelledgOrders = async (socket) => {
           quantity: item.quantity,
           service_type: item.service_type,
           price: item.price,
+          isFree: item.isFree,
           selected_options: item.selected_options
         })),
         total_price: order.total_price,
@@ -687,5 +696,94 @@ exports.OnOrderStatusUpdated = async ({ order_id, io }) => {
     }
   } catch (error) {
     console.error('Error finding or watching order:', error);
+  }
+};
+
+
+
+
+
+
+
+
+
+// Fetch delivered orders filtered by date range
+exports.fetchDriverOrdersForCount = async (socket, startISO, endISO) => {
+  try {
+    console.log('------------------------------------');
+    console.log(startISO, endISO);
+    console.log('------------------------------------');
+    const start = new Date(startISO);
+    const end = new Date(endISO);
+    console.log(start, end);
+    if (isNaN(start) || isNaN(end)) {
+      return console.error('Invalid date format');
+    }
+    end.setDate(end.getDate() + 1);
+  
+      // Fetch orders
+      const orders = await Order.find({
+        created_at: { $gte: start, $lt: end }
+      }).populate('driver_id');
+  
+      // Aggregate revenue per driver
+      const driverRevenues = orders.reduce((acc, order) => {
+        const driverId = order.driver_id._id.toString();
+        if (!acc[driverId]) {
+          acc[driverId] = { ...order.driver_id._doc, revenue: 0 };
+        }
+        acc[driverId].revenue += order.total_price;
+        return acc;
+      }, {});
+  
+      // Calculate total business revenue
+      const totalBusiness = orders.reduce((total, order) => total + order.total_price, 0);
+  
+
+    socket.emit('fetchDriverOrdersForCountUpdated', {
+      totalBusiness,
+      driverRevenues
+    });
+
+  } catch (err) {
+    console.error('Error retrieving order history:', err.message);
+  }
+};
+
+
+// Export orders and driver info into Excel
+exports.exportDriverOrdersToExcel = async (startDate, endDate, drivers, socket) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Driver Orders');
+
+    worksheet.columns = [
+      { header: 'Driver', key: 'driver', width: 30 },
+      { header: 'Phone', key: 'phone', width: 15 },
+      { header: 'Order ID', key: 'order_id', width: 25 },
+      { header: 'Total Price', key: 'total_price', width: 15 },
+      { header: 'Delivery Time', key: 'delivery_time', width: 20 },
+    ];
+
+    for (const driverId in drivers) {
+      const driver = drivers[driverId];
+
+      driver.orders.forEach(order => {
+        worksheet.addRow({
+          driver: driver.driver,
+          phone: driver.phone,
+          order_id: order,
+          total_price: driver.totalRevenue,
+          delivery_time: driver.updated_at,
+        });
+      });
+    }
+
+    const filePath = `./driver_orders_${startDate}_to_${endDate}.xlsx`;
+    await workbook.xlsx.writeFile(filePath);
+
+    socket.emit('fileReady', { path: filePath });
+  } catch (err) {
+    console.error('Error exporting orders to Excel:', err.message);
   }
 };

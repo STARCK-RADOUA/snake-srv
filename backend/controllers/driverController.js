@@ -255,7 +255,9 @@ exports.updateDriverAvailability = async (req, res) => {
         userType: driver.user_id.userType,
         isDisponible: driver.isDisponible,
       }));
-  
+  console.log('------------------------------------');
+  console.log("response",response);
+  console.log('------------------------------------');
       // Return the list of available drivers
       res.status(200).json(response);
     } catch (error) {

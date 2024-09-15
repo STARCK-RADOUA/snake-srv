@@ -1,5 +1,6 @@
 const Client = require('../models/Client');
 const User = require('../models/User');
+const Driver = require('../models/Driver');
 const Warn = require('../models/Warn');
 const QrCode = require('../models/QrCode');
 const bcrypt = require("bcrypt");
@@ -149,7 +150,7 @@ console.log(uniqueId)
 
     try {
         // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
-        let existingUser = await User.findOne({ phone: newClient.phone });
+        let existingUser = await User.findOne({  deviceId: newClient.deviceId ,phone: newClient.phone });
         let existingUser1 =  await User.findOne({ deviceId: newClient.deviceId });
 
         
@@ -164,27 +165,54 @@ console.log('------------------------------------');
         }
 
 
-        if (existingUser1) {
+        if (existingUser1 && existingUser) {
             return res.status(400).json({
                 message: 'error',
-                errors: ['User with this device  already exists']
+                errors: ['User  already exists']
             });
         }
 
-        const hashedPassword = await bcrypt.hash(newClient.password, 10);
+        if (existingUser1 && !existingUser) {
 
-        const user_idetails = await User.create({
-            phone: newClient.phone,
-            firstName: newClient.firstName,
-            lastName: newClient.lastName,
-            deviceId: newClient.deviceId,
-            password: hashedPassword,
-            userType: 'Client',
-            activated: 0,
-        });
+            const hashedPassword = await bcrypt.hash(newClient.password, 10);
 
-        newClient.user_id = user_idetails._id;
-        await Client.create(newClient);
+
+              await User.updateOne({ _id: existingUser1._id}, { $set: {
+                phone: newClient.phone,
+                firstName: newClient.firstName,
+                lastName: newClient.lastName,
+                deviceId: newClient.deviceId,
+                password: hashedPassword,
+                userType: 'Client',
+                activated: 0,
+             } });
+
+             newClient.user_id = existingUser1._id;
+             await Client.create(newClient);
+
+
+       
+        }
+
+
+        if (existingUser1 && existingUser) {
+           
+            const hashedPassword = await bcrypt.hash(newClient.password, 10);
+
+            const user_idetails = await User.create({
+                phone: newClient.phone,
+                firstName: newClient.firstName,
+                lastName: newClient.lastName,
+                deviceId: newClient.deviceId,
+                password: hashedPassword,
+                userType: 'Client',
+                activated: 0,
+            });
+    
+            newClient.user_id = user_idetails._id;
+            await Client.create(newClient);
+        }
+       
 
 
 
@@ -197,24 +225,43 @@ console.log('------------------------------------');
    qrCode.newclientDeviceId = newClient.deviceId;
    await qrCode.save();
    console.log('------------------------------------');
-   const client = await Client.findOne({ _id: qrCode.clientId });
-   console.log('------------------------------------');
-   console.log(client);
-   console.log('------------------------------------');
-  
-   
-   if (client && qrCode.isUsed ) {
-     await User.findOneAndUpdate(
-       { _id: client.user_id }, // Find the user by their user_id (from Client)
-       { $inc: { points_earned: 1 } }, // Increment points_earned by pointsToAdd
-      
-     );
-   } else {
-     console.log('Client not found');
-   }
+   if(qrCode.type === "Client"){
+    const client = await Client.findOne({ _id: qrCode.clientId });
+    console.log('------------------------------------');
+    console.log(client);
+    console.log('------------------------------------');
+    if (client && qrCode.isUsed ) {
+        await User.findOneAndUpdate(
+          { _id: client.user_id }, // Find the user by their user_id (from Client)
+          { $inc: { points_earned: 1 } }, // Increment points_earned by pointsToAdd
+         
+        );
+      } else {
+        console.log('Client  who generate qr not found');
+      }
+
+   }  
+   if(qrCode.type === "Driver"){
+    const client = await Driver.findOne({ _id: qrCode.clientId });
+    console.log('------------------------------------');
+    console.log(client);
+    console.log('------------------------------------');
+    if (client && qrCode.isUsed ) {
+        await User.findOneAndUpdate(
+          { _id: client.user_id }, // Find the user by their user_id (from Client)
+          { $inc: { points_earned: 1 } }, // Increment points_earned by pointsToAdd
+         
+        );
+      } else {
+        console.log('Driver who generate qr not found');
+      }
+
+   } 
+ 
+ 
    
 
-   const username = user_idetails.lastName + ' ' + user_idetails.firstName;
+   const username = existingUser1.lastName + ' ' + existingUser1.firstName;
    const targetScreen = ' Notifications';
    const messageBody = ' vient de se registrer';
    const title = ' Nouvelle Registration';
