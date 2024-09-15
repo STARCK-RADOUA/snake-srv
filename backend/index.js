@@ -81,7 +81,7 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 const cron = require('node-cron');
 const driver = require('./models/Driver');
 const { handleChatInitiation, handleSendMessage, watchMessages } = require('./controllers/ChatSupportController.js');
-const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages } = require('./controllers/chatController.js');
+const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages, joinOrderMessage } = require('./controllers/chatController.js');
 
 
 // Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
@@ -608,28 +608,7 @@ socket.on('watchOrderChatMessages', async () => {
 
 // Client joins an existing chat room with a specific chatId
 socket.on('joinExistingChat', async ({ chatId }) => {
-  try {
-    console.log(`Joining existing chat with chatId: ${chatId}`);
-
-    // Find the chat by chatId
-    const chat = await Chat.findById(chatId).populate('client_id').populate('driver_id');
-    if (!chat) {
-      console.log(`No chat found with chatId: ${chatId}`);
-      socket.emit('error', { message: 'No chat found' });
-      return;
-    }
-
-    // Join the room for this specific chat
-    socket.join(chat._id.toString());
-    console.log(`Socket joined room for chatId: ${chat._id}`);
-
-    // Send the existing chat details to the client
-    socket.emit('chatDetailss', { chatId: chat._id, messages: chat.messages });
-    console.log('Emitted chatDetailss event with messages:', chat.messages.length);
-  } catch (error) {
-    console.error('Error joining chat:', error);
-    socket.emit('error', { message: 'Failed to join chat' });
-  }
+    await joinOrderMessage({socket , chatId}) ;
 });
 
 

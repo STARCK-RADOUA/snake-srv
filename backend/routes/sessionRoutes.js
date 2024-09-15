@@ -20,5 +20,7 @@ router.delete('/:id', sessionController.deleteSession);
 router.post('/get-client-id', sessionController.getUserIdByDeviceId);
 router.post('/get-user-details', sessionController.getUserDetailsByDeviceId);
 router.post('/get-client-ide', sessionController.getClientIdByDeviceId);
+router.post('/get-driver-ide', sessionController.getDriverIdByDeviceId);
+
 
 module.exports = router;

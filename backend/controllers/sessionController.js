@@ -1,6 +1,7 @@
 const Session = require('../models/Session');
 const User = require('../models/User');
 const Client = require('../models/Client');
+const Driver = require('../models/Driver');
 
 // Get all sessions
 exports.getAllSessions = async (req, res) => {
@@ -178,3 +179,28 @@ exports.getClientDetailsByDeviceId = async (req, res) => {
 
 
 
+exports.getDriverIdByDeviceId = async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+        console.log(deviceId)
+
+        // Find the user with the provided device ID
+        const user = await User.findOne({ deviceId: deviceId });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const driver = await Driver.findOne({ user_id: user._id });
+
+        if (!driver) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        res.status(200).json({ driverId: driver._id });
+        console.log(driver._id);
+    } catch (error) {
+        console.error('Error fetching client ID:', error);
+        res.status(500).json({ error: 'Failed to fetch client ID' });
+    }
+};
