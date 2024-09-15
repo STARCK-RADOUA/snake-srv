@@ -9,7 +9,8 @@ const driverSchema = new mongoose.Schema({
     latitude: { type: Number, default: null },
     longitude: { type: Number, default: null },
     isConnected: { type: Boolean, default: false }
-  }
+  },
+  orders_count: { type: Number, default: 0 } // Ajouté pour suivre le nombre de commandes
 
 });
 

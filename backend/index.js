@@ -43,6 +43,7 @@ const Driver = require('./models/Driver');
 const OrderItem = require('./models/OrderItem');
 const chatRoutes = require('./routes/chatRoutes');
 const cors = require('cors');
+const Address = require('./models/Address');
 
 
 // Initialize express and create HTTP server
@@ -79,8 +80,10 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 
 
 const cron = require('node-cron');
-const driver = require('./models/Driver');
 const { handleChatInitiation, handleSendMessage, watchMessages } = require('./controllers/ChatSupportController.js');
+const { getRouteDetails } = require('./controllers/LocationRouteController.js');
+const { assignPendingOrders } = require('./controllers/orderController.js');
+
 const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages, joinOrderMessage } = require('./controllers/chatController.js');
 
 
@@ -97,6 +100,13 @@ cron.schedule('0 2 * * *', async () => {
     console.error('Erreur lors de la suppression des QR codes expirés:', error);
   }
 });
+cron.schedule('0 * * * *', async () => {
+  console.log('Vérification des commandes en attente...');
+  await assignPendingOrders();
+});
+const axios = require('axios');
+
+// Function to calculate distance and duration
 
 
   
@@ -440,7 +450,40 @@ socket.on('adminActivateDeactivateDriver', async ({ driverId, isActive, deviceId
 
 
 
+
+
+
+
+
+
+     socket.on('getRouteDetails', async (orderId) => {
+        try {
+            const result = await getRouteDetails(orderId);
+            socket.emit('routeDetails', result);
+        } catch (error) {
+            socket.emit('error', { message: error.message });
+        }
+    });
+
+
+
+
+
+
  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     socket.on('markAsRead', async (notificationId) => {
         try {
@@ -481,6 +524,7 @@ socket.on('adminActivateDeactivateDriver', async ({ driverId, isActive, deviceId
       // Émettre l'événement 'orderAdded' pour informer le frontend que l'ordre a été ajouté
      socket.emit('orderAdded', order);
      await orderController.fetchPendingOrders(io) ;
+    await orderController.assignPendingOrders();
 
     } catch (error) {
       // Gestion des erreurs

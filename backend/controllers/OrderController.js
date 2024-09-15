@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
+const ClarkeWright = require('./ClarkeWright'); // Assurez-vous que le chemin est correct
+
 const OrderItem = require('../models/OrderItem');
 const Admin = require('../models/Admin');
 const Address = require('../models/Address');
@@ -156,7 +158,7 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
 
         const username = user.lastName + ' ' + user.firstName;
         const targetScreen = ' Notifications';
-        const messageBody = `\n💬 *Nouvelle Commande*\n\n📌 *Détails de la Commande:*\n\n🛒 ID de Commande: \`${order._id}\`\n💰 Prix Total: \`${totalPrice}$\`\n📱 Device ID: \`${user.deviceId}\`\n\n🚫 *Commande annulée.*\n`;
+        const messageBody = `\n💬 *!!!!Nouvelle Commande de service en test*\n\n📌 *Détails de la Commande:*\n\n🛒 ID de Commande: \`${order._id}\`\n💰 Prix Total: \`${totalPrice}$\`\n📱 Device ID: \`${user.deviceId}\`\n\n🚫 *Commande annulée.*\n`;
         const title = ' Client vient de tester une service  ';
      
         await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
@@ -173,7 +175,6 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
       const title = ' Client vient de commander';
    
       await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
-   
       return order._id;
     } catch (error) {
       console.error('Error adding new order:', error.message);
@@ -691,8 +692,13 @@ exports.OnOrderStatusUpdated = async ({ order_id, io }) => {
     console.log(order_id) ;
     const order = await Order.findById(order_id);
     if (order) {
+      console.log('------------------------------------');
+      console.log(order);
+      console.log('------------------------------------');
       // Emit the updated order status to the room
       io.to(order_id).emit('orderStatusUpdates', { order });
+      io.emit('watchOrderStatuss', { order_id: order_id });
+
     }
   } catch (error) {
     console.error('Error finding or watching order:', error);
@@ -787,3 +793,150 @@ exports.exportDriverOrdersToExcel = async (startDate, endDate, drivers, socket) 
     console.error('Error exporting orders to Excel:', err.message);
   }
 };
+
+const TRANCHE_INCREMENT = 10;
+const MIN_TRANCHE = 10;
+const MAX_TRANCHE = 30;
+
+// Function to get available drivers with the current tranche
+async function getAvailableDrivers(tranche) {
+    try {
+        const drivers = await Driver.find({ orders_count: { $lt: tranche } });
+        return drivers;
+    } catch (error) {
+        console.error('Error retrieving available drivers:', error.message);
+        throw new Error('Error retrieving available drivers.');
+    }
+}
+
+// Function to dynamically adjust tranches
+async function adjustTranche() {
+    const drivers = await Driver.find({});
+    const trancheCounts = drivers.map(driver => driver.orders_count);
+
+    const maxOrders = Math.max(...trancheCounts);
+    const minOrders = Math.min(...trancheCounts);
+
+    let currentTranche = MIN_TRANCHE;
+
+    if (minOrders >= currentTranche && maxOrders >= currentTranche + TRANCHE_INCREMENT) {
+        currentTranche += TRANCHE_INCREMENT;
+    } else if (maxOrders < currentTranche - TRANCHE_INCREMENT && currentTranche > MIN_TRANCHE) {
+        currentTranche -= TRANCHE_INCREMENT;
+    }
+
+    return currentTranche;
+}
+exports.assignPendingOrders = async () => {
+
+
+  try {
+    // Fetch all pending orders
+    const pendingOrders = await Order.find({ status: 'pending', driver_id: null });
+
+    if (pendingOrders.length === 0) {
+      console.log('No pending orders to assign.');
+      return;
+    }
+
+    for (const order of pendingOrders) {
+      try {
+        // Assign each pending order to a driver
+        const assignedDriver = await exports.assignOrderToDriver(order._id);
+        console.log(`Order ${order._id} assigned to driver ${assignedDriver._id}`);
+        const { io } = require('../index');
+    await exports.fetchPendingOrders(io) ;
+    await exports.fetchInProgressOrders(io) ;
+    await exports.OnOrderStatusUpdated({order_id: order._id ,io: io});
+ 
+  } catch (error) {
+        console.error(`Failed to assign order ${order._id}:`, error.message);
+      }
+    }
+
+    console.log('Pending orders assignment completed.');
+  } catch (error) {
+    console.error('Error during pending orders assignment:', error.message);
+    throw new Error('Pending orders assignment failed.');
+  }
+}
+
+// Function to assign an order to a driver
+exports.assignOrderToDriver = async (orderId) => {
+    const order = await Order.findById(orderId);
+    if (!order) {
+        throw new Error('Order not found');
+    }
+
+    let tranche = await adjustTranche();
+    let drivers = await getAvailableDrivers(tranche);
+
+    if (drivers.length === 0) {
+        // Increase margin if no drivers are available
+        await Driver.updateMany({ orders_count: { $lt: MAX_TRANCHE } }, { $inc: { orders_count: TRANCHE_INCREMENT } });
+        drivers = await getAvailableDrivers(tranche);
+
+        if (drivers.length === 0) {
+            throw new Error('No available drivers even after increasing margin');
+        }
+    }
+
+    // Convert addresses to coordinates
+    const address = await Address.findById(order.address_id);
+    const { latitude: addressLat, longitude: addressLng } = parseLocation(address.localisation);
+
+    const locations = drivers.map(driver => ({
+        lat: driver.location.latitude,
+        lng: driver.location.longitude,
+        driverId: driver._id
+    }));
+
+    // Add the client's location as the last address
+    locations.push({ lat: addressLat, lng: addressLng, driverId: null });
+
+    // Use the driver location as start and end point
+    const clarkeWright = new ClarkeWright(locations, { lat: addressLat, lng: addressLng }, {});
+    const routes = clarkeWright.createRoutes();
+
+    let bestDriver = null;
+    let minDistance = Infinity;
+
+    routes.forEach(route => {
+      let routeDistance = 0;
+  
+      route.forEach((loc, idx) => {
+          if (idx < route.length - 1) {
+              const nextLoc = route[idx + 1];
+              routeDistance += clarkeWright.calculateDistance(loc, nextLoc);
+          }
+      });
+  
+      const driverLocation = route.find(loc => loc.driverId)?.driverId;
+      if (driverLocation && routeDistance < minDistance) {
+          const driver = drivers.find(driver => driver._id.toString() === driverLocation.toString());
+          if (driver) {
+              minDistance = routeDistance;
+              bestDriver = driver;
+          }
+      }
+  });
+  
+
+    if (bestDriver) {
+        order.driver_id = bestDriver._id;
+        order.status = "in_progress";
+        bestDriver.orders_count += 1;
+        await bestDriver.save();
+        await order.save();
+        const { io } = require('../index');
+        io.emit('orderStatusUpdates', { order });
+        return bestDriver;
+    } else {
+        throw new Error('No suitable driver found');
+    }
+}
+
+function parseLocation(location) {
+    const [latitude, longitude] = location.split(',').map(coord => parseFloat(coord));
+    return { latitude, longitude };
+}
