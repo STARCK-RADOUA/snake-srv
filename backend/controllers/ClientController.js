@@ -91,12 +91,16 @@ exports.logoutUser = async (req, res) => {
 
 
             if (user.userType==="Driver") {
+                await User.findOneAndUpdate(
+                    { deviceId: deviceId },
+                    { activated: false },
+                    { new: true });
                 const username = user.lastName + ' ' + user.firstName;
                 const targetScreen = ' Notifications';
                 const title = '🚨 Déconnexion de Livreur';
                 const messageBody = `👤 livreur vient de se déconnecter.\n\n📞 Téléphone : ${phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
                       
-                await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);        }
+                await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title)}
     
 
         return res.json({ message: "success", user: { userId: user._id, isLogin: false } });

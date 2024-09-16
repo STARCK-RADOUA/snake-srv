@@ -118,7 +118,8 @@ io.on('connection', (socket) => {
         try {
           // Find the driver's associated orders
           await orderController.fetchInProgressOrdersForDriver(io, deviceId);
-          
+        
+
         } catch (error) {
           console.error('Error finding order for driver:', error);
         }

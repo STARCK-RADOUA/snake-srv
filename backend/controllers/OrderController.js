@@ -643,8 +643,6 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
       console.error('User not found for device ID:', deviceId);
       return;
     }
-
-    // Fetch the driver based on user ID
     const driver = await Driver.findOne({user_id: user._id});
     if (!driver) {
       console.error('Driver not found for user ID:', user._id);
@@ -652,36 +650,60 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
     }
 
     // Fetch active and in-progress orders for the driver
-    const orders = await Order.find({ driver_id: driver._id, status: { $in: ['active', 'in_progress'] } })
-      .populate({
-        path: 'client_id',
-        populate: { path: 'user_id', select: 'firstName lastName' }
-      })
-      .populate('address_id', 'address_line')
-      .exec();
-
-    // Process each order and fetch order items
+    const orders = await Order.find({ driver_id: driver._id, status: 'in_progress'  })
+    
+    .populate({
+      path: 'client_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'driver_id',
+      populate: {
+        path: 'user_id',
+        model: 'User',
+        select: 'firstName lastName'
+      }
+    })
+    .populate({
+      path: 'address_id',
+      select: 'address_line localisation'
+    }) ;
     const response = await Promise.all(orders.map(async (order) => {
-      const orderItems = await OrderItem.find({ order_id: order._id }).populate('product_id');
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
+
       return {
         order_number: order._id,
-        client_name: `${order.client_id?.user_id?.firstName || 'Unknown'} ${order.client_id?.user_id?.lastName || ''}`,
-        driver_name: `${driver.user_id.firstName || 'Unknown'} ${driver.user_id.lastName || ''}`,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        location: order.address_id?.localisation || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
           quantity: item.quantity,
-          price: item.price,
           service_type: item.service_type,
+          isFree: item.isFree,
+          price: item.price,
+          selected_options: item.selected_options
         })),
         total_price: order.total_price,
+        delivery_time: order.updated_at,
         payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
         created_at: order.created_at,
+        updated_at: order.updated_at,
       };
     }));
+;
 
     // Emit the orders to the client
-    io.to(deviceId).emit('orderInprogressUpdatedForDriver', { total: orders.length, orders: response });
+    io.to(deviceId).emit('orderInprogressUpdatedForDriver', { total: orders.length, orders: response, active: driver.isDisponible });
   } catch (err) {
     console.error('Error fetching in-progress orders:', err.message);
   }
@@ -903,7 +925,6 @@ exports.assignPendingOrders = async () => {
         // Assign each pending order to a driver
         const assignedDriver = await exports.assignOrderToDriver(order._id);
         console.log(`Order ${order._id} assigned to driver ${assignedDriver._id}`);
-        const { io } = require('../index');
     
  
   } catch (error) {
@@ -987,7 +1008,7 @@ exports.assignOrderToDriver = async (orderId) => {
         await order.save();
         const { io } = require('../index');
         io.emit('orderStatusUpdates', { order });
-        
+
      
 
         return bestDriver;
