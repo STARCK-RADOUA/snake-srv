@@ -114,40 +114,11 @@ const axios = require('axios');
 io.on('connection', (socket) => {
     console.log('A user connected');
 
-    socket.on('driverConnected', async (driverId) => {
+    socket.on('driverConnected', async (deviceId) => {
         try {
           // Find the driver's associated orders
-          const order = await Order.findOne({ driver_id: driverId, active: true });
-    
-          if (order) {
-            console.log(`Order found for driver ${driverId}:`, order);
-    
-            // Emit the order details back to the driver, including its active status
-            socket.emit('orderDetails', {
-              orderId: order._id,
-              active: order.active,
-              driverId: order.driver_id,
-            });
-    
-            // Set up a change stream to watch changes to this specific order
-            const orderChangeStream = Order.watch([{ $match: { 'documentKey._id': order._id } }]);
-    
-            orderChangeStream.on('change', (change) => {
-              if (change.updateDescription && 'active' in change.updateDescription.updatedFields) {
-                const updatedFields = change.updateDescription.updatedFields;
-                console.log(`Order ${order._id} updated. Active status: ${updatedFields.active}`);
-                
-                // Emit the updated status to the connected driver
-                io.emit('orderActiveChanged', {
-                  orderId: order._id,
-                  driverId: updatedFields.driver_id,
-                  active: updatedFields.active,
-                });
-              }
-            });
-          } else {
-            console.log(`No active order found for driver ${driverId}`);
-          }
+          await orderController.fetchInProgressOrdersForDriver(io, deviceId);
+          
         } catch (error) {
           console.error('Error finding order for driver:', error);
         }
@@ -547,7 +518,7 @@ socket.on('adminActivateDeactivateDriver', async ({ driverId, isActive, deviceId
     }
   });
 
-
+  
 // Chat initiation for client and admin
 // Assuming you've already set up your socket.io server
 socket.on('initiateChat', async ({ adminId, userId, userType }) => {

@@ -54,7 +54,7 @@ const autoLogin = async (socket, { deviceId ,location }) => {
 };
 const autoLoginDriver = async (socket, { deviceId }) => {
     try {
-        const driverUser = await User.findOne({ deviceId, userType: 'Driver'});
+        const driverUser = await User.findOne({ deviceId:deviceId, userType: 'Driver'});
 
             if(!driverUser){
                 socket.emit('loginFailure', { message: 'Device ID not found' });
