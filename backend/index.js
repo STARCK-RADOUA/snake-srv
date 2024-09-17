@@ -631,6 +631,13 @@ User.find({ userType: 'Client' }).then((clients) => {
  socket.on('getDeliveredOrders', async () => {
   await orderController.fetchDilevredOrders(socket);
  });
+
+
+ socket.on('getTestOrders', async () => {
+  await orderController.fetchTestOrders(socket);
+ });
+
+
  socket.on('fetchDriverOrdersForCountUpdated', async () => {
   await orderController.fetchDriverOrdersForCount(socket);
  });
@@ -654,6 +661,56 @@ socket.on('watchOrderChatMessages', async () => {
 socket.on('joinExistingChat', async ({ chatId }) => {
     await joinOrderMessage({socket , chatId}) ;
 });
+
+
+
+
+socket.on('getDriverRevenue', async (userId, startDate, endDate) => {
+  try {
+    console.log(userId , startDate , endDate ,"whjhgkh")
+    const driver = await Driver.findOne({ user_id: userId }).populate('user_id');
+
+    if (!driver) {
+      socket.emit('driverData', { error: 'Driver not found' });
+      return;
+    }
+
+    // Calculate total revenue and orders of all time
+    const totalOrders = await Order.countDocuments({ driver_id: driver._id });
+    const totalRevenue = await Order.aggregate([
+      { $match: { driver_id: driver._id } },
+      { $group: { _id: null, total: { $sum: '$total_price' } } }
+    ]);
+
+    // Calculate revenue and orders between specific dates
+    const ordersBetweenDates = await Order.find({
+      driver_id: driver._id,
+      created_at: { $gte: new Date(startDate), $lte: new Date(endDate) }
+    });
+
+    const revenueBetweenDates = await Order.aggregate([
+      { $match: {
+        driver_id: driver._id,
+        created_at: { $gte: new Date(startDate), $lte: new Date(endDate) }
+      }},
+      { $group: { _id: null, total: { $sum: '$total_price' } } }
+    ]);
+
+    socket.emit('driverData', {
+      driver: {
+        ...driver._doc,
+        totalOrders,
+        totalRevenue: totalRevenue[0]?.total || 0
+      },
+      revenueBetweenDates: revenueBetweenDates[0]?.total || 0,
+      ordersBetweenDates: ordersBetweenDates.length
+    });
+  } catch (error) {
+    console.error(error);
+    socket.emit('driverData', { error: 'An error occurred' });
+  }
+});
+
 
 
 });
