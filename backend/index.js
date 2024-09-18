@@ -587,6 +587,7 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
 });
 
 
+
 User.find({ userType: 'Client' }).then((clients) => {
   socket.emit('clientsUpdated', { clients });
 });
@@ -637,52 +638,131 @@ socket.on('joinExistingChat', async ({ chatId }) => {
 
 
 
-socket.on('getDriverRevenue', async (userId, startDate, endDate) => {
+
+
+socket.on('getDriverStats', async () => {
   try {
-    console.log(userId , startDate , endDate ,"whjhgkh")
-    const driver = await Driver.findOne({ user_id: userId }).populate('user_id');
-
-    if (!driver) {
-      socket.emit('driverData', { error: 'Driver not found' });
-      return;
-    }
-
-    // Calculate total revenue and orders of all time
-    const totalOrders = await Order.countDocuments({ driver_id: driver._id });
-    const totalRevenue = await Order.aggregate([
-      { $match: { driver_id: driver._id } },
-      { $group: { _id: null, total: { $sum: '$total_price' } } }
-    ]);
-
-    // Calculate revenue and orders between specific dates
-    const ordersBetweenDates = await Order.find({
-      driver_id: driver._id,
-      created_at: { $gte: new Date(startDate), $lte: new Date(endDate) }
-    });
-
-    const revenueBetweenDates = await Order.aggregate([
-      { $match: {
-        driver_id: driver._id,
-        created_at: { $gte: new Date(startDate), $lte: new Date(endDate) }
-      }},
-      { $group: { _id: null, total: { $sum: '$total_price' } } }
-    ]);
-
-    socket.emit('driverData', {
-      driver: {
-        ...driver._doc,
-        totalOrders,
-        totalRevenue: totalRevenue[0]?.total || 0
+    const driverStats = await Driver.aggregate([
+      {
+        // Join with User collection
+        $lookup: {
+          from: 'users',
+          localField: 'user_id',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
       },
-      revenueBetweenDates: revenueBetweenDates[0]?.total || 0,
-      ordersBetweenDates: ordersBetweenDates.length
-    });
-  } catch (error) {
-    console.error(error);
-    socket.emit('driverData', { error: 'An error occurred' });
+      {
+        // Unwind the joined user array (since it is a single user, not an array)
+        $unwind: '$userInfo'
+      },
+      {
+        // Join with Order collection
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'driver_id',
+          as: 'orders'
+        }
+      },
+      {
+        // Add fields to calculate number of delivered orders and total revenue
+        $addFields: {
+          deliveredOrders: {
+            $size: {
+              $filter: {
+                input: '$orders',
+                as: 'order',
+                cond: { $eq: ['$$order.status', 'delivered'] }
+              }
+            }
+          },
+          totalRevenue: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: '$orders',
+                    as: 'order',
+                    cond: { $eq: ['$$order.status', 'delivered'] }
+                  }
+                },
+                as: 'deliveredOrder',
+                in: '$$deliveredOrder.total_price'
+              }
+            }
+          }
+        }
+      },
+      {
+        // Project the required fields
+        $project: {
+          _id: 0, // Hide the default MongoDB _id
+          driverId: '$_id',
+          userId: '$userInfo._id',
+          firstName: '$userInfo.firstName',
+          lastName: '$userInfo.lastName',
+          deliveredOrders: 1,
+          totalRevenue: 1
+        }
+      }
+    ]);
+     
+
+    socket.emit('driverStats', driverStats);
+  } catch (err) {
+    console.error('Error fetching driver stats:', err);
+    socket.emit('error', 'Error fetching driver stats');
   }
 });
 
+
+const getProductsRevenueAndCount = async () => {
+  try {
+    // Step 1: Aggregate data from OrderItem to calculate revenue and total times bought for each product
+    const orderItems = await OrderItem.aggregate([
+      {
+        $group: {
+          _id: "$product_id",
+          totalTimesBought: { $sum: "$quantity" }, // Sum of quantities for each product
+          totalRevenue: { $sum: { $multiply: ["$price", "$quantity"] } }, // Sum of revenue (price * quantity)
+        }
+      }
+    ]);
+
+    // Step 2: Fetch all products
+    const allProducts = await Product.find();
+
+    // Step 3: Combine the data, setting revenue and total times bought to 0 for products that have not been bought
+    const productsWithStats = allProducts.map(product => {
+      const stats = orderItems.find(item => item._id.toString() === product._id.toString());
+      return {
+        product,
+        totalTimesBought: stats ? stats.totalTimesBought : 0,
+        totalRevenue: stats ? stats.totalRevenue : 0
+      };
+    });
+
+    return productsWithStats;
+  } catch (error) {
+    console.error('Error fetching products revenue and count:', error);
+    throw error;
+  }
+};
+
+// Socket.io implementation
+
+
+  // Listen for the frontend event to get product data
+  socket.on('getProductsRevenue', async () => {
+    try {
+      const productsWithStats = await getProductsRevenueAndCount();
+      // Emit the product data back to the frontend
+      socket.emit('productsRevenue', productsWithStats);
+    } catch (error) {
+      socket.emit('error', { message: 'Error fetching products data' });
+    }
+  });
 
 
 });

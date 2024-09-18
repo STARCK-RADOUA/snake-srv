@@ -265,3 +265,44 @@ exports.updateDriverAvailability = async (req, res) => {
       res.status(500).json({ message: 'Server error' });
     }
   };
+
+
+
+
+  const Order = require('../models/Order'); // Ensure you have the correct path to your Order model
+
+// Controller function
+exports.getDriverRevenueAndOrders = async (req, res) => {
+  const { driverId, startDate, endDate } = req.body;
+
+  try {
+    // Validate input
+    if (!driverId || !startDate || !endDate) {
+      return res.status(400).json({ message: 'Please provide driverId, startDate, and endDate.' });
+    }
+
+    // Convert startDate and endDate to Date objects if needed
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Query to get delivered orders between the dates for the driver
+    const deliveredOrders = await Order.find({
+      driver_id: driverId,
+      status: 'delivered',
+      created_at: { $gte: start, $lte: end }
+    });
+
+    // Calculate total revenue
+    const totalRevenue = deliveredOrders.reduce((acc, order) => acc + order.total_price, 0);
+
+    // Return the total revenue and count of delivered orders
+    res.status(200).json({
+      totalRevenue,
+      totalDeliveredOrders: deliveredOrders.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching driver revenue and orders:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
