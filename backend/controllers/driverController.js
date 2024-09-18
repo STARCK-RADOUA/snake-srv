@@ -325,7 +325,6 @@ console.log('------------------------------------');
 
 
 
-  const Order = require('../models/Order'); // Ensure you have the correct path to your Order model
 
 // Controller function
 exports.getDriverRevenueAndOrders = async (req, res) => {
