@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const User = require('./User'); // This should remain here and is fine
 
 const driverSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },

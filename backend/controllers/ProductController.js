@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const OrderItem = require('../models/OrderItem');
 
 exports.addProduct = async (req, res) => {
   try {
@@ -112,3 +113,56 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ message: 'Server error. Could not delete product.' });
   }
 };
+
+
+
+exports.getProductRevenueAndCountBetweenDates = async (req, res) => {
+  try {
+    // Step 1: Extract productId, startDate, and endDate from the request body or query parameters
+    const { productId, startDate, endDate } = req.body; // Or req.query, depending on how you're sending data
+
+    // Step 2: Convert the start and end dates to ISO format (if necessary)
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Step 3: Aggregate data from OrderItem to calculate revenue and total times bought for the specific product
+    const orderItems = await OrderItem.aggregate([
+      {
+        $match: {
+          product_id: productId, // Match the specific product by ID
+          createdAt: { $gte: start, $lte: end }, // Match the order date between the startDate and endDate
+          status: "delivered" // Only include orders that have been delivered
+        }
+      },
+      {
+        $group: {
+          _id: "$product_id",
+          totalTimesBought: { $sum: "$quantity" }, // Sum of quantities for the product
+          totalRevenue: { $sum: { $multiply: ["$price", "$quantity"] } }, // Sum of revenue (price * quantity)
+        }
+      }
+    ]);
+
+    // Step 4: Check if there is data for the specified product in the given date range
+    if (orderItems.length > 0) {
+      // Return the total revenue and total times bought for the product
+      res.json({
+        productId,
+        totalTimesBought: orderItems[0].totalTimesBought,
+        totalRevenue: orderItems[0].totalRevenue
+      });
+    } else {
+      // If no orders are found, return 0 values
+      res.json({
+        productId,
+        totalTimesBought: 0,
+        totalRevenue: 0
+      });
+    }
+
+  } catch (error) {
+    console.error('Error fetching product revenue and count:', error);
+    res.status(500).json({ message: 'Error fetching product data' });
+  }
+};
+

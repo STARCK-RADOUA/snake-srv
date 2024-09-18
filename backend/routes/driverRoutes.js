@@ -23,6 +23,8 @@ router.post('/device', driverController.getDriverByDeviceId);
 
 router.post('/updateAvailability', driverController.updateDriverAvailability);
 
+router.post('/revenue-orders', driverController.getDriverRevenueAndOrders);
+
 
 module.exports = router;
 
