@@ -86,7 +86,7 @@ exports.logoutUser = async (req, res) => {
             const title = '🚨 Déconnexion de Client';
             const messageBody = `👤 client vient de se déconnecter.\n`;
                  
-            await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);        }
+            await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);}
 
 
 
@@ -98,7 +98,7 @@ exports.logoutUser = async (req, res) => {
                 const username = user.lastName + ' ' + user.firstName;
                 const targetScreen = ' Notifications';
                 const title = '🚨 Déconnexion de Livreur';
-                const messageBody = `👤 livreur vient de se déconnecter.\n\n📞 Téléphone : ${phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
+                const messageBody = `👤 livreur vient de se déconnecter.\n\n📞 Téléphone : ${user.phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
                       
                 await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title)}
     

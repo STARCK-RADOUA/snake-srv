@@ -5,6 +5,7 @@ const driverController = require('../controllers/driverController');
 // Get all drivers
 router.get('/', driverController.getAllDrivers);
 router.get('/diponible', driverController.getAvailableDrivers);
+router.post('/commandeLivree', driverController.commandeLivree); 
 
 // Get a driver by ID
 router.get('/:id', driverController.getDriverById);

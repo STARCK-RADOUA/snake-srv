@@ -1,5 +1,7 @@
 const Driver = require('../models/Driver');
 const User = require('../models/User');
+const Order = require('../models/Order');
+const Client = require('../models/Client');
 const notificationController  =require('./notificationController');
 // Get all drivers
 exports.getAllDrivers = async (req, res) => {
@@ -235,6 +237,60 @@ exports.updateDriverAvailability = async (req, res) => {
     }
   };
 
+
+  exports.commandeLivree = async (req, res) => {
+    try {
+        const { order_number } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
+        const orderId = order_number;
+console.log('------------------------------------');
+console.log('orderId:', orderId);
+console.log('------------------------------------');
+        // Trouver la commande par son _id et mettre à jour son statut à "delivered"
+        const order = await Order.findOneAndUpdate(
+            { _id: orderId },
+            { status: "delivered",active: false },
+            { new: true } // Retourne la commande mise à jour
+        );
+
+        if (!order) {
+            return res.status(404).json({ message: "error", errors: ["Order not found"] });
+        }
+
+        // Récupérer les informations du driver et du client associés à la commande
+        const driver = await Driver.findById(order.driver_id);
+        const client = await Client.findById(order.client_id);
+
+        // Vérifier que le driver et le client existent
+        if (!driver || !client) {
+            return res.status(404).json({ message: "error", errors: ["Driver or client not found"] });
+        }
+
+        const userDriver = await User.findById(driver.user_id);
+        const userClient = await User.findById(client.user_id);
+
+        // Vérifier que les utilisateurs associés au driver et au client existent
+        if (!userDriver || !userClient) {
+            return res.status(404).json({ message: "error", errors: ["User for driver or client not found"] });
+        }
+
+        // Construction du message de notification
+        const username = `${userDriver.lastName} ${userDriver.firstName}`;
+        const targetScreen = 'Notifications';
+        const title = '🚨 Commande Livrée';
+        const messageBody = `👤 ${username} vient de livrer une commande.\n\n📞 Client : ${userClient.lastName} ${userClient.firstName}\n📱 Order ID : ${orderId}\n\nPrenez les mesures nécessaires. Prix total : ${order.total_price} €`;
+
+        // Envoi de la notification
+        await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
+        const { io } = require('../index');
+        io.emit('orderStatusUpdates', { order });
+       
+        return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
+
+    } catch (error) {
+        console.error("Error during processing order delivery:", error);
+        return res.status(500).json({ message: "error", errors: ["Failed to process order delivery"] });
+    }
+};
 
   exports.getAvailableDrivers = async (req, res) => {
     try {
