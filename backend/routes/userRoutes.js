@@ -38,5 +38,8 @@ router.post('/change-phone', userController.changeNumber);
 
 router.post('/change-password', userController.changePass);
 
+router.post('/change-name', userController.changeName);
+
+
 
 module.exports = router;

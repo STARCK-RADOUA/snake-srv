@@ -415,6 +415,23 @@ const client = await Client.findById(id);
   }
 };
 
+
+exports.changeName = async (req, res) => {
+  const { id, firstName, lastName } = req.body;
+
+  try {
+    const client = await Client.findById(id);
+    const user = await User.findByIdAndUpdate(client.user_id, { firstName, lastName }, { new: true });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json({ message: 'Name updated successfully', user });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update name', error });
+  }
+};
+
 // Get all users that are clients
 exports.getClients = async (req, res) => {
   console.log('Received request to fetch clients');  // Log that the request was received
