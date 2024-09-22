@@ -843,7 +843,7 @@ const checkDriverStatus = async () => {
     const diffInMinutes = (now - new Date(lastPing)) / 1000 / 60;
 
     // Vérifie si le livreur est inactif depuis plus de 1 minute
-    if (diffInMinutes > 1 && driver.status === 'online') {
+    if (diffInMinutes > 3 && driver.status === 'online') {
       console.log(`Marquage du livreur ${deviceId} comme déconnecté en raison d'une inactivité.`);
       
       // Mettre à jour le statut du livreur dans l'objet drivers
@@ -923,7 +923,7 @@ const updateDriverPing = (deviceId) => {
 };
 
 // Fonction pour démarrer la vérification des statuts toutes les 30 secondes
-setInterval(checkDriverStatus, 30 * 1000); // Vérifie toutes les 30 secondes
+setInterval(checkDriverStatus, 60 * 1000); // Vérifie toutes les 30 secondes
 
 // Routes
 app.use('/api/addresses', addressRoutes);
