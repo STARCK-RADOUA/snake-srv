@@ -35,7 +35,7 @@ const referralRoutes = require('./routes/referralRoutes');
 const notificationRoute = require('./routes/notificationRoute.js');
 const sessionRoutes = require('./routes/sessionRoutes');
 const userRoutes = require('./routes/userRoutes');
-const Order = require('./models/Order'); // Your Order model
+const Order = require('./models/Order.js'); // Your Order model
 const Product = require('./models/Product');
 const user = require('./models/User');
 const Client = require('./models/Client');
@@ -56,6 +56,8 @@ const io = new Server(server, {
         origin: 'http://192.168.8.159:4000',
         methods: ["GET", "POST"],
     },
+    pingTimeout: 60000, // Disconnect if no pong in 60 seconds
+    pingInterval: 25000 // Ping every 25 seconds
 });
 
 // Middleware
@@ -104,15 +106,43 @@ cron.schedule('0 * * * *', async () => {
   console.log('Vérification des commandes en attente...');
   await assignPendingOrders();
 });
-const axios = require('axios');
 
 // Function to calculate distance and duration
+let drivers = {}; // Store connected drivers and their statuses
 
 
   
 // WebSocket connection
 io.on('connection', (socket) => {
-    console.log('A user connected');
+  const deviceId = socket.handshake.query.deviceId;
+  socket.join(deviceId);
+
+
+    console.log('A user connected',deviceId);
+    drivers[deviceId] = { socketId: socket.id, status: 'online', lastPing: new Date() };
+
+    // Emit the connection status to the driver (if needed)
+    socket.emit('connectionStatus', { status: 'connected', deviceId });
+
+ // When the driver pings the server
+ socket.on('driverPing', (data) => {
+  console.log(`Received ping from driver: ${data.deviceId}`);
+  updateDriverPing(data.deviceId); // Update the last ping timestamp
+});
+
+// If driver explicitly disconnects
+socket.on('driverDisconnected', (data) => {
+  console.log(`Driver lost internet connection: ${data.deviceId}`);
+  if (drivers[data.deviceId]) {
+    drivers[data.deviceId].status = 'disconnected';
+  }
+});
+socket.on('reconnect', () => {
+  console.log(`Driver reconnected: ${deviceId}`);
+  if (drivers[deviceId]) {
+    drivers[deviceId].status = 'online';
+  }
+});
 
     socket.on('driverConnected', async (deviceId) => {
         try {
@@ -124,7 +154,8 @@ io.on('connection', (socket) => {
           console.error('Error finding order for driver:', error);
         }
       });
-
+   
+      
 
     socket.on('registerClient', async (data) => {
         console.log('Register client data:', data);
@@ -215,24 +246,60 @@ io.on('connection', (socket) => {
     });
     
     // Handle driver disconnects
-    socket.on('disconnect', async () => {
+    socket.on('disconne00ct', async () => {
       try {
         // Optionally, update the driver's `isConnected` status to false upon disconnect
         const user = await User.findOne({ deviceId: socket.handshake.query.deviceId });
-        if (user) {
+        if (user && user.userType === "Driver") {
           const driver = await Driver.findOne({ user_id: user._id });
           if (driver) {
             driver.location.isConnected = false;
+            driver.isDisponible = false;
             await driver.save();
     
             io.emit('locationUpdateForAdmin', {
               driverId: user.deviceId,
               latitude: driver.location.latitude,
               longitude: driver.location.longitude,
-              isConnected: driver.location.isConnected
+              isConnected: driver.location.isConnected,
+              isDisponible: driver.isDisponible
             });
+            
           }
+
+
+
+          
         }
+   console.log('------------------------------------');
+   console.log("discon",user.lastName);
+   console.log('------------------------------------');
+
+   console.log(`Le livreur avec le deviceId ${user.deviceId}    mr ${user.lastName}  ${user.firstName}est déconnecté.`);
+
+   // Appeler la fonction pour réinitialiser les commandes et le statut du livreur
+   const result = await orderController.resetOrdersAndDriverByDeviceId(user.deviceId);
+
+   if (result.success) {
+     console.log(`Le livreur ${result.driver.lastName} a été déconnecté, et ${result.ordersUpdated} commandes ont été réinitialisées.`);
+     await orderController.assignPendingOrders();
+     // Notifier les autres clients si nécessaire
+     io.emit('driverDisconnected', { driverId: result.driver, message: 'Le livreur a été déconnecté et ses commandes ont été réassignées.' });
+   } else {
+     console.error(`Erreur lors de la déconnexion du livreur : ${result.message}`);
+   }
+
+
+
+
+
+
+
+
+
+
+
+
       } catch (error) {
         console.error('Error handling disconnect:', error);
       }
@@ -383,10 +450,8 @@ socket.on('sendNotification', async (data) => {
 });
 
 
-const deviceId = socket.handshake.query.deviceId;
 
 // Join the room based on deviceId
-socket.join(deviceId);
 
 
 
@@ -767,6 +832,98 @@ const getProductsRevenueAndCount = async () => {
 
 });
   
+const checkDriverStatus = async () => {
+  console.log('------------------------------------');
+  console.log("check");
+  console.log('------------------------------------');
+  const now = new Date();
+  Object.keys(drivers).forEach(async (deviceId) => {
+    const driver = drivers[deviceId];
+    const lastPing = driver.lastPing;
+    const diffInMinutes = (now - new Date(lastPing)) / 1000 / 60;
+
+    // Vérifie si le livreur est inactif depuis plus de 1 minute
+    if (diffInMinutes > 1 && driver.status === 'online') {
+      console.log(`Marquage du livreur ${deviceId} comme déconnecté en raison d'une inactivité.`);
+      
+      // Mettre à jour le statut du livreur dans l'objet drivers
+      driver.status = 'disconnected';
+
+      // Mettre à jour le statut du livreur dans la base de données
+      try {
+        // Optionally, update the driver's `isConnected` status to false upon disconnect
+        const user = await User.findOne({ deviceId});
+        if (user && user.userType === "Driver") {
+          const driver = await Driver.findOne({ user_id: user._id });
+          if (driver) {
+            driver.location.isConnected = false;
+            driver.isDisponible = false;
+            await driver.save();
+    
+            io.emit('locationUpdateForAdmin', {
+              driverId: user.deviceId,
+              latitude: driver.location.latitude,
+              longitude: driver.location.longitude,
+              isConnected: driver.location.isConnected,
+              isDisponible: driver.isDisponible
+            });
+            
+          }
+
+ console.log('------------------------------------');
+   console.log("discon",user.lastName);
+   console.log('------------------------------------');
+
+   console.log(`Le livreur avec le deviceId ${user.deviceId}    mr ${user.lastName}  ${user.firstName}est déconnecté.`);
+
+   // Appeler la fonction pour réinitialiser les commandes et le statut du livreur
+   const result = await orderController.resetOrdersAndDriverByDeviceId(user.deviceId);
+
+   if (result.success) {
+     console.log(`Le livreur ${result.driver.lastName} a été déconnecté, et ${result.ordersUpdated} commandes ont été réinitialisées.`);
+     await orderController.assignPendingOrders();
+     // Notifier les autres clients si nécessaire
+     io.emit('driverDisconnected', { driverId: result.driver, message: 'Le livreur a été déconnecté et ses commandes ont été réassignées.' });
+   } else {
+     console.error(`Erreur lors de la déconnexion du livreur : ${result.message}`);
+   }
+
+          
+        }
+  
+
+
+
+
+
+
+
+
+
+
+
+
+      } catch (error) {
+        console.error('Error handling disconnect:', error);
+      }
+      
+    }
+  });
+};
+
+// Exemple de fonction pour mettre à jour le ping du livreur
+const updateDriverPing = (deviceId) => {
+  const now = new Date();
+  if (!drivers[deviceId]) {
+    drivers[deviceId] = { lastPing: now, status: 'online' };
+  } else {
+    drivers[deviceId].lastPing = now;
+    drivers[deviceId].status = 'online';
+  }
+};
+
+// Fonction pour démarrer la vérification des statuts toutes les 30 secondes
+setInterval(checkDriverStatus, 30 * 1000); // Vérifie toutes les 30 secondes
 
 // Routes
 app.use('/api/addresses', addressRoutes);

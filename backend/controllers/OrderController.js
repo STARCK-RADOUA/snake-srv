@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
 const ClarkeWright = require('./ClarkeWright'); // Assurez-vous que le chemin est correct
+const systemDown = require('../models/SystemDown');
 
 const OrderItem = require('../models/OrderItem');
 const Admin = require('../models/Admin');
@@ -882,7 +883,7 @@ const MAX_TRANCHE = 30;
 // Function to get available drivers with the current tranche
 async function getAvailableDrivers(tranche) {
     try {
-        const drivers = await Driver.find({ orders_count: { $lt: tranche } });
+        const drivers = await Driver.find({ orders_count: { $lt: tranche },isDisponible: true });
         return drivers;
     } catch (error) {
         console.error('Error retrieving available drivers:', error.message);
@@ -890,23 +891,121 @@ async function getAvailableDrivers(tranche) {
     }
 }
 
-// Function to dynamically adjust tranches
-async function adjustTranche() {
-    const drivers = await Driver.find({});
-    const trancheCounts = drivers.map(driver => driver.orders_count);
 
-    const maxOrders = Math.max(...trancheCounts);
-    const minOrders = Math.min(...trancheCounts);
 
-    let currentTranche = MIN_TRANCHE;
 
-    if (minOrders >= currentTranche && maxOrders >= currentTranche + TRANCHE_INCREMENT) {
-        currentTranche += TRANCHE_INCREMENT;
-    } else if (maxOrders < currentTranche - TRANCHE_INCREMENT && currentTranche > MIN_TRANCHE) {
-        currentTranche -= TRANCHE_INCREMENT;
+
+
+// Fonction pour remettre les commandes à 'pending' et réinitialiser les infos du livreur basé sur son deviceId
+exports.resetOrdersAndDriverByDeviceId = async (deviceId) => {
+  try {
+    // 1. Trouver le User avec le deviceId fourni
+    const user = await User.findOne({ deviceId, userType: 'Driver' });
+    if (!user) {
+      return { success: false, message: 'Livreur non trouvé avec ce deviceId' };
     }
 
-    return currentTranche;
+    // 2. Trouver le driver correspondant à ce user_id
+    const driver = await Driver.findOne({ user_id: user._id });
+    if (!driver) {
+      return { success: false, message: 'Aucun livreur trouvé pour cet utilisateur' };
+    }
+
+    // 3. Trouver toutes les commandes in_progress pour ce driver
+    const inProgressOrders = await Order.find({ driver_id: driver._id, status: 'in_progress' });
+    if (inProgressOrders.length === 0) {
+      return { success: false, message: 'Aucune commande en cours pour ce livreur' };
+    }
+
+    // 4. Mettre à jour les commandes trouvées : status => 'pending', driver_id => null
+    await Order.updateMany(
+      { driver_id: driver._id, status: 'in_progress' },
+      { $set: { status: 'pending', driver_id: null } }
+    );
+
+    // 5. Mettre à jour le livreur : indisponible, déconnecté, et réinitialiser le nombre de commandes
+    await Driver.findByIdAndUpdate(
+      driver._id,
+      {
+        isDisponible: false,
+        'location.isConnected': false,
+        orders_count: 0
+      },
+      { new: true }
+    );
+
+    return {
+      success: true,
+      message: 'Les commandes en cours ont été réinitialisées et le livreur est déconnecté',
+      driver: driver._id,
+      ordersUpdated: inProgressOrders.length
+    };
+  } catch (error) {
+    console.error('Erreur lors de la réinitialisation des commandes et du livreur:', error);
+    return { success: false, message: 'Erreur lors de la mise à jour' };
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Function to dynamically adjust tranches
+
+async function adjustTranche() {
+  // Récupérer la configuration de l'admin
+  const admin = await Admin.findOne({ isSystem: true });
+
+  if (!admin) {
+      console.error('Aucune configuration admin trouvée.');
+      return;
+  }
+
+  const { actuTranche, MAX_TRANCHE } = admin;
+
+  // Récupérer tous les livreurs disponibles
+  const drivers = await Driver.find({ isDisponible: true });
+  const trancheCounts = drivers.map(driver => driver.orders_count);
+
+  // Gérer les cas où il n'y a pas de livreurs
+  if (trancheCounts.length === 0) {
+      console.log('Aucun livreur disponible pour ajuster la tranche.');
+      return;
+  }
+
+  const maxOrders = Math.max(...trancheCounts);
+  const minOrders = Math.min(...trancheCounts);
+
+  let currentTranche = parseInt(actuTranche, 10);
+  const maxTranche = parseInt(MAX_TRANCHE, 10);
+  const trancheIncrement = 10; // Incrémentation fixe
+
+  // Ajuster la tranche en fonction des conditions
+  if (minOrders >= currentTranche && maxOrders >= currentTranche + trancheIncrement && currentTranche < maxTranche) {
+      currentTranche += trancheIncrement;
+  } else if (maxOrders < currentTranche - trancheIncrement && currentTranche > trancheIncrement) {
+      currentTranche -= trancheIncrement;
+  }
+
+  // Mettre à jour la tranche actuelle dans le modèle Admin
+  admin.actuTranche = currentTranche;
+  await admin.save();
+
+  console.log(`La tranche actuelle a été ajustée à : ${currentTranche}`);
+
+  return currentTranche;
 }
 exports.assignPendingOrders = async () => {
 
@@ -939,6 +1038,38 @@ exports.assignPendingOrders = async () => {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Function to assign an order to a driver
 exports.assignOrderToDriver = async (orderId) => {
     const order = await Order.findById(orderId);
@@ -950,8 +1081,6 @@ exports.assignOrderToDriver = async (orderId) => {
     let drivers = await getAvailableDrivers(tranche);
 
     if (drivers.length === 0) {
-        // Increase margin if no drivers are available
-        await Driver.updateMany({ orders_count: { $lt: MAX_TRANCHE } }, { $inc: { orders_count: TRANCHE_INCREMENT } });
         drivers = await getAvailableDrivers(tranche);
 
         if (drivers.length === 0) {
@@ -1006,8 +1135,11 @@ exports.assignOrderToDriver = async (orderId) => {
         bestDriver.orders_count += 1;
         await bestDriver.save();
         await order.save();
+        const user = await User.findById(bestDriver.user_id);
+
         const { io } = require('../index');
         io.emit('orderStatusUpdates', { order });
+        await exports.fetchInProgressOrdersForDriver(io, user.deviceId);
 
      
 

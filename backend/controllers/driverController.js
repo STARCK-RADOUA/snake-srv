@@ -259,7 +259,11 @@ console.log('------------------------------------');
         // Récupérer les informations du driver et du client associés à la commande
         const driver = await Driver.findById(order.driver_id);
         const client = await Client.findById(order.client_id);
-
+        const driverUp = await Driver.findOneAndUpdate(
+            { _id: order.driver_id },
+            { orders_count: driver.orders_count-1 },
+            { new: true } // Retourne la commande mise à jour
+        );
         // Vérifier que le driver et le client existent
         if (!driver || !client) {
             return res.status(404).json({ message: "error", errors: ["Driver or client not found"] });
