@@ -189,6 +189,7 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
             clientId,                // Include clientId
             driverId,                // Include driverId
             lastMessage,
+            chatCreatedAt : chat.createdAt ,
           };
         }));
   
