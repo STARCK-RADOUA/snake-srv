@@ -43,7 +43,7 @@ async function calculateRoute(startLat, startLng, endLat, endLng) {
     const osrmUrl = `http://localhost:5000/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=false`;
 
     try {
-        const response = await axios.get(osrmUrl);
+        const response = await axios.get(osrmUrl,{ timeout: 10000 });
         const data = response.data;
         
         if (data.code === "Ok" && data.routes.length > 0) {
@@ -79,8 +79,13 @@ async function getRouteDetails(orderId) {
 
         const startLat = driver.location.latitude;
         const startLng = driver.location.longitude;
-        const endLat = address.latitude;
-        const endLng = address.longitude;
+
+          // Séparer la latitude et la longitude à partir de la chaîne "latitude, longitude"
+          const [endLat, endLng] = address.localisation.split(',').map(coord => parseFloat(coord.trim()));
+        
+          // Vérification des valeurs
+          if (!isNaN(endLat) && !isNaN(endLng)) {
+            console.log(`Latitude: ${endLat}, Longitude: ${endLng}`);}
 
         const result = await calculateRoute(startLat, startLng, endLat, endLng);
 

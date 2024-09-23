@@ -130,6 +130,58 @@ io.on('connection', (socket) => {
   updateDriverPing(data.deviceId); // Update the last ping timestamp
 });
 
+
+
+socket.on('joinRouteTracking', async (orderId) => {
+  try {
+    console.log("request duration for order id", orderId);
+
+    // Envoie les détails initiaux de l'itinéraire
+    const routeDetails = await getRouteDetails(orderId);
+    console.log(routeDetails);
+    socket.emit('routeUpdate', routeDetails);
+
+    let notificationSent = false; // Variable pour suivre l'envoi de la notification
+
+    const interval = setInterval(async () => {
+      const updatedRouteDetails = await getRouteDetails(orderId);
+      socket.emit('routeUpdate', updatedRouteDetails);
+console.log("interval routes")
+      const driver = await Driver.findById(order.driver_id);
+      const client = await Client.findById(order.client_id);
+      const userClient = await User.findById(client.user_id);
+      const userDriver = await User.findById(driver.user_id);
+
+      const duration = updatedRouteDetails.duration; // Durée restante
+
+      // Vérifiez si la durée est inférieure à 2 minutes (120 secondes)
+      if ((Math.floor(duration / 60)) < 2 && !notificationSent) {
+        const name = "Mise à jour de l'itinéraire"; // Personnalisez le nom
+        const message = `Votre commande arrive bientôt ! Temps restant : ${Math.floor(duration / 60)}m et ${(duration % 60)}s.`; // Message personnalisé
+        const title = "Attention !"; // Titre de la notification
+        const userType = "client"; // Type d'utilisateur (client)
+
+        await notificationController.sendNotificationForce(name, userClient.pushToken, message, title, userType);
+        notificationSent = true; // Marque que la notification a été envoyée
+      }
+
+    }, 30000);
+
+    // Nettoyage lors de la déconnexion
+    socket.on('disconnectRoute', () => {
+      clearInterval(interval);
+      console.log('Client disconnected');
+    });
+  } catch (error) {
+    socket.emit('error', 'Error fetching route details');
+  }
+});
+
+
+
+
+
+
 // If driver explicitly disconnects
 socket.on('driverDisconnected', (data) => {
   console.log(`Driver lost internet connection: ${data.deviceId}`);
@@ -923,7 +975,7 @@ const updateDriverPing = (deviceId) => {
 };
 
 // Fonction pour démarrer la vérification des statuts toutes les 30 secondes
-setInterval(checkDriverStatus, 60 * 1000); // Vérifie toutes les 30 secondes
+setInterval(checkDriverStatus, 40 * 1000); // Vérifie toutes les 30 secondes
 
 // Routes
 app.use('/api/addresses', addressRoutes);
