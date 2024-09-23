@@ -147,6 +147,7 @@ socket.on('joinRouteTracking', async (orderId) => {
       const updatedRouteDetails = await getRouteDetails(orderId);
       socket.emit('routeUpdate', updatedRouteDetails);
 console.log("interval routes")
+      const order = await Order.findById(orderId);
       const driver = await Driver.findById(order.driver_id);
       const client = await Client.findById(order.client_id);
       const userClient = await User.findById(client.user_id);
@@ -157,9 +158,9 @@ console.log("interval routes")
       // Vérifiez si la durée est inférieure à 2 minutes (120 secondes)
       if ((Math.floor(duration / 60)) < 2 && !notificationSent) {
         const name = "Mise à jour de l'itinéraire"; // Personnalisez le nom
-        const message = `Votre commande arrive bientôt ! Temps restant : ${Math.floor(duration / 60)}m et ${(duration % 60)}s.`; // Message personnalisé
+        const message = `Votre commande arrive bientôt ! Temps restant : ${Math.floor(duration / 60)}min.`; // Message personnalisé
         const title = "Attention !"; // Titre de la notification
-        const userType = "client"; // Type d'utilisateur (client)
+        const userType = "Client"; // Type d'utilisateur (client)
 
         await notificationController.sendNotificationForce(name, userClient.pushToken, message, title, userType);
         notificationSent = true; // Marque que la notification a été envoyée

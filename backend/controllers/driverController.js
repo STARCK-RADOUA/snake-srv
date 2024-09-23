@@ -285,6 +285,19 @@ console.log('------------------------------------');
 
         // Envoi de la notification
         await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
+        const name = "Mise à jour de votre commande"; // Personnalisez le nom
+        const message = `🎉 Félicitations ! Votre commande a été livrée avec succès.\n\n Nous espérons que vous apprécierez votre achat. \n\nN'oubliez pas de nous donner votre avis !`;
+        const title2 = "🚚 Commande Livrée 🎉!"; // Titre de la notification
+        const userType = "Client"; // Type d'utilisateur (client)
+        
+        await notificationController.sendNotificationForce(name, userClient.pushToken, message, title2, userType);
+        const name2 = "Félicitations pour la livraison !"; // Nom pour la notification
+const message2 = `💪 Excellent travail ! Vous venez de livrer avec succès une autre commande. Continuez comme ça, vous faites une différence avec chaque livraison. 🚀 On compte sur vous pour les prochaines étapes !`;
+const title22 = "🚚 Félicitations Livraison Réussie 🎉!"; // Titre de la notification
+const userType2 = "Driver"; // Type d'utilisateur (livreur)
+
+await notificationController.sendNotificationForce(name2, userDriver.pushToken, message2, title22, userType2);
+
         const { io } = require('../index');
         io.emit('orderStatusUpdates', { order });
        
