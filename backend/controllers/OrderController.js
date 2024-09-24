@@ -675,9 +675,12 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
     }) ;
     const response = await Promise.all(orders.map(async (order) => {
       const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
-
+      
+      console.log(order)
       return {
         order_number: order._id,
+        client_id : order.client_id._id ,
+        driver_id : order.driver_id._id ,
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
