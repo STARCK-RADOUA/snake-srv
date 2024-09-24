@@ -7,6 +7,7 @@ router.get('/', driverController.getAllDrivers);
 router.get('/diponible', driverController.getAvailableDrivers);
 router.post('/commandeLivree', driverController.commandeLivree); 
 router.post('/commandeCanceled', driverController.commandeCanceled); 
+router.post('/logout', driverController.logoutUser); 
 
 // Get a driver by ID
 router.get('/:id', driverController.getDriverById);

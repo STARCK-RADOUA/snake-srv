@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Order = require('../models/Order');
 const Client = require('../models/Client');
 const notificationController  =require('./notificationController');
+const orderController  =require('./orderController');
 // Get all drivers
 exports.getAllDrivers = async (req, res) => {
     try {
@@ -308,6 +309,109 @@ await notificationController.sendNotificationForce(name2, userDriver.pushToken, 
         return res.status(500).json({ message: "error", errors: ["Failed to process order delivery"] });
     }
 };
+
+exports.logoutUser = async (req, res) => {
+    try {
+        const { deviceId } = req.body;
+        const { io } = require('../index');
+
+        // Trouver l'utilisateur par son deviceId et mettre à jour le champ isLogin à false
+        const user1 = await User.findOneAndUpdate(
+            { deviceId: deviceId },
+            { isLogin: false, activated: false }, // Combinez vos mises à jour ici
+            { new: true } // Option pour retourner l'utilisateur mis à jour
+        );
+        
+      
+
+        if (!user1) {
+            return res.status(401).json({ message: "error", errors: ["User not found"] });
+        }
+
+  
+   
+
+      
+                await User.findOneAndUpdate(
+                    { deviceId: deviceId },
+                    { activated: false },
+                    { new: true });
+
+                
+                        // Optionally, update the driver's `isConnected` status to false upon disconnect
+                        const user = await User.findOne({ deviceId});
+                        if (user && user.userType === "Driver") {
+                          const driver = await Driver.findOne({ user_id: user._id });
+                          if (driver) {
+                            driver.location.isConnected = false;
+                            driver.isDisponible = false;
+                            await driver.save();
+
+                            io.emit('locationUpdateForAdmin', {
+                              driverId: user.deviceId,
+                              latitude: driver.location.latitude,
+                              longitude: driver.location.longitude,
+                              isConnected: driver.location.isConnected,
+                              isDisponible: driver.isDisponible
+                            });
+                            
+                          }
+                
+                 console.log('------------------------------------');
+                   console.log("discon",user.lastName);
+                   console.log('------------------------------------');
+                
+                   console.log(`Le livreur avec le deviceId ${user.deviceId}    mr ${user.lastName}  ${user.firstName}est déconnecté.`);
+                
+                   // Appeler la fonction pour réinitialiser les commandes et le statut du livreur
+                   const result = await orderController.resetOrdersAndDriverByDeviceId(user.deviceId);
+                
+                   if (result.success) {
+                     console.log(`Le livreur ${result.driver.lastName} a été déconnecté, et ${result.ordersUpdated} commandes ont été réinitialisées.`);
+                     await orderController.assignPendingOrders();
+                     // Notifier les autres clients si nécessaire
+                     io.emit('driverDisconnected', { driverId: result.driver, message: 'Le livreur a été déconnecté et ses commandes ont été réassignées.' });
+                   } else {
+                     console.error(`Erreur lors de la déconnexion du livreur : ${result.message}`);
+                   }
+                
+                          
+                        }
+                  
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                const username = user.lastName + ' ' + user.firstName;
+                const targetScreen = ' Notifications';
+                const title = '!!🚨!! Attention Déconnexion de Livreur';
+                const messageBody = `👤 livreur vient de se déconnecter.\n\n📞 Téléphone : ${user.phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
+                      
+                await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title)
+    
+
+
+
+
+
+
+
+
+        return res.json({ message: "success", user: { userId: user._id, isLogin: false } });
+    } catch (error) {
+        console.error("Error during logout:", error);
+        return res.status(500).json({ message: "error", errors: ["Failed to log out user"] });
+    }
+};
+
 
 
   exports.commandeCanceled = async (req, res) => {

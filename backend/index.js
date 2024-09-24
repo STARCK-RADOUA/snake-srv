@@ -110,6 +110,7 @@ cron.schedule('0 * * * *', async () => {
 // Function to calculate distance and duration
 let drivers = {}; // Store connected drivers and their statuses
 
+let notificationSent = false; // Variable pour suivre l'envoi de la notification
 
   
 // WebSocket connection
@@ -141,17 +142,20 @@ socket.on('joinRouteTracking', async (orderId) => {
     console.log(routeDetails);
     socket.emit('routeUpdate', routeDetails);
 
-    let notificationSent = false; // Variable pour suivre l'envoi de la notification
+   
 
-    const interval = setInterval(async () => {
+    const interval1 = setInterval(async () => {
       const updatedRouteDetails = await getRouteDetails(orderId);
-      socket.emit('routeUpdate', updatedRouteDetails);
-console.log("interval routes")
-      const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId);
       const driver = await Driver.findById(order.driver_id);
       const client = await Client.findById(order.client_id);
       const userClient = await User.findById(client.user_id);
       const userDriver = await User.findById(driver.user_id);
+
+
+      io.to(userClient.deviceId).emit('routeUpdate', updatedRouteDetails);
+console.log("interval routes")
+  
 
       const duration = updatedRouteDetails.duration; // Durée restante
 
@@ -170,7 +174,8 @@ console.log("interval routes")
 
     // Nettoyage lors de la déconnexion
     socket.on('disconnectRoute', () => {
-      clearInterval(interval);
+      clearInterval(interval1);
+      notificationSent = false; 
       console.log('Client disconnected');
     });
   } catch (error) {
