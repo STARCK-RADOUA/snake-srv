@@ -140,13 +140,24 @@ socket.on('joinRouteTracking', async (orderId) => {
     // Envoie les détails initiaux de l'itinéraire
     const routeDetails = await getRouteDetails(orderId);
     console.log(routeDetails);
-    socket.emit('routeUpdate', routeDetails);
+    const order1 = await Order.findById(orderId);
 
-   
+    const client1 = await Client.findById(order1.client_id);
+
+    const userClient1 = await User.findById(client1.user_id);
+
+         io.to(userClient1.deviceId).emit('routeUpdate', routeDetails);
+
 
     const interval1 = setInterval(async () => {
       const updatedRouteDetails = await getRouteDetails(orderId);
     const order = await Order.findById(orderId);
+
+    if (order.status !== 'in_progress') {
+      clearInterval(interval1);  // Arrêtez l'intervalle si la commande n'est plus 'in_progress'
+      console.log('Order is no longer in progress, stopping route updates');
+      return;
+    }
       const driver = await Driver.findById(order.driver_id);
       const client = await Client.findById(order.client_id);
       const userClient = await User.findById(client.user_id);
@@ -670,6 +681,8 @@ socket.on('sendMessage', async ({ chatId, sender, content }) => {
   socket.on('watchOrderStatuss', async ({ order_id }) => {
     socket.join(order_id);
    await orderController.OnOrderStatusUpdated({order_id , io})
+   await orderController.assignPendingOrders();
+
   });
 
 

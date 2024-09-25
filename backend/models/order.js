@@ -10,6 +10,8 @@ const orderSchema = new mongoose.Schema({
   active: { type: Boolean, default: true },
   total_price: { type: Number, required: true },
   exchange: { type: Number, required: false },
+  report_reason: { type: String, required: false }, // Motif de signalement dynamique sélectionné
+  report_comment: { type: String, required: false },
   payment_method: { type: String, enum: ['cash', 'TPE'], required: false },
   comment: String,
   service_Test: { type: Boolean, default: false },
