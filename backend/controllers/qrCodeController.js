@@ -115,3 +115,68 @@ console.log("//////////////////////laaalaaaaalaaa///////////////////////////////
     res.status(500).json({ error: 'Erreur lors de la vérification du QR code' });
   }
 };
+
+
+// Controller to get QR codes where isUsed = true with user info
+exports.getUsedQrCodesWithUserInfo = async (req, res) => {
+  try {
+    // Find all QR codes where isUsed is true
+    const usedQrCodes = await QrCode.find({ isUsed: true });
+
+    // Prepare an array to store the results
+    const qrCodesWithUserInfo = [];
+
+    for (const qrCode of usedQrCodes) {
+      let userInfo = null;
+
+      // Check if the clientId exists in the Client collection
+      const client = await Client.findOne({ _id: qrCode.clientId }).populate('user_id');
+      
+      if (client) {
+        // If client is found, get user info from the populated user_id field
+        userInfo = {
+          userType: 'Client',
+          id: client._id,
+          firstName: client.user_id.firstName,
+          lastName: client.user_id.lastName,
+          phone: client.user_id.phone,
+        };
+      } else {
+        // If not found in Client, check in Driver collection
+        const driver = await Driver.findOne({ _id: qrCode.clientId }).populate('user_id');
+        if (driver) {
+          userInfo = {
+            userType: 'Driver',
+            id: driver._id,
+            firstName: driver.user_id.firstName,
+            lastName: driver.user_id.lastName,
+            phone: driver.user_id.phone,
+          };
+        }
+      }
+
+      // If userInfo is found, add it to the response array
+      if (userInfo) {
+        qrCodesWithUserInfo.push({
+          id : qrCode._id ,
+          qr: qrCode.uniqueId,
+          clientId: qrCode.clientId,
+          newclientDeviceId: qrCode.newclientDeviceId,
+          type: qrCode.type,
+          deviceId: qrCode.deviceId ,
+          timestamp: qrCode.timestamp,
+          expirationTime: qrCode.expirationTime,
+          userInfo: userInfo,
+        });
+      }
+    }
+
+    // Return the results
+    res.status(200).json(qrCodesWithUserInfo);
+
+  } catch (error) {
+    console.error('Error fetching QR codes:', error.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
