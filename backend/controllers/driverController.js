@@ -416,21 +416,24 @@ exports.logoutUser = async (req, res) => {
 
   exports.commandeCanceled = async (req, res) => {
     try {
-        const { order_number } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
+        const { order_number,reportReason, comment  } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
         const orderId = order_number;
 console.log('------------------------------------');
 console.log('orderId to canceled...:', orderId);
+console.log('orderId to canceled...:', reportReason);
+console.log('orderId to canceled...:', comment);
 console.log('------------------------------------');
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
             { _id: orderId },
-            { status: "cancelled",active: false },
+            { status: "cancelled",active: false ,report_reason: reportReason,report_comment: comment },
             { new: true } // Retourne la commande mise à jour
         );
 
         if (!order) {
             return res.status(404).json({ message: "error", errors: ["Order not found"] });
         }
+       
 
         // Récupérer les informations du driver et du client associés à la commande
         const driver = await Driver.findById(order.driver_id);

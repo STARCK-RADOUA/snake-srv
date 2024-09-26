@@ -706,12 +706,14 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
     }));
 ;
 
-    // Emit the orders to the client
+    // Emit the orders to the Driver
     io.to(deviceId).emit('orderInprogressUpdatedForDriver', { total: orders.length, orders: response, active: driver.isDisponible });
   } catch (err) {
     console.error('Error fetching in-progress orders:', err.message);
   }
 };
+
+
 
 
 exports.fetchCancelledgOrders = async (socket) => {
@@ -879,9 +881,7 @@ exports.exportDriverOrdersToExcel = async (startDate, endDate, drivers, socket) 
   }
 };
 
-const TRANCHE_INCREMENT = 10;
-const MIN_TRANCHE = 10;
-const MAX_TRANCHE = 30;
+
 
 // Function to get available drivers with the current tranche
 async function getAvailableDrivers(tranche) {
@@ -994,9 +994,12 @@ async function adjustTranche() {
   let currentTranche = parseInt(actuTranche, 10);
   const maxTranche = parseInt(MAX_TRANCHE, 10);
   const trancheIncrement = 10; // Incrémentation fixe
-
+console.log("minOrders",minOrders)
+console.log("currentTranche",currentTranche)
+console.log("trancheIncrement",trancheIncrement)
+console.log("maxOrders",maxOrders)
   // Ajuster la tranche en fonction des conditions
-  if (minOrders >= currentTranche && maxOrders >= currentTranche + trancheIncrement && currentTranche < maxTranche) {
+  if (minOrders >= currentTranche && maxTranche >= currentTranche + trancheIncrement && currentTranche < maxTranche) {
       currentTranche += trancheIncrement;
   } else if (maxOrders < currentTranche - trancheIncrement && currentTranche > trancheIncrement) {
       currentTranche -= trancheIncrement;
@@ -1019,10 +1022,10 @@ exports.assignPendingOrders = async () => {
 
     if (pendingOrders.length === 0) {
       console.log('No pending orders to assign.');
-      return;
+    return;
     }
 
-    for (const order of pendingOrders) {
+    for (const order of pendingOrders ) {
       try {
         // Assign each pending order to a driver
         const assignedDriver = await exports.assignOrderToDriver(order._id);
@@ -1076,8 +1079,8 @@ exports.assignPendingOrders = async () => {
 // Function to assign an order to a driver
 exports.assignOrderToDriver = async (orderId) => {
     const order = await Order.findById(orderId);
-    if (!order) {
-        throw new Error('Order not found');
+    if (!order || order.status !== "pending") {
+       throw new Error('Order not found');
     }
 
     let tranche = await adjustTranche();
@@ -1133,6 +1136,11 @@ exports.assignOrderToDriver = async (orderId) => {
   
 
     if (bestDriver) {
+      const inProgressOrders = await Order.find({ _id:order._id ,driver_id: bestDriver._id, status: 'in_progress' });
+      if (inProgressOrders.length !== 0) {
+      
+        return ;
+      }
         order.driver_id = bestDriver._id;
         order.status = "in_progress";
         bestDriver.orders_count += 1;
