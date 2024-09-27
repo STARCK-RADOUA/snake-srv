@@ -26,6 +26,9 @@
     "mongoose-unique-validator": "^3.1.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.14",
+    "pdf-creator-node": "^2.3.5",
+    "pdfkit": "^0.15.0",
+    "puppeteer": "^23.4.1",
     "socket.io": "^4.7.5",
     "util": "^0.12.5",
     "ws": "^8.18.0"

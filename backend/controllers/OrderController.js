@@ -713,7 +713,220 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
   }
 };
 
+exports.fetchOrdersAndGeneratePDF = async (req, res) => {
+  const { driverId } = req.params; // Get driverId from URL parameters
+  const { startDate, endDate } = req.query; // Get the start and end dates from query parameters
 
+  try {
+    // Fetch orders for the specified driver
+    const orders = await Order.find({
+      driver_id: driverId,
+      status: 'delivered',
+      created_at: { $gte: new Date(startDate), $lte: new Date(endDate) },
+    })
+      .populate({
+        path: 'client_id',
+        populate: {
+          path: 'user_id',
+          model: 'User',
+          select: 'firstName lastName',
+        },
+      })
+      .populate({
+        path: 'driver_id',
+        populate: {
+          path: 'user_id',
+          model: 'User',
+          select: 'firstName lastName',
+        },
+      })
+      .populate({
+        path: 'address_id',
+        select: 'address_line localisation',
+      });
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found for the specified driver and date range.' });
+    }
+
+    const response = await Promise.all(
+      orders.map(async (order) => {
+        const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
+
+        return {
+          order_number: order._id,
+          client_id: order.client_id._id,
+          driver_id: order.driver_id._id,
+          client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+          driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+          address_line: order.address_id?.address_line || 'N/A',
+          location: order.address_id?.localisation || 'N/A',
+          products: orderItems.map((item) => ({
+            product: item.product_id,
+            quantity: item.quantity,
+            service_type: item.service_type,
+            isFree: item.isFree,
+            price: item.price,
+            selected_options: item.selected_options,
+          })),
+          total_price: order.total_price,
+          delivery_time: order.updated_at,
+          payment_method: order.payment_method,
+          comment: order.comment,
+          exchange: order.exchange,
+          stars: order.stars,
+          referral_amount: order.exchange,
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+        };
+      })
+    );
+
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((acc, order) => acc + order.total_price, 0);
+
+    // Generate PDF
+    const pdfBuffer = await generatePDF(response, totalOrders, totalRevenue, startDate, endDate);
+
+    // Set the appropriate headers
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="orders_report.pdf"',
+      'Content-Length': pdfBuffer.length,
+    });
+
+    // Send the PDF buffer
+    res.end(pdfBuffer); // Use res.end() to send the buffer
+  } catch (err) {
+    console.error('Error fetching orders and generating PDF:', err.message);
+    res.status(500).json({ error: 'An error occurred while generating the PDF' });
+  }
+};
+
+const puppeteer = require('puppeteer');
+
+const generatePDF = async (orders, totalOrders, totalRevenue, startDate, endDate) => {
+  const browser = await puppeteer.launch();
+  const page = await browser.newPage();
+
+  // Define HTML content for the PDF
+  const htmlContent = `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <title>Rapport des Commandes du Livreur</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+        h1 {
+          text-align: center;
+          color: #333;
+        }
+        h2 {
+          color: #555;
+          border-bottom: 2px solid #ccc;
+          padding-bottom: 10px;
+        }
+        .summary {
+          text-align: center;
+          margin-bottom: 20px;
+          padding: 10px;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+          background-color: #f9f9f9;
+        }
+        .summary h2 {
+          margin: 5px 0;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+          page-break-inside: avoid; /* Prevent breaking inside table */
+        }
+        table, th, td {
+          border: 1px solid #ddd;
+        }
+        th, td {
+          padding: 10px;
+          text-align: left;
+        }
+        th {
+          background-color: #f2f2f2;
+          color: #333;
+        }
+        tr:nth-child(even) {
+          background-color: #f9f9f9; /* Light gray for even rows */
+        }
+        tr:nth-child(odd) {
+          background-color: #ffffff; /* White for odd rows */
+        }
+        .order-divider {
+          border-top: 3px solid #ccc;
+          margin: 20px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>Rapport des Commandes du Livreur</h1>
+      <div class="summary">
+        <h2>Chiffre d'Affaires et Total Commandes de ${startDate} à ${endDate}</h2>
+        <h2>Livreur : ${orders[0].driver_name}</h2>
+        <h2>Total Commandes : ${totalOrders}</h2>
+        <h2>Chiffre d'Affaires : ${totalRevenue} €</h2>
+      </div>
+      ${orders
+        .map((order) => `
+          <div class="order-divider"></div>
+          <h2>Commande #${order.order_number}</h2>
+          <p><strong>Client :</strong> ${order.client_name}</p>
+          <p><strong>Livreur :</strong> ${order.driver_name || 'N/A'}</p>
+          <p><strong>Adresse :</strong> ${order.address_line}</p>
+          <p><strong>Localisation :</strong> ${order.location}</p>
+          <p><strong>Prix Total :</strong> ${order.total_price} €</p>
+          <p><strong>Méthode de Paiement :</strong> ${order.payment_method}</p>
+          <p><strong>Heure de Livraison :</strong> ${new Date(order.delivery_time).toLocaleString()}</p>
+          <table>
+            <tr>
+              <th>Produit</th>
+              <th>Quantité</th>
+              <th>Prix</th>
+              <th>Type de Service</th>
+            </tr>
+            ${order.products
+              .map(
+                (product) => `
+                <tr>
+                  <td>${product.product.name || 'N/A'}</td>
+                  <td>${product.quantity}</td>
+                  <td>${product.price} €</td>
+                  <td>${product.product.service_type || 'N/A'}</td>
+                </tr>`
+              )
+              .join('')}
+          </table>
+          <div class="order-divider"></div>
+        `)
+        .join('')}
+    </body>
+  </html>
+`;
+
+  // Set the HTML content for Puppeteer
+  await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
+  // Generate the PDF
+  const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '20mm', bottom: '20mm', left: '20mm' } });
+
+  await browser.close();
+
+  return pdfBuffer;
+};
 
 
 exports.fetchCancelledgOrders = async (socket) => {

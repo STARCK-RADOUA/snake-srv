@@ -7,6 +7,7 @@ router.put('/update/:orderId', orderController.updateOrderPayment);
 
 router.post('/update/feedback', orderController.updateOrderFeedback);
 router.get('/all', orderController.getOrderHistory);
+router.get('/:driverId/orders/pdf', orderController.fetchOrdersAndGeneratePDF);
 
 router.patch('/:orderId/cancel', orderController.cancelOrder);
 router.post('/update-driver-id', orderController.updateDriverId);
