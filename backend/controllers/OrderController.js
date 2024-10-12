@@ -1438,3 +1438,94 @@ exports.fetchTestOrders = async (socket) => {
     console.error('Error retrieving order history:', err.message);
   }
 };
+
+
+exports.getAllDriverStatsBytime  = async (req, res) => {
+  console.log("wa3")
+  const { startDate, endDate } = req.query;
+
+  try {
+    const driverStats = await Driver.aggregate([
+      {
+        // Join with User collection
+        $lookup: {
+          from: 'users',
+          localField: 'user_id',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      {
+        // Unwind the joined user array (since it is a single user, not an array)
+        $unwind: '$userInfo'
+      },
+      {
+        // Join with Order collection
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'driver_id',
+          as: 'orders'
+        }
+      },
+      {
+        // Add fields to calculate delivered orders and total revenue between startDate and endDate
+        $addFields: {
+          deliveredOrders: {
+            $size: {
+              $filter: {
+                input: '$orders',
+                as: 'order',
+                cond: {
+                  $and: [
+                    { $eq: ['$$order.status', 'delivered'] },
+                    { $gte: ['$$order.created_at', new Date(startDate)] },
+                    { $lte: ['$$order.created_at', new Date(endDate)] }
+                  ]
+                }
+              }
+            }
+          },
+          totalRevenue: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: '$orders',
+                    as: 'order',
+                    cond: {
+                      $and: [
+                        { $eq: ['$$order.status', 'delivered'] },
+                        { $gte: ['$$order.created_at', new Date(startDate)] },
+                        { $lte: ['$$order.created_at', new Date(endDate)] }
+                      ]
+                    }
+                  }
+                },
+                as: 'deliveredOrder',
+                in: '$$deliveredOrder.total_price'
+              }
+            }
+          }
+        }
+      },
+      {
+        // Project the required fields
+        $project: {
+          _id: 0, // Hide the default MongoDB _id
+          driverId: '$_id',
+          userId: '$userInfo._id',
+          firstName: '$userInfo.firstName',
+          lastName: '$userInfo.lastName',
+          deliveredOrders: 1,
+          totalRevenue: 1
+        }
+      }
+    ]);
+
+    return res.status(200).json(driverStats);
+  } catch (err) {
+    console.error('Error fetching driver stats:', err);
+    return res.status(500).json({ error: 'Error fetching driver stats' });
+  }
+};

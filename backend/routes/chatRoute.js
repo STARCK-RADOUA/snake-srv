@@ -7,5 +7,6 @@ const chatController = require('../controllers/chatController');
 router.post('/initiate', chatController.initiateChat);
 router.post('/send-message', chatController.sendMessage);
 router.get('/:chatId', chatController.getChatHistory);
+router.post('/mark-seenFD', chatController.markSeenFD);
 
 module.exports = router;

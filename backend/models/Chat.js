@@ -4,6 +4,7 @@ const messageSchema = new mongoose.Schema({
   sender: { type: String, required: true }, // 'driver' or 'client'
   content: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
+  seen: { type: Boolean, default: false }  // New field to track if the message has been seen
 });
 
 const chatSchema = new mongoose.Schema({

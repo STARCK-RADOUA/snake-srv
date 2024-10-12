@@ -203,6 +203,84 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
       console.error('Error finding or watching chats:', error);
     }
   };
+
+
+  exports.watchOrderMessagesForDriver = async ({ socket  , deviceId}) => {
+    console.log('Driver hk:', deviceId);
+
+    // Fetch the user based on device ID
+    const user = await User.findOne({ deviceId, userType: 'Driver'});
+    console.log('User:', user);
+    if (!user) {
+      console.error('User not found for device ID:', deviceId);
+      return;
+    }
+    const driver = await Driver.findOne({user_id: user._id});
+    console.log(driver , "didi")
+
+    if (!driver) {
+      console.error('Driver not found for user ID:', user._id);
+      return;
+    }
+
+    try {
+      // Fetch all chat supports and populate related fields
+      const chats = await Chat.find({driver_id: driver._id}).populate('client_id').populate('driver_id').populate('order_id');
+      console.log(chats , "chichi")
+      if (chats) {
+        const lastMessages = await Promise.all(chats.map(async (chat) => {
+          const lastMessage = chat.messages[chat.messages.length - 1]; // Get the last message
+          let clientFullName = '';
+          let driverFullName = '';
+          let clientId = '';
+          let driverId = '';
+  
+          // Fetch client details
+          const clientObj = await Client.findById(chat.client_id);
+          if (clientObj) {
+            const clientUser = await User.findById(clientObj.user_id);
+            if (clientUser) {
+              clientFullName = `${clientUser.firstName} ${clientUser.lastName}`;
+              clientId = clientUser._id; // Get the clientId
+            }
+          }
+  
+          // Fetch driver details
+          const driverObj = await Driver.findById(chat.driver_id);
+          if (driverObj) {
+            const driverUser = await User.findById(driverObj.user_id);
+            if (driverUser) {
+              driverFullName = `${driverUser.firstName} ${driverUser.lastName}`;
+              driverId = driverUser._id; // Get the driverId
+            }
+          }
+  
+          // Fetch order status
+          const orderStatus = chat.order_id ? chat.order_id.status : 'Unknown';
+  
+          return {
+            chatId: chat._id,        // Include chat ID
+            orderId: chat.order_id._id,
+            orderStatus,
+            clientFullName,
+            driverFullName,
+            clientId,                // Include clientId
+            driverId,                // Include driverId
+            lastMessage,
+            chatCreatedAt : chat.createdAt ,
+          };
+        }));
+  
+        // Filter out any null results
+        const validMessages = lastMessages.filter(msg => msg !== null);
+  
+        // Emit the last messages to the client
+        socket.emit('OrderchatMessagesDriverUpdated', { messages: validMessages });
+      }
+    } catch (error) {
+      console.error('Error finding or watching chats:', error);
+    }
+  };
   
 
 
@@ -231,3 +309,30 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
     }
   };
   
+
+  exports.markSeenFD = async (req, res) => {
+    const { chatId } = req.body; // Expecting chatId in the request body
+  
+    try {
+      // Find the chat by ID
+      const chat = await Chat.findById(chatId);
+  
+      if (!chat) {
+        return res.status(404).json({ error: 'Chat not found' });
+      }
+  
+      // Loop through the messages and mark client messages as seen
+      chat.messages.forEach((message) => {
+        if (message.sender === 'client' && !message.seen) {
+          message.seen = true;
+        }
+      });
+  
+      // Save the updated chat
+      await chat.save();
+  
+      return res.status(200).json({ message: 'All client messages marked as seen', messages: chat.messages });
+    } catch (error) {
+      return res.status(500).json({ error: 'Error marking messages as seen' });
+    }
+  };

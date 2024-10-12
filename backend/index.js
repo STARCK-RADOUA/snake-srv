@@ -86,7 +86,7 @@ const { handleChatInitiation, handleSendMessage, watchMessages } = require('./co
 const { getRouteDetails } = require('./controllers/LocationRouteController.js');
 const { assignPendingOrders } = require('./controllers/orderController.js');
 
-const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages, joinOrderMessage } = require('./controllers/chatController.js');
+const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages, joinOrderMessage, watchOrderMessagesForDriver } = require('./controllers/chatController.js');
 
 
 // Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
@@ -762,8 +762,11 @@ socket.on('watchChatMessages', async () => {
   await  watchMessages({socket}) ;
 });
 
+socket.on('watchChatMessagesDriver', async (deviceId) => {
+  await  watchOrderMessagesForDriver({socket , deviceId}) ;
+});
 socket.on('watchOrderChatMessages', async () => {
-  await  watchOrderMessages({socket}) ;
+  await  watchOrderMessages({socket }) ;
 });
 
 // Client joins an existing chat room with a specific chatId
@@ -858,6 +861,20 @@ const getProductsRevenueAndCount = async () => {
     // Step 1: Aggregate data from OrderItem to calculate revenue and total times bought for each product
     const orderItems = await OrderItem.aggregate([
       {
+        $lookup: {
+          from: 'orders', // The collection name for 'Order' should be 'orders' in MongoDB
+          localField: 'Order_id',
+          foreignField: '_id',
+          as: 'orderDetails'
+        }
+      },
+      {
+        $unwind: '$orderDetails' // Unwind the order details array
+      },
+      {
+        $match: { 'orderDetails.status': 'delivered' } // Only include delivered orders
+      },
+      {
         $group: {
           _id: "$product_id",
           totalTimesBought: { $sum: "$quantity" }, // Sum of quantities for each product
@@ -885,6 +902,7 @@ const getProductsRevenueAndCount = async () => {
     throw error;
   }
 };
+
 
 // Socket.io implementation
 
@@ -1001,6 +1019,7 @@ app.use('/api/addresses', addressRoutes);
 app.use('/api/admins', adminRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/chat', chatRoute);
 
 app.use('/api/driver', driverRoutes);
 
