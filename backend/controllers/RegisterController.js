@@ -108,71 +108,7 @@ AL Rahma Health Center`,
 
 
 const signUp = (req, res) => {
-    const newUser = req.body;
 
-    const userValidStatus = isUserValid(newUser);
-    if (!userValidStatus.status) {
-        res.json({ message: "error", errors: userValidStatus.errors });
-    } else {
-        User.create(
-            {
-                email: newUser.email,
-                username: newUser.email,
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                password: newUser.password,
-                userType: newUser.userType,
-            },
-            (error, userDetails) => {
-                if (error) {
-                    res.json({ message: "error", errors: [error.message] });
-                } else {
-                    let verificationToken = generateVerificationToken()
-                    saveVerificationToken(userDetails._id, verificationToken);
-
-                    if (newUser.userType === "Doctor") {
-                        Client.create(
-                            {
-                                userId: userDetails._id,
-                                firstName: newUser.firstName,
-                                lastName: newUser.lastName,
-                                email: newUser.email,
-                                username: newUser.email
-                            },
-                            (error2, doctorDetails) => {
-                                if (error2) {
-                                    User.deleteOne({ _id: userDetails });
-                                    res.json({ message: "error", errors: [error2.message] });
-                                } else {
-                                    res.json({ message: "success" });
-                                }
-                            }
-                        );
-                    }
-                    if (newUser.userType === "Patient") {
-                        Patient.create(
-                            {
-                                userId: userDetails._id,
-                                firstName: newUser.firstName,
-                                lastName: newUser.lastName,
-                                email: newUser.email,
-                                username: newUser.firstName + " " + newUser.lastName
-                            },
-                            (error2, patientDetails) => {
-                                if (error2) {
-                                    User.deleteOne({ _id: userDetails });
-                                    res.json({ message: "error", errors: [error2.message] });
-                                } else {
-                                    sendVerificationEmail(userDetails.email, newUser.firstName, newUser.lastName, verificationToken.token);
-                                    res.json({ message: "success" });
-                                }
-                            }
-                        );
-                    }
-                }
-            }
-        );
-    }
 };
 
 const verifyUser = (req, res) => {

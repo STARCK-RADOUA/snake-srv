@@ -155,67 +155,25 @@ console.log(uniqueId)
     try {
         // Vérifier si un utilisateur avec le même numéro de téléphone et deviceId existe
         let existingUser = await User.findOne({  deviceId: newClient.deviceId ,phone: newClient.phone });
-        let existingUser1 =  await User.findOne({ deviceId: newClient.deviceId });
 
         
 console.log('------------------------------------');
 console.log(req.body);
 console.log('------------------------------------');
-        if (existingUser ) {
+     
+
+
+        if ( existingUser) {
             return res.status(400).json({
                 message: 'error',
-                errors: ['User with this phone num']
+                errors: ['L\'utilisateur existe déjà']
             });
         }
 
 
-        if (existingUser1 && existingUser) {
-            return res.status(400).json({
-                message: 'error',
-                errors: ['User  already exists']
-            });
-        }
-
-        if (existingUser1 && !existingUser) {
-
-            const hashedPassword = await bcrypt.hash(newClient.password, 10);
-
-
-              await User.updateOne({ _id: existingUser1._id}, { $set: {
-                phone: newClient.phone,
-                firstName: newClient.firstName,
-                lastName: newClient.lastName,
-                deviceId: newClient.deviceId,
-                password: hashedPassword,
-                userType: 'Client',
-                activated: 0,
-             } });
-
-             newClient.user_id = existingUser1._id;
-             await Client.create(newClient);
 
 
        
-        }
-
-
-        if (existingUser1 && existingUser) {
-           
-            const hashedPassword = await bcrypt.hash(newClient.password, 10);
-
-            const user_idetails = await User.create({
-                phone: newClient.phone,
-                firstName: newClient.firstName,
-                lastName: newClient.lastName,
-                deviceId: newClient.deviceId,
-                password: hashedPassword,
-                userType: 'Client',
-                activated: 0,
-            });
-    
-            newClient.user_id = user_idetails._id;
-            await Client.create(newClient);
-        }
        
 
 
@@ -226,6 +184,26 @@ console.log('------------------------------------');
    const qrCode = await QrCode.findOne({ uniqueId });
    console.log('------------------------------------');
    console.log(qrCode);
+   if (!qrCode) {
+    return res.status(404).json({ message: 'error', errors: ['QR Code not found'] });
+}
+if ( !existingUser) {
+           
+    const hashedPassword = await bcrypt.hash(newClient.password, 10);
+
+    const user_idetails = await User.create({
+        phone: newClient.phone,
+        firstName: newClient.firstName,
+        lastName: newClient.lastName,
+        deviceId: newClient.deviceId,
+        password: hashedPassword,
+        userType: 'Client',
+        activated: 0,
+    });
+
+    newClient.user_id = user_idetails._id;
+    await Client.create(newClient);
+}
    qrCode.newclientDeviceId = newClient.deviceId;
    await qrCode.save();
    console.log('------------------------------------');
@@ -261,7 +239,8 @@ console.log('------------------------------------');
       }
 
    } 
- 
+   let existingUser1 = await User.findOne({  deviceId: newClient.deviceId ,phone: newClient.phone });
+
  
    
 
@@ -273,10 +252,9 @@ console.log('------------------------------------');
    await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
 
 
+req.io.emit('clientRegistered', { message: 'succès', details: 'Client enregistré avec succès !' });
 
-        req.io.emit('clientRegistered', { message: 'success', details: 'Client registered successfully!' });
-
-        return res.status(201).json({ message: 'success', details: 'Client registered successfully!' });
+return res.status(201).json({ message: 'succès', details: 'Client enregistré avec succès !' });
 
     } catch (error) {
         if (error.message.includes('User validation failed')) {

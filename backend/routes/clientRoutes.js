@@ -15,7 +15,6 @@ router.get('/', clientController.getClients);
 router.get('/:id', clientController.getClientById);
 
 // Route pour créer un nouveau client
-router.post('/', clientController.saveClient);
 
 // Route pour mettre à jour un client existant
 router.put('/:id', clientController.updateClient);

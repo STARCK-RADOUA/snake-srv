@@ -10,6 +10,13 @@ console.log("hhhhhhhhhhhhhhhhhh",req.body)
   if (!userType || !pushToken || !deviceId) {
     return res.status(400).json({ error: 'userType and pushToken are required' });
   }
+  const user = await User.findOne(
+    { deviceId: deviceId }, // Crée un nouvel enregistrement si l'utilisateur n'existe pas
+  );
+
+  if (!user) {
+    return     console.log('Push token not saved no user:');
+  }
 
   try {
     // Mise à jour du pushToken de l'utilisateur en fonction du userType
@@ -20,7 +27,8 @@ console.log("hhhhhhhhhhhhhhhhhh",req.body)
     );
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return     console.log('Push token not saved no user:');
+
     }
 
     res.status(200).json({ message: 'Push token saved successfully', user });

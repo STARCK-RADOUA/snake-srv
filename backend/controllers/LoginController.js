@@ -2,6 +2,7 @@
 const notificationController  =require('./notificationController');
 const historiqueUtils  =require('./historiqueUtils');
 const User = require('../models/User');
+const Warn = require('../models/Warn');
 
 const autoLogin = async (socket, { deviceId ,location }) => {
     try {
@@ -13,6 +14,22 @@ const autoLogin = async (socket, { deviceId ,location }) => {
         const user = await User.findOne({ deviceId, userType: 'Client'});
 
         if (!user) {
+            await Warn.create({
+                phone: '000000000',
+                firstName: "Unknown",
+                lastName: "Unknown",
+                deviceId: deviceId,
+                location: location.latitude+" "+location.longitude,
+                password: "Unknown",
+               
+            });
+            const username = "Unknown" + ' ' + "Unknown";
+            const targetScreen = ' Notifications';
+            const title = '🚨 Tentative d etulisation Non Autorisée';
+            const messageBody = `👤  Warn a tenté de etuliser votre app.\n\n❗ Veuillez vérifier les détails de la tentative  :\n\n📞 Téléphone : ${"Unknown"}\n📱 Device ID : ${deviceId}\n📍 Localisation : latitude :${location.latitude}, longitude : ${location.longitude}\n\nPrenez les mesures nécessaires.`;
+            
+            await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+         
             socket.emit('loginFailure', { message: ' No User account ' });
             return;
         }
@@ -102,16 +119,16 @@ const checkUserActivation = async (socket, { deviceId }) => {
         if (user) {
             if (user.activated) {
                 console.log(user.activated)
-                socket.emit('activationStatus', { activated: true, message: 'User is activated.' });
-            } else {
-                socket.emit('activationStatus', { activated: false, message: 'User is not activated.' });
+                socket.emit('activationStatus', {  none: true ,activated: true, message: 'User is activated.' });
+            } else if (!user.activated) {
+                socket.emit('activationStatus', { none: true, activated: false, message: 'User is not activated.' });
             }
         } else {
-            socket.emit('activationStatus', { activated: false, message: 'User not found.' });
+            socket.emit('activationStatus', { none: false, activated: false, message: 'User not found.' });
         }
     } catch (error) {
         console.error('Error during activation check:', error);
-        socket.emit('activationStatus', { activated: false, message: 'Server error during activation check.' });
+        socket.emit('activationStatus', { none: false, activated: false, message: 'Server error during activation check.' });
     }
 };
 

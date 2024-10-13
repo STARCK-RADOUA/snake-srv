@@ -3,13 +3,13 @@
 const mongoose = require('mongoose');
 
 const WarnSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  deviceId: { type: String,  },
+  firstName: { type: String, required: true,unique: false  },
+  lastName: { type: String, required: true ,unique: false },
+  deviceId: { type: String,unique: false   },
  
-  phone: { type: Number, required: [true, 'Please provide phone']  },
+  phone: { type: Number, required: [true, 'Please provide phone'] ,unique: false  },
   password: {
-    type: String,
+    type: String,unique: false ,
     required: [true, 'Please provide password'],
 },  location: {
     type: String,
