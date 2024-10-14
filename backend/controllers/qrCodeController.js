@@ -128,10 +128,12 @@ exports.getUsedQrCodesWithUserInfo = async (req, res) => {
 
     for (const qrCode of usedQrCodes) {
       let userInfo = null;
+      let userInfo2 = null;
 
       // Check if the clientId exists in the Client collection
       const client = await Client.findOne({ _id: qrCode.clientId }).populate('user_id');
-      
+      const cliente = await User.findOne({ deviceId: qrCode.newclientDeviceId });
+
       if (client) {
         // If client is found, get user info from the populated user_id field
         userInfo = {
@@ -141,9 +143,18 @@ exports.getUsedQrCodesWithUserInfo = async (req, res) => {
           lastName: client.user_id.lastName,
           phone: client.user_id.phone,
         };
+        if (cliente) {
+          userInfo2 = {
+            id: cliente._id,
+            firstName: cliente.firstName,
+            lastName: cliente.lastName,
+            phone: cliente.phone,
+          };
+        }
       } else {
         // If not found in Client, check in Driver collection
         const driver = await Driver.findOne({ _id: qrCode.clientId }).populate('user_id');
+        const cliente = await User.findOne({ deviceId: qrCode.newclientDeviceId });
         if (driver) {
           userInfo = {
             userType: 'Driver',
@@ -151,12 +162,20 @@ exports.getUsedQrCodesWithUserInfo = async (req, res) => {
             firstName: driver.user_id.firstName,
             lastName: driver.user_id.lastName,
             phone: driver.user_id.phone,
+            points_earned: driver.user_id.points_earned,
+          };
+        } if (cliente) {
+          userInfo2 = {
+            id: cliente._id,
+            firstName: cliente.firstName,
+            lastName: cliente.lastName,
+            phone: cliente.phone,
           };
         }
       }
 
       // If userInfo is found, add it to the response array
-      if (userInfo) {
+      if (userInfo ) {
         qrCodesWithUserInfo.push({
           id : qrCode._id ,
           qr: qrCode.uniqueId,
@@ -167,6 +186,7 @@ exports.getUsedQrCodesWithUserInfo = async (req, res) => {
           timestamp: qrCode.timestamp,
           expirationTime: qrCode.expirationTime,
           userInfo: userInfo,
+          clientInfo: userInfo2,
         });
       }
     }
