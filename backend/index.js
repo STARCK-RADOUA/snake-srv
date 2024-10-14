@@ -45,7 +45,13 @@ const chatRoutes = require('./routes/chatRoutes');
 const cors = require('cors');
 const Address = require('./models/Address');
 
-
+const {
+  emitInitialStatus,
+  toggleSystemStatus,
+  toggleClientsStatus,
+  toggleDriversStatus,
+  toggleSystemStatusForDriver,
+} = require('./controllers/socketController');
 // Initialize express and create HTTP server
 const app = express();
 const server = http.createServer(app);
@@ -223,8 +229,31 @@ socket.on('reconnect', () => {
           console.error('Error finding order for driver:', error);
         }
       });
+      socket.on('toggleSystemDriver', () => {
+        console.log('Toggling system status for driver:');
+        console.log('Toggling system status for driver:');
+        console.log('Toggling system status for driver:');
+        toggleSystemStatusForDriver(io);
+      }); 
+      // Handle system toggle
+      socket.on('toggleSystem', (data) => {
+        toggleSystemStatus(data, io);
+      }); 
+
    
-      
+      socket.on('statusS', (data) => {
+        emitInitialStatus(socket);
+      });
+    
+      // Handle clients toggle
+      socket.on('toggleClients', (data) => {
+        toggleClientsStatus(data, io);
+      });
+    
+      // Handle drivers toggle
+      socket.on('toggleDrivers', (data) => {
+        toggleDriversStatus(data, io);
+      });
 
     socket.on('registerClient', async (data) => {
         console.log('Register client data:', data);
