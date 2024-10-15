@@ -151,9 +151,9 @@ socket.on('joinRouteTracking', async (orderId) => {
     const client1 = await Client.findById(order1.client_id);
 
     const userClient1 = await User.findById(client1.user_id);
-
+    if (order1.status === 'in_progress') {
          io.to(userClient1.deviceId).emit('routeUpdate', routeDetails);
-
+    }
 
     const interval1 = setInterval(async () => {
       const updatedRouteDetails = await getRouteDetails(orderId);
@@ -169,10 +169,11 @@ socket.on('joinRouteTracking', async (orderId) => {
       const userClient = await User.findById(client.user_id);
       const userDriver = await User.findById(driver.user_id);
 
+      if (order.status === 'in_progress') {
 
       io.to(userClient.deviceId).emit('routeUpdate', updatedRouteDetails);
 console.log("interval routes")
-  
+      }
 
       const duration = updatedRouteDetails.duration; // Durée restante
 
