@@ -56,7 +56,8 @@ const toggleSystemStatus = async (data, io) => {
   } catch (error) {
     console.error('Error toggling system status:', error);
   }
-};const toggleSystemStatusForDriver = async ( io) => {
+};
+const toggleSystemStatusForDriver = async ( io) => {
   try {
     const admin = await Admin.findOne();
    

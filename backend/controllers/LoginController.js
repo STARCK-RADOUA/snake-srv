@@ -4,7 +4,7 @@ const historiqueUtils  =require('./historiqueUtils');
 const User = require('../models/User');
 const Warn = require('../models/Warn');
 
-const autoLogin = async (socket, { deviceId ,location }) => {
+const autoLogin = async (socket, { deviceId ,location },io) => {
     try {
         console.log('Auto Login :', deviceId);
         console.log('------------------------------------');
@@ -61,7 +61,7 @@ const autoLogin = async (socket, { deviceId ,location }) => {
 
 
         // Si tout va bien, l'utilisateur est connecté
-        socket.emit('loginSuccess', { userId: user._id, message: 'Login successful' });
+        io.to(deviceId).emit('loginSuccess', { userId: user._id, message: 'Login successful' });
 
    
     } catch (error) {

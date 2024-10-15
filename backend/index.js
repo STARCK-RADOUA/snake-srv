@@ -443,11 +443,12 @@ socket.on('reconnect', () => {
     console.log('Auto login data:', data);
             // Vérification si l'ID de l'appareil est fourni
             if (!deviceId) {
-                socket.emit('loginFailure', { message: 'Device ID not provided' });
+                io.to(deviceId).emit('loginFailure', { message: 'Device ID not provided' });
+
                 return;
             }
     
-            loginController.autoLogin(socket, data); 
+            loginController.autoLogin(socket, data,io); 
             // Si tout va bien, l'utilisateur est connecté
            
     
