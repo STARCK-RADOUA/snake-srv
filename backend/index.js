@@ -805,7 +805,87 @@ socket.on('joinExistingChat', async ({ chatId }) => {
 
 
 
+socket.on('getDeliveredOrdersSummary', async () => {
+  try {
+    const deliveredOrders = await Order.find({ status: 'delivered' });
 
+    // Calculate total sum of delivered orders
+    const totalSum = deliveredOrders.reduce((acc, order) => acc + order.total_price, 0);
+    const totalCount = deliveredOrders.length;
+
+    // Emit the result back to the client
+    socket.emit('deliveredOrdersSummary', {
+      totalSum,
+      totalCount
+    });
+  } catch (error) {
+    console.error('Error fetching delivered orders:', error);
+    socket.emit('error', 'Could not retrieve delivered orders');
+  }
+});
+
+
+socket.on('getTotalClients', async () => {
+  try {
+    const totalClients = await User.countDocuments({ userType: 'Client' });
+    // Emit the result back to the client
+    socket.emit('totalClients', { totalClients });
+  } catch (error) {
+    console.error('Error fetching total clients:', error);
+    socket.emit('error', 'Could not retrieve total clients');
+  }
+});
+
+
+
+socket.on('getTotalProducts', async () => {
+  try {
+    const totalProducts = await Product.countDocuments({ is_active: true }); // Count only active products
+    // Emit the result back to the client
+    socket.emit('totalProducts', { totalProducts });
+  } catch (error) {
+    console.error('Error fetching total products:', error);
+    socket.emit('error', 'Could not retrieve total products');
+  }
+});
+
+
+
+
+socket.on('getDailyRevenue', async () => {
+  try {
+    const today = new Date();
+    const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 365); // 1 year back
+
+    // Aggregate the total revenue for each day
+    const dailyRevenue = await Order.aggregate([
+      {
+        $match: {
+          created_at: {
+            $gte: startDate,
+            $lte: today,
+          },
+          status: 'delivered', // Assuming you want only delivered orders
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } },
+          totalRevenue: { $sum: "$total_price" },
+        },
+      },
+      {
+        $sort: { _id: 1 }, // Sort by date ascending
+      },
+    ]);
+
+    // Emit the result back to the client
+    socket.emit('dailyRevenue', { dailyRevenue });
+  } catch (error) {
+    console.error('Error fetching daily revenue:', error);
+    socket.emit('error', 'Could not retrieve daily revenue');
+  }
+});
 
 
 socket.on('getDriverStats', async () => {
