@@ -241,15 +241,20 @@ exports.updateDriverAvailability = async (req, res) => {
 
   exports.commandeLivree = async (req, res) => {
     try {
-        const { order_number } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
+        const { order_number,comment } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
         const orderId = order_number;
 console.log('------------------------------------');
 console.log('orderId:', orderId);
 console.log('------------------------------------');
+
+const existingOrder = await Order.findById(orderId);
+if (existingOrder.status === "delivered") {
+  return res.status(400).json({ message: "error", errors: ["Commande déjà livrée"] });
+}
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
             { _id: orderId },
-            { status: "delivered",active: false },
+            { status: "delivered",active: false,drivercomment:comment },
             { new: true } // Retourne la commande mise à jour
         );
 
@@ -300,7 +305,7 @@ const userType2 = "Driver"; // Type d'utilisateur (livreur)
 await notificationController.sendNotificationForce(name2, userDriver.pushToken, message2, title22, userType2);
 
         const { io } = require('../index');
-        io.emit('orderStatusUpdates', { order });
+        io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
        
         return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
 
@@ -465,7 +470,7 @@ console.log('------------------------------------');
         // Envoi de la notification
         await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
         const { io } = require('../index');
-        io.emit('orderStatusUpdates', { order });
+        io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
        
         return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
 

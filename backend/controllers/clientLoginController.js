@@ -7,7 +7,8 @@ const bcrypt = require("bcrypt");
 
 const isLoginValid = (phone, password) => {
     const errorList = [];
-    const phoneRegex = /^\+?(\d{1,4})?\s?-?\(?\d{1,4}\)?\s?-?\d{1,4}\s?-?\d{1,4}\s?-?\d{1,9}$/;
+    const phoneRegex = /^(?:\+33|0)[1-9](?:[ .-]?\d{2}){4}$/; // Example pattern for a 10-digit phone number
+
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
     if (!phone) {

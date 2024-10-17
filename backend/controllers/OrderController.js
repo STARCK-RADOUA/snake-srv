@@ -995,6 +995,8 @@ exports.OnOrderStatusUpdated = async ({ order_id, io }) => {
       console.log('------------------------------------');
       console.log(order);
       console.log('------------------------------------');
+      const client = await Client.findById(order.client_id);
+const userclient = await User.findById(client.user_id);
       // Emit the updated order status to the room
       io.to(order_id).emit('orderStatusUpdates', { order });
       io.emit('watchOrderStatuss', { order_id: order_id });
@@ -1360,9 +1362,10 @@ exports.assignOrderToDriver = async (orderId) => {
         await bestDriver.save();
         await order.save();
         const user = await User.findById(bestDriver.user_id);
-
+const client = await Client.findById(order.client_id);
+const userclient = await User.findById(client.user_id);
         const { io } = require('../index');
-        io.emit('orderStatusUpdates', { order });
+        io.to(userclient.deviceId).emit('orderStatusUpdates', { order });
         await exports.fetchInProgressOrdersForDriver(io, user.deviceId);
 
      
