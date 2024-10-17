@@ -241,15 +241,20 @@ exports.updateDriverAvailability = async (req, res) => {
 
   exports.commandeLivree = async (req, res) => {
     try {
-        const { order_number } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
+        const { order_number,comment } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
         const orderId = order_number;
 console.log('------------------------------------');
 console.log('orderId:', orderId);
 console.log('------------------------------------');
+
+const existingOrder = await Order.findById(orderId);
+if (existingOrder.status === "delivered") {
+  return res.status(400).json({ message: "error", errors: ["Commande déjà livrée"] });
+}
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
             { _id: orderId },
-            { status: "delivered",active: false },
+            { status: "delivered",active: false,drivercomment:comment },
             { new: true } // Retourne la commande mise à jour
         );
 

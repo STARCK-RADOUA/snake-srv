@@ -14,6 +14,7 @@ const orderSchema = new mongoose.Schema({
   report_comment: { type: String, required: false },
   payment_method: { type: String, enum: ['cash', 'TPE'], required: false },
   comment: String,
+  drivercomment: String,
   service_Test: { type: Boolean, default: false },
   stars: Number,
   created_at: { type: Date, default: Date.now },

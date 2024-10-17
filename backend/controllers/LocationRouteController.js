@@ -3,6 +3,7 @@ const Order = require('../models/Order');
 const Address = require('../models/Address');
 const Driver = require('../models/Driver');
 const ClarkeWright = require('./ClarkeWright');
+const chalk = require('chalk'); // Utiliser chalk pour les couleurs
 
 async function getOptimizedRoutes(orderId) {
     try {
@@ -53,49 +54,57 @@ async function calculateRoute(startLat, startLng, endLat, endLng) {
                 duration: route.duration  // en secondes
             };
         } else {
-            throw new Error('Error retrieving route data.');
-        }
+            console.error('Error: No valid routes returned.');
+            return { error: 'Error retrieving route data.' };         }
     } catch (error) {
-        console.error(error);
-        throw new Error('Connection or processing error.');
+        console.error('Error fetching route from OSRM:', error.message);
+        return { error: 'Connection or processing error.' };
     }
 }
 
-// Fonction du contrôleur pour obtenir les détails de l'itinéraire
+// Fonction du contrôleur pour obtenir les détails de l'itinéraireconst chalk = require('chalk'); // Utiliser chalk pour les couleurs
+
 async function getRouteDetails(orderId) {
     try {
         const order = await Order.findById(orderId).populate('address_id').populate('driver_id');
         
         if (!order) {
-            throw new Error('Order not found');
+            console.error(chalk.red('Error: Order not found'));
+            return { error: 'Order not found' };
         }
 
         const address = await Address.findById(order.address_id);
         const driver = await Driver.findById(order.driver_id);
 
         if (!address || !driver) {
-            throw new Error('Address or driver not found');
+            console.error(chalk.red('Error: Address or driver not found'));
+            return { error: 'Address or driver not found' };
         }
 
         const startLat = driver.location.latitude;
         const startLng = driver.location.longitude;
 
-          // Séparer la latitude et la longitude à partir de la chaîne "latitude, longitude"
-          const [endLat, endLng] = address.localisation.split(',').map(coord => parseFloat(coord.trim()));
-        
-          // Vérification des valeurs
-          if (!isNaN(endLat) && !isNaN(endLng)) {
-            console.log(`Latitude: ${endLat}, Longitude: ${endLng}`);}
+        // Séparer la latitude et la longitude à partir de la chaîne "latitude, longitude"
+        const [endLat, endLng] = address.localisation.split(',').map(coord => parseFloat(coord.trim()));
+
+        // Vérification des valeurs
+        if (isNaN(endLat) || isNaN(endLng)) {
+            console.error(chalk.red('Error: Invalid coordinates for address'));
+            return { error: 'Invalid coordinates for address' };
+        }
 
         const result = await calculateRoute(startLat, startLng, endLat, endLng);
-
         return result;
 
     } catch (error) {
-        console.error(error);
-        throw new Error('Error retrieving route details.');
+        // Affichage de l'erreur en rouge dans la console
+        console.error(chalk.red('Error retrieving route details:', error.message));
+
+        // Retourner un objet d'erreur sans arrêter le serveur
+        return { error: 'Error retrieving route details' };
     }
 }
+
 
 module.exports = {
     getRouteDetails,
