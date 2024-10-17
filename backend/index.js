@@ -209,15 +209,27 @@ console.log("interval routes")
 // If driver explicitly disconnects
 socket.on('driverDisconnected', (data) => {
   console.log(`Driver lost internet connection: ${data.deviceId}`);
-  if (drivers[data.deviceId]) {
+  const driver =Driver.findOne({deviceId: data.deviceId});
+  if (driver) {
+   
+ if (drivers[data.deviceId]) {
     drivers[data.deviceId].status = 'disconnected';
   }
+
+  }
+ 
 });
 socket.on('reconnect', () => {
   console.log(`Driver reconnected: ${deviceId}`);
-  if (drivers[deviceId]) {
+  const driver =Driver.findOne({deviceId: deviceId});
+  if (driver) {
+   
+
+ if (drivers[deviceId]) {
     drivers[deviceId].status = 'online';
   }
+  }
+ 
 });
 
     socket.on('driverConnected', async (deviceId) => {
@@ -794,7 +806,7 @@ socket.on('watchChatMessages', async () => {
 });
 
 socket.on('watchChatMessagesDriver', async (deviceId) => {
-  await  watchOrderMessagesForDriver({socket , deviceId}) ;
+  await  watchOrderMessagesForDriver({io , deviceId}) ;
 });
 socket.on('watchOrderChatMessages', async () => {
   await  watchOrderMessages({socket }) ;
@@ -804,6 +816,8 @@ socket.on('watchOrderChatMessages', async () => {
 socket.on('joinExistingChat', async ({ chatId }) => {
     await joinOrderMessage({socket , chatId}) ;
 });
+
+
 
 
 
@@ -1112,10 +1126,16 @@ const checkDriverStatus = async () => {
 };
 
 // Exemple de fonction pour mettre à jour le ping du livreur
-const updateDriverPing = (deviceId) => {
+const updateDriverPing = async (deviceId) => {
   const now = new Date();
+  const orders = Order.find({status:"pending"})
+  if (orders){
+    await orderController.assignPendingOrders();
+
+  }
   if (!drivers[deviceId]) {
     drivers[deviceId] = { lastPing: now, status: 'online' };
+  
   } else {
     drivers[deviceId].lastPing = now;
     drivers[deviceId].status = 'online';

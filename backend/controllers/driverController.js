@@ -300,7 +300,7 @@ const userType2 = "Driver"; // Type d'utilisateur (livreur)
 await notificationController.sendNotificationForce(name2, userDriver.pushToken, message2, title22, userType2);
 
         const { io } = require('../index');
-        io.emit('orderStatusUpdates', { order });
+        io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
        
         return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
 
@@ -465,7 +465,7 @@ console.log('------------------------------------');
         // Envoi de la notification
         await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
         const { io } = require('../index');
-        io.emit('orderStatusUpdates', { order });
+        io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
        
         return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
 
