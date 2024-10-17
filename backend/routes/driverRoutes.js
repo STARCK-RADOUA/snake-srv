@@ -5,6 +5,8 @@ const driverController = require('../controllers/driverController');
 // Get all drivers
 router.get('/', driverController.getAllDrivers);
 router.get('/diponible', driverController.getAvailableDrivers);
+router.get('/forChart', driverController.getAvailableDriversForChart);
+
 router.post('/commandeLivree', driverController.commandeLivree); 
 router.post('/commandeCanceled', driverController.commandeCanceled); 
 router.post('/logout', driverController.logoutUser); 

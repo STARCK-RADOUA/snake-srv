@@ -506,6 +506,37 @@ console.log('------------------------------------');
   };
 
 
+  exports.getAvailableDriversForChart = async (req, res) => {
+    try {
+      // Find all drivers where isDisponible is true and populate the user details
+      const drivers = await Driver.find()
+        .populate({
+          path: 'user_id',
+          model: 'User',
+          select: 'firstName lastName userType'
+        });
+  
+      // Map to include both user details and driver details
+      const response = drivers.map(driver => ({
+        driver_id: driver._id,
+        user_id: driver.user_id._id,
+        firstName: driver.user_id.firstName,
+        lastName: driver.user_id.lastName,
+        userType: driver.user_id.userType,
+        isDisponible: driver.isDisponible,
+      }));
+  console.log('------------------------------------');
+  console.log("response",response);
+  console.log('------------------------------------');
+      // Return the list of available drivers
+      res.status(200).json(response);
+    } catch (error) {
+      console.error('Error retrieving available drivers:', error.message);
+      res.status(500).json({ message: 'Server error' });
+    }
+  };
+
+
 
 
 

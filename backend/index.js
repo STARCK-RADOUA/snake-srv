@@ -88,7 +88,7 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 
 
 const cron = require('node-cron');
-const { handleChatInitiation, handleSendMessage, watchMessages } = require('./controllers/ChatSupportController.js');
+const { handleChatInitiation, handleSendMessage, watchMessages, watchSupportMessagesForDriver } = require('./controllers/ChatSupportController.js');
 const { getRouteDetails } = require('./controllers/LocationRouteController.js');
 const { assignPendingOrders } = require('./controllers/orderController.js');
 
@@ -691,8 +691,8 @@ socket.on('initiateChat', async ({ adminId, userId, userType }) => {
 });
 
 // Handle message sending (for both client and admin)
-socket.on('sendMessage', async ({ chatId, sender, content }) => {
- await handleSendMessage({ chatId, sender, content, io }) ;
+socket.on('sendMessage', async ({ chatId, sender, content ,deviceId }) => {
+ await handleSendMessage({ chatId, sender, content , deviceId, io }) ;
 });
 
 
@@ -795,6 +795,12 @@ socket.on('watchChatMessages', async () => {
 socket.on('watchChatMessagesDriver', async (deviceId) => {
   await  watchOrderMessagesForDriver({socket , deviceId}) ;
 });
+
+
+socket.on('watchSupportChatMessagesDriver', async (deviceId) => {
+  await  watchSupportMessagesForDriver({socket , deviceId}) ;
+});
+
 socket.on('watchOrderChatMessages', async () => {
   await  watchOrderMessages({socket }) ;
 });
@@ -808,22 +814,48 @@ socket.on('joinExistingChat', async ({ chatId }) => {
 
 socket.on('getDeliveredOrdersSummary', async () => {
   try {
+    // Fetch delivered orders from the database
     const deliveredOrders = await Order.find({ status: 'delivered' });
 
+    // Log the delivered orders for debugging
+    console.log('Delivered Orders:', deliveredOrders);
+
+    // If there are no delivered orders, totalSum will be 0
+    if (!Array.isArray(deliveredOrders) || deliveredOrders.length === 0) {
+      console.log('No delivered orders found.');
+      socket.emit('deliveredOrdersSummary', {
+        totalSum: 0,
+        totalCount: 0
+      });
+      return;
+    }
+
     // Calculate total sum of delivered orders
-    const totalSum = deliveredOrders.reduce((acc, order) => acc + order.total_price, 0);
+    const totalSum = deliveredOrders.reduce((acc, order) => {
+      // Check if total_price exists and is a valid number
+      const price = typeof order.total_price === 'number' ? order.total_price : 0;
+      return acc + price;
+    }, 0);
+
     const totalCount = deliveredOrders.length;
+
+    // Log the calculated totalSum and totalCount for debugging
+    console.log('Total Sum:', totalSum);
+    console.log('Total Count:', totalCount);
 
     // Emit the result back to the client
     socket.emit('deliveredOrdersSummary', {
       totalSum,
       totalCount
     });
+
   } catch (error) {
-    console.error('Error fetching delivered orders:', error);
+    // Handle any errors during fetching or processing
+    console.error('Error fetching or processing delivered orders:', error);
     socket.emit('error', 'Could not retrieve delivered orders');
   }
 });
+
 
 
 socket.on('getTotalClients', async () => {
@@ -887,6 +919,45 @@ socket.on('getDailyRevenue', async () => {
     socket.emit('error', 'Could not retrieve daily revenue');
   }
 });
+
+
+
+socket.on('getDailyRevenueDriver', async (driverId) => {
+  try {
+    const today = new Date();
+    const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 365); // 1 year back
+
+    // Aggregate the total revenue for each day for the specified driver
+    const dailyRevenue = await Order.aggregate([
+      {
+        $match: {
+          created_at: {
+            $gte: startDate,
+            $lte: today,
+          },
+          status: 'delivered', // Assuming you want only delivered orders
+          driver_id: mongoose.Types.ObjectId(driverId), // Filter by the given driverId
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } },
+          totalRevenue: { $sum: "$total_price" },
+        },
+      },
+      {
+        $sort: { _id: 1 }, // Sort by date ascending
+      },
+    ]);
+
+    // Emit the result back to the client
+    socket.emit('dailyRevenueDriver', { dailyRevenue });
+  } catch (error) {
+    console.error('Error fetching daily revenue:', error);
+    socket.emit('error', 'Could not retrieve daily revenue');
+  }
+});
+
 
 
 socket.on('getDriverStats', async () => {

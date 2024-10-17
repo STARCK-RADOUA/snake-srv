@@ -190,7 +190,7 @@ exports.handleChatInitiation = async ({ adminId, userId, userType, socket }) =>{
 
 
 
-exports.handleSendMessage = async ({ chatId, sender, content, io }) => {
+exports.handleSendMessage = async ({ chatId, sender, content, deviceId,  io }) => {
   try {
     const chat = await ChatSupport.findById(chatId);
     if (!chat) {
@@ -206,8 +206,25 @@ exports.handleSendMessage = async ({ chatId, sender, content, io }) => {
     };
     chat.messages.push(newMessage);
     await chat.save();
-    const { io } = require('../index');
-    await this.watchMessages({socket : io}) ; 
+    if (sender === "admin") {
+      console.log("Sender is admin");
+      try {
+        console.log("de" , deviceId)
+            await this.watchSupportMessagesForDriver({ socket: io , deviceId });
+
+      } catch (error) {
+        console.error('Error in watchMessages:', error);
+      }
+    } else {
+     
+        console.log("Handling non-admin message with deviceId:", deviceId);
+        try {
+          await this.watchMessages({ socket: io });
+        } catch (error) {
+          console.error('Error in watchSupportMessagesForDriver:', error);
+        }
+      
+    }
     // Emit the new message to everyone in the chat room
     io.to(chatId).emit('newMessage', { message: newMessage });
   } catch (error) {
@@ -261,5 +278,68 @@ exports.watchMessages = async ({socket}) => {
     }
   } catch (error) {
     console.error('Error finding or watching chats:', error);
+  }
+};
+
+
+exports.watchSupportMessagesForDriver = async ({ socket, deviceId }) => {
+  try {
+    console.log('Driver Device ID:', deviceId);
+
+    // Fetch the user based on device ID
+    const user = await User.findOne({ deviceId });
+    console.log('User:', user);
+
+    if (!user) {
+      console.error('User not found for device ID:', deviceId);
+      return;
+    }
+
+    // Try to find driver or client based on the user
+    let userCD = await Driver.findOne({ user_id: user._id });
+    console.log('Driver:', userCD);
+
+    if (!userCD) {
+      userCD = await Client.findOne({ user_id: user._id });
+      console.log('Client:', userCD);
+    }
+
+    if (!userCD) {
+      console.error('Neither driver nor client found for user ID:', user._id);
+      return;
+    }
+
+    // Fetch chats related to the user (driver or client)
+    const chats = await ChatSupport.find({ client_id: userCD._id })
+      .populate('client_id')
+      .populate('admin_id');
+
+    if (!chats || chats.length === 0) {
+      console.log('No chats found for client/driver ID:', userCD._id);
+      return;
+    }
+
+    // Extract last messages from each chat
+    const lastMessages = await Promise.all(
+      chats.map(async (chat) => {
+        const lastMessage = chat.messages[chat.messages.length - 1]; // Get the last message
+        if (lastMessage) {
+          return { lastMessage };
+        }
+        return null;
+      })
+    );
+
+    // Filter out null messages
+    const validMessages = lastMessages.filter((msg) => msg !== null);
+
+    if (validMessages.length > 0) {
+      // Emit the last messages to the client
+      socket.emit('SupportchatMessagesUpdatedForDriver', { messages: validMessages });
+    } else {
+      console.log('No valid messages found for client/driver ID:', userCD._id);
+    }
+  } catch (error) {
+    console.error('Error while watching support messages for driver:', error);
   }
 };
