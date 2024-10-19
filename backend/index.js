@@ -89,7 +89,7 @@ mongoose.connect('mongodb+srv://saadi0mehdi:1cmu7lEhWPTW1vGk@cluster0.whkh7vj.mo
 
 const cron = require('node-cron');
 const { handleChatInitiation, handleSendMessage, watchMessages, watchSupportMessagesForDriver } = require('./controllers/ChatSupportController.js');
-const { getRouteDetails } = require('./controllers/LocationRouteController.js');
+const { getRouteDetails,calculateCumulativeOrderDuration } = require('./controllers/LocationRouteController.js');
 const { assignPendingOrders } = require('./controllers/orderController.js');
 
 const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages, joinOrderMessage, watchOrderMessagesForDriver } = require('./controllers/chatController.js');
@@ -168,7 +168,7 @@ socket.on('joinRouteTracking', async (orderId) => {
     console.log("request duration for order id", orderId);
 
     // Envoie les détails initiaux de l'itinéraire
-    const routeDetails = await getRouteDetails(orderId);
+    const routeDetails = await calculateCumulativeOrderDuration(orderId);
     console.log(routeDetails);
     const order1 = await Order.findById(orderId);
 
@@ -180,7 +180,7 @@ socket.on('joinRouteTracking', async (orderId) => {
     }
 
     const interval1 = setInterval(async () => {
-      const updatedRouteDetails = await getRouteDetails(orderId);
+      const updatedRouteDetails = await calculateCumulativeOrderDuration(orderId);
     const order = await Order.findById(orderId);
 
     if (order.status !== 'in_progress') {
@@ -629,15 +629,7 @@ socket.on('adminActivateDeactivateDriver', async ({ driverId, isActive, deviceId
 
 
 
-     socket.on('getRouteDetails', async (orderId) => {
-        try {
-            const result = await getRouteDetails(orderId);
-            socket.emit('routeDetails', result);
-        } catch (error) {
-            socket.emit('error', { message: error.message });
-        }
-    });
-
+    
 
 
 
