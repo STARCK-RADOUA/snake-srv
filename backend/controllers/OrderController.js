@@ -413,13 +413,18 @@ exports.affectOrderToDriver = async (req, res) => {
   try {
     // Find the order by order number
     const order = await Order.findOne({ _id: orderId });
+    const forstDriver =  order.driver_id;
     if (!order) {
       console.log('Order not found:', orderId);
       return res.status(404).json({ message: 'Order not found' });
     }
+    const client = await Client.findById(order.client_id);
 
     // Find the driver by ID
     const driver = await Driver.findById(driverId);
+    const user44 = await User.findById(driver.user_id);
+    const deviceId =  user44.deviceId;
+
     if (!driver) {
       console.log('Driver not found:', driverId);
       return res.status(404).json({ message: 'Driver not found' });
@@ -436,6 +441,38 @@ exports.affectOrderToDriver = async (req, res) => {
     const { io } = require('../index');
     await this.fetchPendingOrders(io) ;
     await this.fetchInProgressOrders(io) ;
+    const driver1 = await Driver.findById(forstDriver);
+    if (!driver1) {
+      console.log('Driver not found:', forstDriver);
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+    const userDriver = await User.findById(driver1.user_id) ;
+const deviceId1= userDriver.deviceId ;
+await this.fetchInProgressOrdersForDriver(io,deviceId1) ;
+
+await this.fetchInProgressOrdersForDriver(io,deviceId) ;
+const userClient = await User.findById(client.user_id);
+
+io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
+
+const driverUp1 = await Driver.findOneAndUpdate(
+  { _id: forstDriver},
+  { orders_count: driver1.orders_count-1 },
+  { new: true } // Retourne la commande mise à jour
+);
+
+
+
+const driverUp = await Driver.findOneAndUpdate(
+    { _id: order.driver_id },
+    { orders_count: driver.orders_count+1 },
+    { new: true } // Retourne la commande mise à jour
+);
+
+
+
+
+
 
     
     res.status(200).json({ message: 'Order successfully assigned', order });
@@ -446,7 +483,7 @@ exports.affectOrderToDriver = async (req, res) => {
 };
 
 
-
+//////////////////////////////////////////////////////////////////////
 
 
 
