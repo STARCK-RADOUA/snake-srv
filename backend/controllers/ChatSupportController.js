@@ -209,9 +209,16 @@ exports.handleSendMessage = async ({ chatId, sender, content, deviceId,  io }) =
     if (sender === "admin") {
       console.log("Sender is admin");
       try {
-        console.log("de" , deviceId)
-            await this.watchSupportMessagesForDriver({ socket: io , deviceId });
 
+
+        const client1 = await Client.findById(chat.client_id);
+        const clientuser = await User.findById(client1.user_id);
+const deviceId1 =   clientuser.deviceId;
+console.log('Driver hk:', deviceId1);
+        console.log("de" , deviceId1)
+            await this.watchSupportMessagesForDriver({ socket: io , deviceId: deviceId1 });
+
+    
       } catch (error) {
         console.error('Error in watchMessages:', error);
       }

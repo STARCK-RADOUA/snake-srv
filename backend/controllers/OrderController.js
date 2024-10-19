@@ -1111,10 +1111,6 @@ async function getAvailableDrivers(tranche) {
 
 
 
-
-
-
-// Fonction pour remettre les commandes à 'pending' et réinitialiser les infos du livreur basé sur son deviceId
 exports.resetOrdersAndDriverByDeviceId = async (deviceId) => {
   try {
     // 1. Trouver le User avec le deviceId fourni
@@ -1140,8 +1136,35 @@ exports.resetOrdersAndDriverByDeviceId = async (deviceId) => {
       { driver_id: driver._id, status: 'in_progress' },
       { $set: { status: 'pending', driver_id: null } }
     );
+    const pendi = await Order.find({ status: 'pending' });
+console.log(pendi)
+console.log("inpro",inProgressOrders)
+    // 5. Envoyer les notifications de mise à jour aux clients
+    for (const order of pendi) {
+      try {
+        // Récupérer le client associé à la commande
+        const client = await Client.findById(order.client_id);
+        if (!client) {
+          console.log(`Client not found for order: ${order._id}`);
+          continue;
+        }
+    
+        // Récupérer l'utilisateur (User) associé au client
+        const userClient = await User.findById(client.user_id);
+        if (!userClient || !userClient.deviceId) {
+          console.log(`User or deviceId not found for client: ${client._id}`);
+          continue;
+        }
+    
+        // Émettre les mises à jour d'état de commande
+        const { io } = require('../index');
+        io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
+      } catch (error) {
+        console.error(`Error processing order ${order._id}:`, error);
+      }
+    }
 
-    // 5. Mettre à jour le livreur : indisponible, déconnecté, et réinitialiser le nombre de commandes
+    // 6. Mettre à jour le livreur : indisponible, déconnecté, et réinitialiser le nombre de commandes
     await Driver.findByIdAndUpdate(
       driver._id,
       {
@@ -1163,17 +1186,6 @@ exports.resetOrdersAndDriverByDeviceId = async (deviceId) => {
     return { success: false, message: 'Erreur lors de la mise à jour' };
   }
 };
-
-
-
-
-
-
-
-
-
-
-
 
 
 

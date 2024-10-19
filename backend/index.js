@@ -120,17 +120,41 @@ let notificationSent = false; // Variable pour suivre l'envoi de la notification
 
   
 // WebSocket connection
-io.on('connection', (socket) => {
+io.on('connection', async(socket) => {
   const deviceId = socket.handshake.query.deviceId;
   socket.join(deviceId);
 
 
-    console.log('A user connected',deviceId);
-    drivers[deviceId] = { socketId: socket.id, status: 'online', lastPing: new Date() };
+  if (deviceId) {
+    console.log('A user connected', deviceId);
+    User.findOne({ deviceId: deviceId, userType: "Driver" })
+      .then((driver) => {
+        if (driver) {
+          drivers[deviceId] = { socketId: socket.id, status: 'online', lastPing: new Date() };
+          console.log('A Driver connected and registered in server', driver.deviceId);
+        }
+        // Emit the connection status to the driver (if needed)
+        socket.emit('connectionStatus', { status: 'connected', deviceId });
 
-    // Emit the connection status to the driver (if needed)
-    socket.emit('connectionStatus', { status: 'connected', deviceId });
+      })
+      .catch((error) => {
+        console.error('Error during connection setup:', error);
+        socket.emit('error', { message: 'Error during connection setup' });
+      }); 
 
+    User.findOne({ deviceId: deviceId, userType: "Client" })
+      .then((driver) => {
+        if (driver) {    
+
+          console.log('A client connected and registered in server', driver.deviceId);
+        }
+        // Emit the connection status to the driver (if needed)
+      })
+      .catch((error) => {
+        console.error('Error during connection setup:', error);
+        socket.emit('error', { message: 'Error during connection setup' });
+      });
+  }
  // When the driver pings the server
  socket.on('driverPing', (data) => {
   console.log(`Received ping from driver: ${data.deviceId}`);
@@ -209,7 +233,7 @@ console.log("interval routes")
 // If driver explicitly disconnects
 socket.on('driverDisconnected', (data) => {
   console.log(`Driver lost internet connection: ${data.deviceId}`);
-  const driver =Driver.findOne({deviceId: data.deviceId});
+  const driver =User.findOne({deviceId: deviceId,userType: "Driver"});
   if (driver) {
    
  if (drivers[data.deviceId]) {
@@ -221,7 +245,7 @@ socket.on('driverDisconnected', (data) => {
 });
 socket.on('reconnect', () => {
   console.log(`Driver reconnected: ${deviceId}`);
-  const driver =Driver.findOne({deviceId: deviceId});
+  const driver =User.findOne({deviceId: deviceId,userType: "Driver"});
   if (driver) {
    
 
@@ -1199,7 +1223,7 @@ const checkDriverStatus = async () => {
 // Exemple de fonction pour mettre à jour le ping du livreur
 const updateDriverPing = async (deviceId) => {
   const now = new Date();
-  const orders = Order.find({status:"pending"})
+  const orders = await Order.find({status:"pending"})
   if (orders){
     await orderController.assignPendingOrders();
 
