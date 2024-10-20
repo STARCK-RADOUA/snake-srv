@@ -113,16 +113,25 @@ async function calculateCumulativeOrderDuration(orderId) {
   
       // 1. Récupérer l'order basé sur l'orderId donné
       const order = await Order.findById(orderId).populate('driver_id');
-      if (!order) {
-        console.error(chalk.red('Order not foun:', error.message));
+     if (order.status !== "in_progress") {
+        return console.error(('Order not inprogess:', error.message));
         
+
+      } if (!order) {
+        return console.error(chalk.red('Order not foun:', error.message));
+        
+      }if (order.driver_id=== null) {
+        return console.error(chalk.red('Order not foun:', error.message));
+        
+
       }
       console.log(`Order found: ${order._id}, driverId: ${order.driver_id}`);
   
       // 2. Récupérer le driver_id de cette commande
       const driverId = order.driver_id;
       if (!driverId) {
-        throw new Error('No driver assigned to this order');
+        return console.error(chalk.red('No driver assigned to this order', error.message));
+
       }
       console.log(`Driver ID: ${driverId}`);
   

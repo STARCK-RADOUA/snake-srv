@@ -146,7 +146,7 @@ io.on('connection', async(socket) => {
       .then((driver) => {
         if (driver) {    
 
-          console.log('A client connected and registered in server', driver.deviceId);
+          console.log('A client connected and use  server', driver.deviceId);
         }
         // Emit the connection status to the driver (if needed)
       })
@@ -166,11 +166,15 @@ io.on('connection', async(socket) => {
 socket.on('joinRouteTracking', async (orderId) => {
   try {
     console.log("request duration for order id", orderId);
-
+    const order1 = await Order.findById(orderId);
+    if (order1.status !== 'in_progress') {
+      clearInterval(interval1);  // Arrêtez l'intervalle si la commande n'est plus 'in_progress'
+      console.log('Order is no longer in progress, stopping route updates');
+      return;
+    }
     // Envoie les détails initiaux de l'itinéraire
     const routeDetails = await calculateCumulativeOrderDuration(orderId);
     console.log(routeDetails);
-    const order1 = await Order.findById(orderId);
 
     const client1 = await Client.findById(order1.client_id);
 
@@ -180,14 +184,16 @@ socket.on('joinRouteTracking', async (orderId) => {
     }
 
     const interval1 = setInterval(async () => {
-      const updatedRouteDetails = await calculateCumulativeOrderDuration(orderId);
-    const order = await Order.findById(orderId);
+
+       const order = await Order.findById(orderId);
 
     if (order.status !== 'in_progress') {
       clearInterval(interval1);  // Arrêtez l'intervalle si la commande n'est plus 'in_progress'
       console.log('Order is no longer in progress, stopping route updates');
       return;
     }
+      const updatedRouteDetails = await calculateCumulativeOrderDuration(orderId);
+   
       const driver = await Driver.findById(order.driver_id);
       const client = await Client.findById(order.client_id);
       const userClient = await User.findById(client.user_id);
