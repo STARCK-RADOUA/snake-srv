@@ -8,5 +8,6 @@ router.post('/initiate', chatController.initiateChat);
 router.post('/send-message', chatController.sendMessage);
 router.get('/:chatId', chatController.getChatHistory);
 router.post('/mark-seenFD', chatController.markSeenFD);
+router.post('/mark-seenFCC', chatController.markSeenFCC);
 
 module.exports = router;

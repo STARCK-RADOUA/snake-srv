@@ -373,3 +373,13 @@ const generateProductReportPDF = async (productWithStats, startDate, endDate) =>
     throw new Error('PDF Generation failed');
   }
 };
+
+
+exports.getProductsList = async (req, res) => {
+  try {
+    const products = await Product.find({}, 'name _id'); // Fetch only name and _id fields
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching products', error });
+  }
+};
