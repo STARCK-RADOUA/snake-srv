@@ -114,9 +114,8 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
   console.log("zrzerf" , orderId , order)
 
   await this.watchOrderMessagesForDriver({ io, deviceId });
-  if (order) {
-    await this.watchOrderMessagesForClient({ io, orderId: order._id });
-  }
+  await this.watchOrderMessagesForClient({ io, orderId });
+
 
     console.log(`Emitted newMessages event for chatId: ${chatId}`);
 
