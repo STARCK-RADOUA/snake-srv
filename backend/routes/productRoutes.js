@@ -1,8 +1,9 @@
 const express = require('express');
-const { getProducts, addProductA, updateProduct, deleteProduct ,getProductRevenueAndCountBetweenDatesPDF  , getProductRevenueAndCountBetweenDates, getAllProductRevenueAndCountBetweenDates} = require('../controllers/ProductController');
+const { getProducts, addProductA, updateProduct, deleteProduct ,getProductRevenueAndCountBetweenDatesPDF, getProductsList  , getProductRevenueAndCountBetweenDates, getAllProductRevenueAndCountBetweenDates} = require('../controllers/ProductController');
 const router = express.Router();
 
 router.get('/get', getProducts);
+router.get('/getList', getProductsList);
 router.post('/add', addProductA);
 router.put('/update/:productId',updateProduct );
 router.delete('/delete/:id', deleteProduct);

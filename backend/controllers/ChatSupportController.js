@@ -210,9 +210,23 @@ exports.handleSendMessage = async ({ chatId, sender, content, deviceId,  io }) =
       console.log("Sender is admin");
       try {
 
+          // Try to find driver or client based on the user
+    let userCD = await Driver.findById(chat.client_id);
+    console.log('Driver:', userCD);
 
-        const client1 = await Client.findById(chat.client_id);
-        const clientuser = await User.findById(client1.user_id);
+    if (!userCD) {
+      userCD = await Client.findById(chat.client_id);
+      console.log('Client:', userCD);
+    }
+
+    if (!userCD) {
+      console.error('Neither driver nor client found for user ID:', user._id);
+      return;
+    }
+
+
+       
+        const clientuser = await User.findById(userCD.user_id);
 const deviceId1 =   clientuser.deviceId;
 console.log('Driver hk:', deviceId1);
         console.log("de" , deviceId1)

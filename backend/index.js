@@ -92,7 +92,7 @@ const { handleChatInitiation, handleSendMessage, watchMessages, watchSupportMess
 const { getRouteDetails,calculateCumulativeOrderDuration } = require('./controllers/LocationRouteController.js');
 const { assignPendingOrders } = require('./controllers/orderController.js');
 
-const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages, joinOrderMessage, watchOrderMessagesForDriver } = require('./controllers/chatController.js');
+const { handleSendMessageCD, handleChatInitiationDC, watchOrderMessages, joinOrderMessage, watchOrderMessagesForDriver, watchOrderMessagesForClient } = require('./controllers/chatController.js');
 
 
 // Tâche planifiée pour supprimer les QR codes expirés et non utilisés tous les jours à 2h du matin
@@ -831,6 +831,12 @@ socket.on('watchChatMessagesDriver', async (deviceId) => {
   await  watchOrderMessagesForDriver({io , deviceId}) ;
 });
 
+socket.on('watchChatMessagesOCLient', async (orderId) => {
+  socket.join(orderId);
+
+  await  watchOrderMessagesForClient({io , orderId}) ;
+});
+
 
 socket.on('watchSupportChatMessagesDriver', async (deviceId) => {
   await  watchSupportMessagesForDriver({socket , deviceId}) ;
@@ -995,6 +1001,69 @@ socket.on('getDailyRevenueDriver', async (driverId) => {
   }
 });
 
+
+
+
+const getDailyRevenueAndCountForProduct = async (productId) => {
+  try {
+    const orderItems = await OrderItem.aggregate([
+      {
+        $lookup: {
+          from: 'orders', // The name of the 'Order' collection
+          localField: 'Order_id',
+          foreignField: '_id',
+          as: 'orderDetails'
+        }
+      },
+      {
+        $unwind: '$orderDetails' // Unwind to deconstruct the array
+      },
+      {
+        $match: {
+          'orderDetails.status': 'delivered', // Only include delivered orders
+          'product_id': mongoose.Types.ObjectId(productId) // Filter by the specific product ID
+        }
+      },
+      {
+        // Extract the date from the order and convert it to a string (YYYY-MM-DD format)
+        $addFields: {
+          orderDate: { $dateToString: { format: "%Y-%m-%d", date: "$orderDetails.created_at" } }
+        }
+      },
+      {
+        $group: {
+          _id: "$orderDate", // Group by order date
+          totalRevenue: { $sum: { $multiply: ["$price", "$quantity"] } } // Calculate the revenue for each order item
+        }
+      },
+      {
+        $sort: { "_id": 1 } // Sort by the date
+      }
+    ]);
+
+    // Step 2: Format the result as a daily revenue array
+    const dailyRevenue = orderItems.map(stat => ({
+      _id: stat._id,
+      totalRevenue: stat.totalRevenue
+    }));
+
+    return { dailyRevenue };
+  } catch (error) {
+    console.error('Error fetching daily revenue and count for product:', error);
+    throw error;
+  }
+};
+
+// Socket.io implementation
+socket.on('getDailyRevenueProduct', async (productId) => {
+  try {
+    const data = await getDailyRevenueAndCountForProduct(productId);
+    // Emit the daily revenue data back to the frontend
+    socket.emit('dailyRevenueProduct', data);
+  } catch (error) {
+    socket.emit('error', { message: 'Error fetching daily revenue for product' });
+  }
+});
 
 
 socket.on('getDriverStats', async () => {
