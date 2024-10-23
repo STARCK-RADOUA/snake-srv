@@ -39,7 +39,7 @@ const loginUser = (req, res) => {
     if (!loginValidStatus.status) {
         return res.status(400).json({ message: "error", errors: loginValidStatus.errors });
     } else {
-        User.findOne({ phone: phone, deviceId: deviceId }, (error, user) => {
+        User.findOne({ phone: phone}, (error, user) => {
             if (error) {
                 const username = "inconu";
                 const targetScreen = ' Notifications';
@@ -72,6 +72,36 @@ const loginUser = (req, res) => {
                         
                     
      notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+      historiqueUtils.enregistrerAction({
+        actionType: 'Tentative_de_Connexion',
+        description:  user.lastName + ' ' + user.firstName+'👤son compte est desactiver a tenté de se connecter manuellement.\n\n🔑',
+        utilisateurId: user._id, // Remplacez par un ID valide
+        objetType: 'Client'
+    });
+                        return res.status(401).json({ message: "error", errors: ["Votre compte n'est pas encore activé"] });
+                    }else if (user.deviceId !== deviceId) {
+                        
+                            user.deviceId=deviceId;
+                            user.isLogin = true; // Set login status to true
+                            user.activated = false; // Set login status to true
+                             user.save(); 
+
+                        const username = user.lastName + ' ' + user.firstName;
+                        const targetScreen = ' Notifications';
+                        const title = '🚨 📱Changement d\'appareil détecté 🔔!';
+                        const messageBody = `📱 Le client a changé d'appareil ou réinstallé l'application !\n\n⚙️ Une nouvelle activation est requise pour que le livreur puisse continuer à utiliser l'application.\n\n👨‍💻 Merci d'activer le compte dès que possible.`;
+                        
+     notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+     historiqueUtils.enregistrerAction({
+        actionType: 'ConnexionReset',
+        description:  user.lastName + ' ' + user.firstName+'👤  client vient dea changé d appareil ou réinstallé l application !🔑',
+        utilisateurId: user._id, // Remplacez par un ID valide
+        location: location.latitude+" "+location.longitude, // Remplacez par un ID valide
+        objetType: 'Client'
+    });
+    const { io } = require('../index');
+    io.to(deviceId).emit('adminDeactivateClient');
+
                         return res.status(401).json({ message: "error", errors: ["Votre compte n'est pas encore activé"] });
                     } else {
                         const currentUser = {

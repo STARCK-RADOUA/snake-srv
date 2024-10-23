@@ -21,7 +21,6 @@ const historiqueSchema = new Schema({
     },
     location: {
         type: String,
-        required: [true, 'Please provide location'],
     },
     objetType: {
         type: String,

@@ -99,7 +99,12 @@ const autoLoginDriver = async (socket, { deviceId }) => {
             await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
          
     
-    
+            await historiqueUtils.enregistrerAction({
+                actionType: 'Connexion',
+                description:  driverUser.lastName + ' ' + driverUser.firstName+'👤 vient de se connecter.\n\n🔑',
+                utilisateurId: driverUser._id, // Remplacez par un ID valide
+                objetType: 'Driver'
+            });
     
             // Si tout va bien, l'utilisateur est connecté
             socket.emit('loginSuccess', { userId: driverUser._id, message: 'Login successful' });

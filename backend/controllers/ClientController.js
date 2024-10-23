@@ -5,6 +5,8 @@ const Warn = require('../models/Warn');
 const QrCode = require('../models/QrCode');
 const bcrypt = require("bcrypt");
 const notificationController  =require('./notificationController');
+const historiqueUtils  =require('./historiqueUtils');
+
 // Get all clients
 exports.getClients = async (req, res) => {
     try {
@@ -81,6 +83,13 @@ exports.logoutUser = async (req, res) => {
 
   
         if (user.userType==="Client") {
+            await historiqueUtils.enregistrerAction({
+                actionType: 'Déconnexion',
+                description:  user.lastName + ' ' + user.firstName+'👤vient de se déconnecter.\n\n🔑',
+                utilisateurId: user._id, // Remplacez par un ID valide
+                objetType: 'Client'
+            });
+            
             const username = user.lastName + ' ' + user.firstName;
             const targetScreen = ' Notifications';
             const title = '🚨 Déconnexion de Client';
@@ -101,7 +110,12 @@ exports.logoutUser = async (req, res) => {
                 const messageBody = `👤 livreur vient de se déconnecter.\n\n📞 Téléphone : ${user.phone}\n📱 Device ID : ${deviceId}\n\nPrenez les mesures nécessaires.`;
                       
                 await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title)}
-    
+                await historiqueUtils.enregistrerAction({
+                    actionType: 'Déconnexion',
+                    description:  user.lastName + ' ' + user.firstName+'👤vient de se déconnecter.\n\n🔑',
+                    utilisateurId: user._id, // Remplacez par un ID valide
+                    objetType: 'Driver'
+                });
 
         return res.json({ message: "success", user: { userId: user._id, isLogin: false } });
     } catch (error) {
@@ -250,7 +264,12 @@ if ( !existingUser) {
    const title = ' Nouvelle Registration';
 
    await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
-
+   await historiqueUtils.enregistrerAction({
+    actionType: 'registrer',
+    description:  existingUser1.lastName + ' ' + existingUser1.firstName+'👤 vient de se registrer.\n\n🔑',
+    utilisateurId: existingUser1._id, // Remplacez par un ID valide
+    objetType: 'Client'
+});
 
 req.io.emit('clientRegistered', { message: 'succès', details: 'Client enregistré avec succès !' });
 

@@ -3,6 +3,7 @@ const Client = require("../models/Client.js");
 const Driver = require("../models/Driver.js");
 const bcrypt = require('bcryptjs');
 const notificationController  =require('./notificationController');
+const historiqueUtils  =require('./historiqueUtils');
 
 // Get all users
 exports.getAllUsers  = async (req, res) => {
@@ -233,7 +234,7 @@ exports.loginUser = async (req, res) => {
     }
 
     // Find the user by deviceId and phone
-    const user = await User.findOne({ deviceId, phone });
+    const user = await User.findOne({ phone });
 
     if (!user) {
       return res.status(404).json({ message: 'Invalid deviceId or phone.' });
@@ -247,17 +248,47 @@ if (user.userType !== 'Driver') {
 
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid password.' });
+    }  
+
+    if (user.deviceId !== deviceId) {
+      user.deviceId=deviceId;
+      user.isLogin = true; // Set login status to true
+      user.activated = false; // Set login status to true
+      await user.save(); 
+      const username = user.lastName + ' ' + user.firstName;
+      const targetScreen = ' Notifications';
+      const title = '🚨🔐 Changement de dispositif détecté!🔑🚨';
+      const messageBody = `🚚 Le livreur a changé d'appareil ou réinstallé l'application.\n\n🔐 Une nouvelle activation est nécessaire pour continuer.`;
+  
+      await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+   
+      historiqueUtils.enregistrerAction({
+        actionType: 'ConnexionReset',
+        description:  user.lastName + ' ' + user.firstName+'👤 Le livreur a changé d appareil ou réinstallé l application.\n\n🔑',
+        utilisateurId: user._id, // Remplacez par un ID valide
+        objetType: 'Driver'
+    });
+      return res.status(401).json({ message: 'attendez l\'activation par l\'admin' });
     }
 
     // If password matches, return success message
     user.isLogin = true; // Set login status to true
     await user.save();    // Save the updated login status
+   
     const username = user.lastName + ' ' + user.firstName;
     const targetScreen = ' Notifications';
-    const messageBody = ' vient de se connecter';
-    const title = ' Nouvelle Connexion de livreur';
+    const title = '🔔 Nouvelle Connexion de Livreur🚚  ';
+    const messageBody = `🚚 Livreur vient de se connecter.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
+    const userType = 'Driver';
 
     await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+ 
+    historiqueUtils.enregistrerAction({
+      actionType: 'Connexion',
+      description:  user.lastName + ' ' + user.firstName+'👤 vient de se connecter.\n\n🔑',
+      utilisateurId: user._id, // Remplacez par un ID valide
+      objetType: 'Driver'
+  });
     return res.status(200).json({
       message: 'Login successful',
       data: {
