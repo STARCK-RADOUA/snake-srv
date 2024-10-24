@@ -98,23 +98,26 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
     io.to(chatId).emit('newMessages', { message: newMessage });
    
     let driver1 = await Driver.findById(chat.driver_id);
+    let client1 = await Client.findById(chat.client_id);
     console.log('Driver:', driver1);
 
  
 
     console.log(driver1 , "dvv")
     const userdriver = await User.findOne(driver1.user_id);
+    const userClient = await User.findOne(client1.user_id);
     console.log(userdriver , "dv")
     
 
     let deviceId = userdriver.deviceId;
+    let deviceIdclient = userClient.deviceId;
   const order = await Order.findOne(chat.order_id)
-  console.log("zrzerf")
+  console.log("zrzerf      device id client        "+deviceIdclient)
   let orderId = order._id ;
   console.log("zrzerf" , orderId , order)
 
   await this.watchOrderMessagesForDriver({ io, deviceId });
-  await this.watchOrderMessagesForClient({ io, orderId });
+  await this.watchOrderMessagesForClient({ io, orderId,deviceIdclient });
 
 
     console.log(`Emitted newMessages event for chatId: ${chatId}`);
@@ -308,7 +311,7 @@ exports.watchOrderMessagesForDriver = async ({ io, deviceId }) => {
 
 
 
-exports.watchOrderMessagesForClient = async ({ io, orderId }) => {
+exports.watchOrderMessagesForClient = async ({ io, orderId,deviceIdclient }) => {
   console.log("yeds" , orderId)
 
   try {
@@ -350,7 +353,7 @@ exports.watchOrderMessagesForClient = async ({ io, orderId }) => {
       console.log(orderId, "ghghg")
 
       // Emit the last messages to the client
-      io.to(orderId).emit('OrderchatMessagesClientUpdated', { messages: validMessages });
+      io.to(deviceIdclient).emit('OrderchatMessagesClientUpdated', { messages: validMessages });
     }
   } catch (error) {
     console.error('Error finding or watching chats:', error);
