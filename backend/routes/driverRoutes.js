@@ -23,6 +23,9 @@ router.put('/:id', driverController.updateDriver);
 // Delete a driver
 router.delete('/:id', driverController.deleteDriver);
 
+router.delete('/delete/:id', driverController.deleteDriverFromAdmin);
+
+
 router.post('/device', driverController.getDriverByDeviceId);
 
 router.post('/updateAvailability', driverController.updateDriverAvailability);

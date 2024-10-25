@@ -14,6 +14,7 @@ router.patch('/:orderId/cancel', orderController.cancelOrder);
 router.post('/update-driver-id', orderController.updateDriverId);
 router.put('/affect-order', orderController.affectOrderToDriver);
 
+router.get('/order-status-counts', orderController.getOrderStatusCounts);
 
 
 module.exports = router;

@@ -401,7 +401,37 @@ exports.getOrderHistory = async (req, res) => {
 };
 
 
+exports.getOrderStatusCounts = async (req, res) => {
+  try {
+    // Define all possible statuses
+    const allStatuses = ['pending', 'in_progress', 'delivered', 'cancelled', 'test'];
 
+    // Aggregate to get the count of each status present in the collection
+    const statusCounts = await Order.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Create a map of the results
+    const statusCountMap = statusCounts.reduce((acc, item) => {
+      acc[item._id] = item.count;
+      return acc;
+    }, {});
+
+    // Transform the result to include all statuses, even with 0 count
+    const formattedCounts = allStatuses.map(status => ({
+      [status]: { count: statusCountMap[status] || 0 } // Use 0 if the status is not present
+    }));
+
+    res.status(200).json([formattedCounts]); // Wrap in an array to match the requested format
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error });
+  }
+};
 
 
 

@@ -176,6 +176,38 @@ exports.deleteDriver = async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 }
+
+exports.deleteDriverFromAdmin = async (req, res) => {
+    console.log("connect")
+    try {
+      // Find the user by ID (User ID comes from req.params.id)
+      const user = await User.findById(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: 'Utilisateur introuvable.' });
+      }
+  
+      // Find the driver associated with the user
+      const driver = await Driver.findOne({ user_id: user._id });
+      if (!driver) {
+        return res.status(404).json({ message: 'Conducteur introuvable.' });
+      }
+  
+      // Delete the driver
+      await Driver.deleteOne({ _id: driver._id });
+  
+      // Delete the associated user
+      await User.deleteOne({ _id: user._id });
+  
+      res.status(200).json({ message: 'Conducteur et utilisateur supprimés avec succès.' });
+      const { io } = require('../index');
+    const drivers = await User.find({userType : 'Driver'});
+    io.emit('driversUpdated', { drivers });
+    } catch (error) {
+      console.error('Erreur lors de la suppression du conducteur:', error);
+      res.status(400).json({ message: 'Erreur lors de la suppression du conducteur. Veuillez réessayer.' });
+    }
+  };
+  
 exports.getDriverByDeviceId = async (req, res) => {
     const { deviceId } = req.body;  // Extract deviceId from the body
 
