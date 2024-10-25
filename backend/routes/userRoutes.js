@@ -25,6 +25,9 @@ router.post('/driver/add', userController.addDriver);
 // Update a user
 router.put('/:id', userController.updateUser);
 
+router.put('/update/:id', userController.updateTheDriver);
+
+
 // Delete a user
 router.delete('/:id', userController.deleteUser);
 

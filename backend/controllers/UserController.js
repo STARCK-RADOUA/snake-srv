@@ -644,6 +644,53 @@ exports.toggleLoginStatusD = async (io, driverId)=> {
 };
 
 
+
+exports.updateTheDriver = async (req, res) => {
+  const { id } = req.params;
+  const { firstName, lastName, deviceId, phone, password, points_earned, userType, activated, isLogin } = req.body;
+
+  try {
+    let updatedData = { firstName, lastName, deviceId, phone, points_earned, userType, activated, isLogin };
+
+    // If password is provided, hash it before updating
+    if (password) {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+      updatedData.password = hashedPassword;
+    }
+
+    // Find driver by ID and update with new data
+    const updatedDriver = await User.findByIdAndUpdate(
+      id,
+      updatedData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedDriver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    res.status(200).json({ message: 'Driver updated successfully', updatedDriver });
+  } catch (error) {
+    // Check for duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        message: `Duplicate field error: ${Object.keys(error.keyValue).join(', ')} already exists.`,
+      });
+    }
+    // Validation errors or others
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: Object.values(error.errors).map((err) => err.message).join(', '),
+      });
+    }
+
+    res.status(500).json({ message: 'An error occurred while updating the driver' });
+  }
+};
+
+
+
 // Function to create a new user and driver
 exports.addDriver = async (req, res) => {
   try {
