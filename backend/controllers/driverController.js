@@ -453,7 +453,7 @@ exports.logoutUser = async (req, res) => {
 
   exports.commandeCanceled = async (req, res) => {
     try {
-        const { order_number,reportReason, comment  } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
+        const { order_number,reportReason, comment,isChecked  } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
         const orderId = order_number;
 console.log('------------------------------------');
 console.log('orderId to canceled...:', orderId);
@@ -463,7 +463,7 @@ console.log('------------------------------------');
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
             { _id: orderId },
-            { status: "cancelled",active: false ,report_reason: reportReason,report_comment: comment },
+            { status: "cancelled",active: false ,report_reason: reportReason,report_comment: comment,spam: isChecked },
             { new: true } // Retourne la commande mise à jour
         );
 
