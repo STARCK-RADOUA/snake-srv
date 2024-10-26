@@ -308,18 +308,22 @@ console.log('------------------------------------');
             password: hashedPassword,
            
         });
+      await this.watchwarnMessages(req.io);
         const username = newClient.lastName + ' ' + newClient.firstName;
         const targetScreen = ' Notifications';
         const title = '🚨 Tentative de Registrement Non Autorisée';
         const messageBody = `👤  Warn a tenté de se registrer manuellement.\n\n❗ Veuillez vérifier les détails de la tentative de registrement :\n\n📞 Téléphone : ${newClient.phone}\n📱 Device ID : ${newClient.deviceId}\n📍 Localisation : latitude :${newClient.location.latitude}, longitude : ${newClient.location.longitude}\n\nPrenez les mesures nécessaires.`;
         
+
         await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
      
      
         
         req.io.emit('clientRegisteredLC', { message: 'success', details: 'Client registered successfully!' });
+  
 
-     
+   
+
 
     } catch (error) {
        
@@ -329,6 +333,31 @@ console.log('------------------------------------');
         
     }
 };
+
+
+exports.watchwarnMessages = async ({ socket }) => {
+    try {
+      // Fetch the latest Warn document
+      const latestWarn = await Warn.findOne().sort({ created_at: -1 });
+  
+      if (latestWarn) {
+        const warningData = {
+          seen: latestWarn.seen,
+          deviceId: latestWarn.deviceId,
+          _id: latestWarn._id,
+        };
+  
+        // Emit the latest warning data to the client who requested it
+        socket.emit('newWarning', warningData);
+      } else {
+        socket.emit('newWarning', { message: 'No warnings found' });
+      }
+    } catch (error) {
+      console.error('Error fetching the latest warning:', error);
+      socket.emit('newWarning', { message: 'Error fetching the latest warning' });
+    }
+  };
+  
 
 exports.updateClient = async (req, res) => {
     let newClient = req.body;

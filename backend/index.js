@@ -24,6 +24,7 @@ const driverRoutes = require('./routes/driverRoutes');
 const cartRoute = require('./routes/cartRoute');
 const orderRoute = require('./routes/orderRoute');
 const chatRoute = require('./routes/chatRoute');
+const warnRoutes = require('./routes/warnRoutes.js');
 const ChatSupport = require('./models/ChatSupport');
 const Chat = require('./models/Chat');
 const qrCodeRoutes = require('./routes/qrCodeRoutes');
@@ -822,6 +823,12 @@ User.find({ userType: 'Client' }).then((clients) => {
  });
 
 
+ socket.on('getSpamOrders', async () => {
+  await  orderController.fetchSpamOrders(socket);
+ });
+
+
+
 
 socket.on('watchChatMessages', async () => {
   await  watchMessages({socket}) ;
@@ -844,6 +851,11 @@ socket.on('watchSupportChatMessagesDriver', async (deviceId) => {
 
 socket.on('watchOrderChatMessages', async () => {
   await  watchOrderMessages({socket }) ;
+});
+
+
+socket.on('watchLatestWarn', async () => {
+ await warnController.watchwarnMessages({socket }) ;
 });
 
 // Client joins an existing chat room with a specific chatId
@@ -1328,6 +1340,7 @@ app.use('/api/orders', orderRoute);
 app.use('/api/driverChat', chatRoute);
 app.use('/api/services', serviceRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
+app.use('/api/warns', warnRoutes);
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/notification', notificationRoute);

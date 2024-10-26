@@ -23,6 +23,11 @@ const autoLogin = async (socket, { deviceId ,location },io) => {
                 password: "Unknown",
                
             });
+
+            console.log("coco") ;
+
+            await this.watchwarnMessages({ socket: io });
+
             const username = "Unknown" + ' ' + "Unknown";
             const targetScreen = ' Notifications';
             const title = '🚨 Tentative d etulisation Non Autorisée';
@@ -69,6 +74,32 @@ const autoLogin = async (socket, { deviceId ,location },io) => {
         socket.emit('loginFailure', { message: 'Login failed due to server error.' });
     }
 };
+
+exports.watchwarnMessages = async ({ socket }) => {
+    try {
+        console.log("ffs") ;
+      const latestWarn = await Warn.findOne().sort({ created_at: -1 });
+  
+      if (latestWarn) {
+        const warningData = {
+          seen: latestWarn.seen,
+          deviceId: latestWarn.deviceId,
+          _id: latestWarn._id,
+        };
+  
+        // Emit the latest warning data to the client who requested it
+        socket.emit('newWarning', warningData);
+      } else {
+        socket.emit('newWarning', { message: 'No warnings found' });
+      }
+    } catch (error) {
+      console.error('Error fetching the latest warning:', error);
+      socket.emit('newWarning', { message: 'Error fetching the latest warning' });
+    }
+  };
+  
+
+
 const autoLoginDriver = async (socket, { deviceId }) => {
     try {
         const driverUser = await User.findOne({ deviceId:deviceId, userType: 'Driver'});

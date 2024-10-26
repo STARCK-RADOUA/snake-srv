@@ -623,6 +623,7 @@ exports.fetchDilevredOrders = async (socket) => {
         comment: order.comment,
         exchange: order.exchange,
         stars: order.stars,
+        report_comment: order.report_comment || null, // Send report_comment only if it exists
         referral_amount: order.exchange,
         created_at: order.created_at,
         updated_at: order.updated_at,
@@ -696,6 +697,68 @@ exports.fetchInProgressOrders = async (socket) => {
     console.error('Error retrieving order history:', err.message);
   }
 };
+
+
+
+exports.fetchSpamOrders = async (socket) => {
+  try {
+    const spamOrders = await Order.find({ spam: true })
+      .populate({
+        path: 'client_id',
+        populate: {
+          path: 'user_id',
+          model: 'User',
+          select: 'firstName lastName'
+        }
+      })
+      .populate({
+        path: 'driver_id',
+        populate: {
+          path: 'user_id',
+          model: 'User',
+          select: 'firstName lastName'
+        }
+      })
+      .populate({
+        path: 'address_id',
+        select: 'address_line'
+      });
+
+    const response = await Promise.all(spamOrders.map(async (order) => {
+      const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
+
+      return {
+        order_number: order._id,
+        client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
+        driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
+        address_line: order.address_id?.address_line || 'N/A',
+        products: orderItems.map(item => ({
+          product: item.product_id,
+          quantity: item.quantity,
+          service_type: item.service_type,
+          isFree: item.isFree,
+          price: item.price,
+          selected_options: item.selected_options
+        })),
+        total_price: order.total_price,
+        delivery_time: order.updated_at,
+        payment_method: order.payment_method,
+        comment: order.comment,
+        exchange: order.exchange,
+        stars: order.stars,
+        referral_amount: order.exchange,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+      };
+    }));
+
+    // Emit the spam orders with populated details to all connected clients
+    socket.emit('spamOrdersUpdated', { total: spamOrders.length, orders: response });
+  } catch (err) {
+    console.error('Error retrieving spam orders:', err.message);
+  }
+};
+
 
 
 
@@ -1041,6 +1104,8 @@ exports.fetchCancelledgOrders = async (socket) => {
         comment: order.comment,
         exchange: order.exchange,
         stars: order.stars,
+        report_comment: order.report_comment || null, // Include report_comment if it exists
+        report_reason: order.report_reason || null ,// Include report_reason if it exists
         referral_amount: order.exchange,
         created_at: order.created_at,
         updated_at: order.updated_at,
