@@ -9,6 +9,8 @@ const orderSchema = new mongoose.Schema({
   status: { type: String, enum: ['pending', 'in_progress', 'delivered', 'cancelled','test'], required: true },
   active: { type: Boolean, default: true },
   spam: { type: Boolean, default: false },
+  notification_2min: { type: Boolean, default: false },
+  notification_pret: { type: Boolean, default: false },
   total_price: { type: Number, required: true },
   exchange: { type: Number, required: false },
   report_reason: { type: String, required: false }, // Motif de signalement dynamique sélectionné

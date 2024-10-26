@@ -105,6 +105,56 @@ async function getRouteDetails(orderId) {
         // Retourner un objet d'erreur sans arrêter le serveur
         return { error: 'Error retrieving route details' };
     }
+  }
+async function getRoutsDetaillForToWOrders(orderId1, orderId2) {
+    try {
+        const order1 = await Order.findById(orderId1).populate('address_id')
+        const order2 = await Order.findById(orderId2).populate('address_id')
+        
+        if (!order1) {
+            console.error(chalk.red('Error: Order not found'));
+            return { error: 'Order not found' };
+        }  if (!order2) {
+            console.error(chalk.red('Error: Order not found'));
+            return { error: 'Order not found' };
+        }
+
+        const address1 = await Address.findById(order1.address_id);
+        const address2 = await Address.findById(order2.address_id);
+
+        if (!address1 ) {
+            console.error(chalk.red('Error: Address or driver not found'));
+            return { error: 'Address or driver not found' };
+        }  if (!address2 ) {
+            console.error(chalk.red('Error: Address or driver not found'));
+            return { error: 'Address or driver not found' };
+        }
+
+       
+
+        // Séparer la latitude et la longitude à partir de la chaîne "latitude, longitude"
+        const [endLat1, endLng1] = address1.localisation.split(',').map(coord => parseFloat(coord.trim()));
+        const [startLat, startLng] = address2.localisation.split(',').map(coord => parseFloat(coord.trim()));
+
+        // Vérification des valeurs
+        if (isNaN(endLat1) || isNaN(endLng1)) {
+            console.error(chalk.red('Error: Invalid coordinates for address'));
+            return { error: 'Invalid coordinates for address' };
+        }  if (isNaN(startLat) || isNaN(startLng)) {
+            console.error(chalk.red('Error: Invalid coordinates for address'));
+            return { error: 'Invalid coordinates for address' };
+        }
+
+        const result = await calculateRoute(startLat, startLng, endLat1, endLng1);
+        return result;
+
+    } catch (error) {
+        // Affichage de l'erreur en rouge dans la console
+        console.error(chalk.red('Error retrieving route details:', error.message));
+
+        // Retourner un objet d'erreur sans arrêter le serveur
+        return { error: 'Error retrieving route details' };
+    }
 }
 
 async function calculateCumulativeOrderDuration(orderId) {
@@ -152,7 +202,7 @@ async function calculateCumulativeOrderDuration(orderId) {
       }
   
       // 5. Trier les commandes par durée (du plus court au plus long)
-      ordersWithDurations.sort((a, b) => a.duration - b.duration);
+      ordersWithDurations.sort((a, b) => b.duration - a.duration);
       console.log('Orders sorted by duration:', ordersWithDurations.map(o => ({ orderId: o.order._id, duration: o.duration })));
   
       // 6. Trouver la durée de la commande d'entrée et calculer le cumul
@@ -162,17 +212,18 @@ async function calculateCumulativeOrderDuration(orderId) {
   
       for (let { order: currentOrder, duration } of ordersWithDurations) {
         if (currentOrder._id.toString() === orderId.toString()) {
+          console.log(`Input order found. ion: ${duration}`);
           inputOrderDuration = duration;
           resultDuration += inputOrderDuration; // Ajouter la durée de la commande en entrée
           console.log(`Input order found. ID: ${currentOrder._id}, Duration: ${duration}`);
-        } else if (duration < inputOrderDuration ) {
+        } else if (duration <= inputOrderDuration ) {
           resultDuration += duration; // Ajouter seulement les commandes ayant une durée inférieure
           console.log(`Adding duration for order ${currentOrder._id}. Duration: ${duration}`);
         }
         cumulativeDurations.push({ orderId: currentOrder._id, duration });
       }
   
-      console.log(`Cumulative duration for the input order ${orderId}: ${Math.floor(resultDuration)} minutes`);
+      console.log(`Cumulative duration for the input order ${resultDuration}: ${Math.floor(resultDuration)} minu ${Math.floor(cumulativeDurations)}tes  ${Math.floor(inputOrderDuration)}`);
       return {
         orderId,
         inputOrderDuration,

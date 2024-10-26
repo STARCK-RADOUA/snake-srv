@@ -206,18 +206,43 @@ socket.on('joinRouteTracking', async (orderId) => {
 console.log("interval routes")
       }
 
-      const duration = updatedRouteDetails.duration; // Durée restante
+      const duration = updatedRouteDetails.resultDuration; // Durée restante
 
       // Vérifiez si la durée est inférieure à 2 minutes (120 secondes)
-      if ((Math.floor(duration / 60)) < 2 && !notificationSent) {
+      if ((Math.floor(duration )) <= 2 && !order.notification_2min) {
+
+        const orderup = await Order.findOneAndUpdate(
+          { _id: orderId },
+          { notification_2min: true },
+          { new: true } // Retourne la commande mise à jour
+      );   
         const name = "Mise à jour de l'itinéraire"; // Personnalisez le nom
-        const message = `Votre commande arrive bientôt ! Temps restant : ${Math.floor(duration / 60)}min.`; // Message personnalisé
-        const title = "Attention !"; // Titre de la notification
+        const message = `🎉  Votre commande arrive bientôt !
+        ⏰ Temps restant estimé : 2 min.
+        🛍️ Préparez-vous à recevoir votre commande !`;  
+              const title = "🔔 Attention ! 🚚"; // Titre de la notification
         const userType = "Client"; // Type d'utilisateur (client)
 
         await notificationController.sendNotificationForce(name, userClient.pushToken, message, title, userType);
-        notificationSent = true; // Marque que la notification a été envoyée
-      }
+           } 
+       if ((Math.floor(duration )) <= 0.5 && !order.notification_pret) {
+
+        const orderup = await Order.findOneAndUpdate(
+          { _id: orderId },
+          { notification_pret: true },
+          { new: true } // Retourne la commande mise à jour
+      );
+        const name = "Mise à jour de l'itinéraire"; // Personnalisez le nom
+        const message = `🎉 Votre commande est arrivée au point de livraison ! 
+        🕒 Veuillez être prêt à la réceptionner dans les minutes qui suivent.
+        📦 Merci d'avoir fait confiance à notre service !`;
+        
+        const title = "📍 Livraison en cours !"; // Titre de la notification
+        const userType = "Client"; // Type d'utilisateur (client)
+
+        await notificationController.sendNotificationForce(name, userClient.pushToken, message, title, userType);
+           }
+
 
     }, 30000);
 
