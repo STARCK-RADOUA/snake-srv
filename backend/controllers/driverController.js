@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Client = require('../models/Client');
 const notificationController  =require('./notificationController');
 const orderController  =require('./orderController');
+const {getRouteDetailsByOrderAndDriver}  =require('./LocationRouteController');
 // Get all drivers
 exports.getAllDrivers = async (req, res) => {
     try {
@@ -346,6 +347,95 @@ await notificationController.sendNotificationForce(name2, userDriver.pushToken, 
         return res.status(500).json({ message: "error", errors: ["Failed to process order delivery"] });
     }
 };
+exports.commandeRedistribuer = async (req, res) => {
+  try {
+      const { order_number, deviceId } = req.body;
+      const orderId = order_number;
+
+      // Fetch the order, driver, and client details
+      const existingOrder = await Order.findById(orderId);
+      if (!existingOrder) return res.status(404).json({ message: "error", errors: ["Order not found"] });
+      
+      const userDriver = await User.findOne({ deviceId });
+      const currentDriver = await Driver.findOne({ user_id: userDriver._id });
+      const client = await Client.findById(existingOrder.client_id);
+      const userClient = await User.findById(client.user_id);
+
+      // Check order status
+      if (existingOrder.status !== "in_progress") {
+          return res.status(400).json({ message: "error", errors: ["Order not in progress"] });
+      }
+
+      // Find all available drivers
+      const availableDrivers = await Driver.find({ isDisponible: true, _id: { $ne: existingOrder.driver_id } });
+
+      if (!availableDrivers.length) {
+          return res.status(404).json({ message: "error", errors: ["No available drivers found"] });
+      }
+
+      // Variables to track the closest driver
+      let closestDriver = null;
+      let shortestDuration = Infinity;
+
+      // Loop through each available driver to find the closest one
+      for (const driver of availableDrivers) {
+          const result = await getRouteDetailsByOrderAndDriver(orderId, driver._id);
+          
+          // If there's an error, skip to the next driver
+          if (result.error) continue;
+
+          const { duration } = result;
+console.log('------------------------------------');
+console.log('wa haa duration ', duration);
+console.log('------------------------------------');
+          // Check if the route is within 20 minutes and if it’s the shortest duration found
+          if (duration <= 20 && duration < shortestDuration) {
+              shortestDuration = duration;
+              closestDriver = driver;
+          }
+      }
+
+      // If no driver is found within 20 minutes, return an error
+      if (!closestDriver) {
+          return res.status(404).json({ message: "error", errors: ["No drivers within 20 minutes found"] });
+      }
+   const driverUp = await Driver.findOneAndUpdate(
+        { _id: currentDriver._id },
+        { orders_count: currentDriver.orders_count-1 },
+        { new: true } // Retourne la commande mise à jour
+    );
+       const driverUp2 = await Driver.findOneAndUpdate(
+        { _id: closestDriver._id },
+        { orders_count: closestDriver.orders_count+1 },
+        { new: true } // Retourne la commande mise à jour
+    );
+      // Assign the closest driver to the order
+      existingOrder.driver_id = closestDriver._id;
+      await existingOrder.save();
+      const newDriver = await User.findById(closestDriver.user_id );
+
+
+      // Notify client and update order status
+      const username = `${userDriver.lastName} ${userDriver.firstName}`;
+      const username2 = `${newDriver.lastName} ${newDriver.firstName}`;
+      const targetScreen = 'Notifications';
+      const title = '🚨 Commande Redistribuée';
+      const messageBody = `👤 ${username} a redistribué une commande.\n\n📞 Client : ${userClient.lastName} ${userClient.firstName}\n📱 Order ID : ${orderId}\n\nPrenez les mesures nécessaires. Prix total : ${existingOrder.total_price} €  \n\nle new livreur  : ${username2}  duree :${shortestDuration} `;
+
+      await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
+
+      // Emit real-time update to the client
+      const { io } = require('../index');
+      io.to(userClient.deviceId).emit('orderStatusUpdates', { order: existingOrder });
+
+      return res.json({ message: "success", order: { _id: existingOrder._id, status: existingOrder.status, active: existingOrder.active } });
+
+  } catch (error) {
+      console.error("Error redistributing order:", error);
+      return res.status(500).json({ message: "error", errors: ["Failed to redistribute order"] });
+  }
+};
+
 
 exports.logoutUser = async (req, res) => {
     try {

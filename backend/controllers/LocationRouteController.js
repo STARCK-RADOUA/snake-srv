@@ -106,6 +106,46 @@ async function getRouteDetails(orderId) {
         return { error: 'Error retrieving route details' };
     }
   }
+  async function getRouteDetailsByOrderAndDriver(orderId, driverId) {
+    try {
+        const order = await Order.findById(orderId).populate('address_id').populate('driver_id');
+        
+        if (!order) {
+            console.error(chalk.red('Error: Order not found'));
+            return { error: 'Order not found' };
+        }
+
+        const address = await Address.findById(order.address_id);
+        const driver = await Driver.findById(driverId);
+
+        if (!address || !driver) {
+            console.error(chalk.red('Error: Address or driver not found'));
+            return { error: 'Address or driver not found' };
+        }
+
+        const startLat = driver.location.latitude;
+        const startLng = driver.location.longitude;
+
+        // Séparer la latitude et la longitude à partir de la chaîne "latitude, longitude"
+        const [endLat, endLng] = address.localisation.split(',').map(coord => parseFloat(coord.trim()));
+
+        // Vérification des valeurs
+        if (isNaN(endLat) || isNaN(endLng)) {
+            console.error(chalk.red('Error: Invalid coordinates for address'));
+            return { error: 'Invalid coordinates for address' };
+        }
+
+        const result = await calculateRoute(startLat, startLng, endLat, endLng);
+        return result;
+
+    } catch (error) {
+        // Affichage de l'erreur en rouge dans la console
+        console.error(chalk.red('Error retrieving route details:', error.message));
+
+        // Retourner un objet d'erreur sans arrêter le serveur
+        return { error: 'Error retrieving route details' };
+    }
+  }
 async function getRoutsDetaillForToWOrders(orderId1, orderId2) {
     try {
         const order1 = await Order.findById(orderId1).populate('address_id')
@@ -239,5 +279,6 @@ async function calculateCumulativeOrderDuration(orderId) {
 module.exports = {
     getRouteDetails,
     calculateRoute,
-    calculateCumulativeOrderDuration
+    calculateCumulativeOrderDuration,
+    getRouteDetailsByOrderAndDriver
 };

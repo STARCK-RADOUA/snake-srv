@@ -8,6 +8,7 @@ router.get('/diponible', driverController.getAvailableDrivers);
 router.get('/forChart', driverController.getAvailableDriversForChart);
 
 router.post('/commandeLivree', driverController.commandeLivree); 
+router.post('/commandeRedestrubier', driverController.commandeRedistribuer); 
 router.post('/commandeCanceled', driverController.commandeCanceled); 
 router.post('/logout', driverController.logoutUser); 
 
