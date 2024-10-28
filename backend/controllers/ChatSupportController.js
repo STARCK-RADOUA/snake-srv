@@ -5,6 +5,7 @@ const ChatSupport = require('../models/ChatSupport');
 const Client = require('../models/Client');
 const Driver = require('../models/Driver');
 const User = require('../models/User');
+const notificationController = require('./notificationController');
 
 
 exports.initiateChat = async (req, res) => {
@@ -231,7 +232,13 @@ const deviceId1 =   clientuser.deviceId;
 console.log('Driver hk:', deviceId1);
         console.log("de" , deviceId1)
             await this.watchSupportMessagesForDriver({ socket: io , deviceId: deviceId1 });
-
+            const name = "Mise à jour de l'itinéraire"; // Personnalisez le nom
+            const message = `Un nouveau message de l'administration est disponible. !
+            ⏰Veuillez le consulter et suivre les instructions nécessaires.`;  
+                  const title = "🔔 Nouveau Message Administrateur 📢 "; // Titre de la notification
+            const userType = "Driver"; // Type d'utilisateur (client)
+    
+            await notificationController.sendNotificationForce(name, clientuser.pushToken, message, title, userType);
     
       } catch (error) {
         console.error('Error in watchMessages:', error);
@@ -240,7 +247,60 @@ console.log('Driver hk:', deviceId1);
      
         console.log("Handling non-admin message with deviceId:", deviceId);
         try {
+          
           await this.watchMessages({ socket: io });
+
+          let userCD = await Driver.findById(chat.client_id);
+          console.log('Driver:', userCD);
+      
+          if (!userCD) {
+            userCD = await Client.findById(chat.client_id);
+            console.log('Client:', userCD);
+          }
+      
+          if (!userCD) {
+            console.error('Neither driver nor client found for user ID:', user._id);
+            return;
+          }
+          const clientuser = await User.findById(userCD.user_id);
+          const deviceId1 =   clientuser.deviceId;
+if (sender === "client") {
+
+  
+  const username = ' ' ;
+  const targetScreen = ' Notifications';
+  const title = "🔔 Message de Client 📨";
+  const messageBody =  `Un nouveau message a été reçu de la part de votre client :
+  ${ clientuser.lastName + ' ' + clientuser.firstName}.
+  📍 Veuillez le consulter pour une prise en charge rapide.`;
+  
+  await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+
+
+
+} else if (sender ==="driver") {
+
+  const username = ' ' ;
+  const targetScreen = ' Notifications';
+  const title = "🔔 Message de Livreur 🛵";
+  const messageBody = `Un nouveau message a été reçu 
+  de la part de Livreur :
+   ${ clientuser.lastName + ' ' + clientuser.firstName}.
+  📍 Veuillez le consulter pour une prise en charge rapide.`;
+  
+  await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+
+
+
+
+
+
+
+
+}
+
+
+
         } catch (error) {
           console.error('Error in watchSupportMessagesForDriver:', error);
         }

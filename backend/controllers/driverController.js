@@ -501,6 +501,15 @@ console.log('------------------------------------');
 
         // Envoi de la notification
         await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
+        if(isChecked){
+         const username = `${userDriver.lastName} ${userDriver.firstName}`;
+        const targetScreen = 'Notifications';
+        const title = '🚨🚨🚨  Commande Signalee 🚨🚨🚨';
+        const messageBody = `🚨🚨👤 ${username} vient de signaler une commande.\n\n📞 Client : ${userClient.lastName} ${userClient.firstName}\n📱 Order ID : ${orderId}\n\nPrenez les mesures nécessaires. Prix total : ${order.total_price} €`;
+
+        // Envoi de la notification
+        await notificationController.sendNotificationAdmin(username, targetScreen, messageBody, title);
+        }
         const { io } = require('../index');
         io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
        

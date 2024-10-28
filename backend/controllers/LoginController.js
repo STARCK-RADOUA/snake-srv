@@ -100,12 +100,17 @@ exports.watchwarnMessages = async ({ socket }) => {
   
 
 
-const autoLoginDriver = async (socket, { deviceId }) => {
+const autoLoginDriver = async (socket, { deviceId,location }) => {
     try {
         const driverUser = await User.findOne({ deviceId:deviceId, userType: 'Driver'});
 
             if(!driverUser){
                 socket.emit('loginFailure', { message: 'Device ID not found' });
+                return;
+            }
+
+      if(!location){
+                socket.emit('loginFailure', { message: 'location  not found' });
                 return;
             }
 
@@ -134,7 +139,9 @@ const autoLoginDriver = async (socket, { deviceId }) => {
                 actionType: 'Connexion',
                 description:  driverUser.lastName + ' ' + driverUser.firstName+'👤 vient de se connecter.\n\n🔑',
                 utilisateurId: driverUser._id, // Remplacez par un ID valide
-                objetType: 'Driver'
+                objetType: 'Driver',
+                location: location
+
             });
     
             // Si tout va bien, l'utilisateur est connecté

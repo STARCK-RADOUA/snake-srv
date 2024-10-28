@@ -45,6 +45,7 @@ const OrderItem = require('./models/OrderItem');
 const chatRoutes = require('./routes/chatRoutes');
 const cors = require('cors');
 const Address = require('./models/Address');
+const historiqueRoutes = require('./routes/historiqueRoutes');
 
 const {
   emitInitialStatus,
@@ -528,11 +529,11 @@ socket.on('reconnect', () => {
     });
        socket.on('autoLoginDriver', async (data) => {
         try {
-            const { deviceId } = data;
+            const { deviceId,location } = data;
     console.log('Auto login data:', data);
             // Vérification si l'ID de l'appareil est fourni
-            if (!deviceId) {
-                socket.emit('loginFailure', { message: 'Device ID not provided' });
+            if (!deviceId || !location) {
+                socket.emit('loginFailure', { message: 'Device ID not provided or location' });
                 return;
             }
     
@@ -1389,6 +1390,7 @@ app.use('/api/driverChat', chatRoute);
 app.use('/api/services', serviceRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
 app.use('/api/warns', warnRoutes);
+app.use('/api/history', historiqueRoutes);
 
 app.use('/api/admin', adminRoutes);
 app.use('/api/notification', notificationRoute);

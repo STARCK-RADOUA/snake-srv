@@ -3,6 +3,7 @@ const Client = require('../models/Client');
 const Driver = require('../models/Driver');
 const Order = require('../models/Order');
 const User = require('../models/User');
+const notificationController = require('./notificationController');
 
 exports.initiateChat = async (req, res) => {
   const { driver_id, client_id, order_id } = req.body;
@@ -118,6 +119,37 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
 
   await this.watchOrderMessagesForDriver({ io, deviceId });
   await this.watchOrderMessagesForClient({ io, orderId,deviceIdclient });
+
+
+if(sender === 'client'){
+
+ const name = "new message"; // Personnalisez le nom
+  const title = "🔔 Nouveau Message Client 📨";
+  const message = `Vous avez reçu un nouveau message de votre client.
+  📍 Veuillez le consulter et répondre si nécessaire.`;
+  // Titre de la notification
+  const userType = "Driver"; // Type d'utilisateur (client)
+
+  await notificationController.sendNotificationForce(name, userdriver.pushToken, message, title, userType);
+
+
+
+}else if(sender ==='driver'){
+  const name = "new message"; // Personnalisez le nom
+
+  const title = "🔔 Nouveau Message de votre Livreur 🛵";
+  const message = `Votre livreur vous a envoyé un nouveau message.
+  📍 Consultez-le pour suivre l'état de votre livraison.`;
+  
+  // Titre de la notification
+  const userType = "Client"; // Type d'utilisateur (client)
+
+  await notificationController.sendNotificationForce(name, userClient.pushToken, message, title, userType);
+
+
+}
+
+
 
 
     console.log(`Emitted newMessages event for chatId: ${chatId}`);

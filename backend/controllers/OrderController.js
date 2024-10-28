@@ -834,7 +834,7 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
         updated_at: order.updated_at,
       };
     }));
-;
+
 
     // Emit the orders to the Driver
     io.to(deviceId).emit('orderInprogressUpdatedForDriver', { total: orders.length, orders: response, active: driver.isDisponible });

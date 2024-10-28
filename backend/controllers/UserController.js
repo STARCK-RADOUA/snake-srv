@@ -226,10 +226,10 @@ exports.editActivatedStatus = async (user_id, newActivatedStatus) => {
 
 exports.loginUser = async (req, res) => {
   try {
-    const { deviceId, phone, password } = req.body;
+    const { deviceId, phone, password ,location } = req.body;
 
     // Check if the required fields are provided
-    if (!deviceId || !phone || !password) {
+    if (!deviceId || !phone || !password || !location) {
       return res.status(400).json({ message: 'Please provide deviceId, phone, and password.' });
     }
 
@@ -237,7 +237,7 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ phone });
 
     if (!user) {
-      return res.status(404).json({ message: 'Invalid deviceId or phone.' });
+      return res.status(404).json({ message: ' invalid phone' });
     }
 if (user.userType !== 'Driver') {
       return res.status(404).json({ message: 'compte introubable' });
@@ -266,7 +266,8 @@ if (user.userType !== 'Driver') {
         actionType: 'ConnexionReset',
         description:  user.lastName + ' ' + user.firstName+'👤 Le livreur a changé d appareil ou réinstallé l application.\n\n🔑',
         utilisateurId: user._id, // Remplacez par un ID valide
-        objetType: 'Driver'
+        objetType: 'Driver',
+        location: location
     });
       return res.status(401).json({ message: 'attendez l\'activation par l\'admin' });
     }
@@ -287,7 +288,9 @@ if (user.userType !== 'Driver') {
       actionType: 'Connexion',
       description:  user.lastName + ' ' + user.firstName+'👤 vient de se connecter.\n\n🔑',
       utilisateurId: user._id, // Remplacez par un ID valide
-      objetType: 'Driver'
+      objetType: 'Driver',
+      location: location
+
   });
     return res.status(200).json({
       message: 'Login successful',
