@@ -455,10 +455,23 @@ exports.changeName = async (req, res) => {
 
   try {
     const client = await Client.findById(id);
+    const userCli = await User.findById(client.user_id);
+    if (!userCli) {
+      return res.status(404).json({ message: 'User not found' });
+    }
     const user = await User.findByIdAndUpdate(client.user_id, { firstName, lastName }, { new: true });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    const username = user.lastName + ' ' + user.firstName;
+    const oldusername = userCli.lastName + ' ' + userCli.firstName;
+    const targetScreen = ' Notifications';
+    const messageBody = ` vient de changer son nom de ${oldusername} vers ${username}`;
+    const title = ' Changemment de Nom de Client';
+ 
+    await notificationController.sendNotificationAdmin(oldusername,targetScreen,messageBody ,title);
+ 
+ 
     res.status(200).json({ message: 'Name updated successfully', user });
 
   } catch (error) {
