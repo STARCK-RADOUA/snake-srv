@@ -568,6 +568,63 @@ socket.on('reconnect', () => {
         }
     }); 
     
+    socket.on('searchQuery', async (params) => {
+      try {
+        const { query, startDate, endDate } = params;
+        const regex = new RegExp(query, 'i'); // Créer une expression régulière insensible à la casse pour la recherche
+    
+        // Récupérer toutes les collections de la base de données
+        const db = mongoose.connection.db; // Accéder correctement à la base de données MongoDB
+        const collections = await db.listCollections().toArray();
+        let results = [];
+    
+        // Effectuer la recherche dans chaque collection
+        for (const collection of collections) {
+          const col = db.collection(collection.name);
+    
+          // Construire la requête de base
+          let queryFilter = {};
+    console.log(startDate);
+    console.log(endDate);
+          // Ajouter le filtre de date si les dates sont spécifiées
+          if ((startDate && endDate) && (startDate !== endDate)) {
+            queryFilter.created_at = {
+              $gte: new Date(startDate),
+              $lte: new Date(endDate),
+            };
+          }
+    
+          // Récupérer les documents correspondant au filtre
+          const documents = await col.find(queryFilter).toArray();
+    
+          // Filtrer les documents par le terme de recherche
+          const matchedDocuments = documents.filter((doc) => {
+            return Object.values(doc).some((value) => {
+              if (typeof value === 'string' && regex.test(value)) {
+                return true;
+              }
+              return false;
+            });
+          });
+    
+          if (matchedDocuments.length > 0) {
+            results = results.concat(
+              matchedDocuments.map((doc) => ({
+                collection: collection.name,
+                _id: doc._id,
+                details: doc, // Retourner tout le document avec toutes ses propriétés
+              }))
+            );
+          }
+        }
+    
+        // Envoyer les résultats au client
+        socket.emit('searchResults', results);
+      } catch (error) {
+        console.error('Error during search:', error);
+        socket.emit('searchResults', []); // Envoyer une liste vide en cas d'erreur
+      }
+    });
     
     
     socket.on('adminRestoreLogin', async (data) => {

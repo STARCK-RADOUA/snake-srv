@@ -257,6 +257,7 @@ exports.adminRestoreLogin = async (socket, { deviceId }) => {
 
         // Update the user's password in the database
         user.password = hashedPassword;
+        user.isLogin = false;
         await user.save();
 
         // Prepare the email content with the user's phone number, email, and the new password
