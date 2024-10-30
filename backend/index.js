@@ -962,6 +962,55 @@ socket.on('getDeliveredOrdersSummary', async () => {
 
 
 
+
+
+socket.on('getAllOrdersSummary', async () => {
+  try {
+    // Fetch delivered orders from the database
+    const deliveredOrders = await Order.find();
+
+    // Log the delivered orders for debugging
+    console.log('Delivered Orders:', deliveredOrders);
+
+    // If there are no delivered orders, totalSum will be 0
+    if (!Array.isArray(deliveredOrders) || deliveredOrders.length === 0) {
+      console.log('No delivered orders found.');
+      socket.emit('AllOrdersSummary', {
+        totalSum: 0,
+        totalCount: 0
+      });
+      return;
+    }
+
+    // Calculate total sum of delivered orders
+    const totalSum = deliveredOrders.reduce((acc, order) => {
+      // Check if total_price exists and is a valid number
+      const price = typeof order.total_price === 'number' ? order.total_price : 0;
+      return acc + price;
+    }, 0);
+
+    const totalCount = deliveredOrders.length;
+
+    // Log the calculated totalSum and totalCount for debugging
+    console.log('Total Sum:', totalSum);
+    console.log('Total Count:', totalCount);
+
+    // Emit the result back to the client
+    socket.emit('AllOrdersSummary', {
+      totalSum,
+      totalCount
+    });
+
+  } catch (error) {
+    // Handle any errors during fetching or processing
+    console.error('Error fetching or processing delivered orders:', error);
+    socket.emit('error', 'Could not retrieve delivered orders');
+  }
+});
+
+
+
+
 socket.on('getTotalClients', async () => {
   try {
     const totalClients = await User.countDocuments({ userType: 'Client' });
@@ -973,6 +1022,17 @@ socket.on('getTotalClients', async () => {
   }
 });
 
+
+
+  // Listen for "getTotalSpamOrdersNumber" event
+  socket.on('getTotalSpamOrdersNumber', async () => {
+    try {
+      const spamCount = await Order.countDocuments({ spam: true });
+      socket.emit('spamCountResponse', spamCount); // Emit response back to client
+    } catch (error) {
+      console.error('Error fetching spam count:', error);
+    }
+  });
 
 
 socket.on('getTotalProducts', async () => {

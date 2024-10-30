@@ -408,6 +408,9 @@ exports.getOrderStatusCounts = async (req, res) => {
 
     // Aggregate to get the count of each status present in the collection
     const statusCounts = await Order.aggregate([
+      { 
+        $match: { spam: false } // Exclude spam orders
+      },
       {
         $group: {
           _id: "$status",
@@ -519,7 +522,7 @@ const driverUp = await Driver.findOneAndUpdate(
 
 exports.fetchPendingOrders = async (socket) => {
   try {
-    const orders = await Order.find({ status: 'pending' })
+    const orders = await Order.find({ status: 'pending' , spam: false  })
     .populate({
       path: 'client_id',
       populate: {
@@ -538,7 +541,6 @@ exports.fetchPendingOrders = async (socket) => {
     })
     .populate({
       path: 'address_id',
-      select: 'address_line'
     }) ;
     const response = await Promise.all(orders.map(async (order) => {
       const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
@@ -548,12 +550,16 @@ exports.fetchPendingOrders = async (socket) => {
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        building: order.address_id?.building || 'N/A',
+        floor: order.address_id?.floor || 'N/A',
+        door_number: order.address_id?.door_number || 'N/A',
+        digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
           quantity: item.quantity,
           service_type: item.service_type,
           isFree: item.isFree,
-
+          priceDA: item.priceDA,
           price: item.price,
           selected_options: item.selected_options
         })),
@@ -580,7 +586,7 @@ exports.fetchPendingOrders = async (socket) => {
 
 exports.fetchDilevredOrders = async (socket) => {
   try {
-    const orders = await Order.find({ status: 'delivered' })
+    const orders = await Order.find({ status: 'delivered' , spam: false  })
     .populate({
       path: 'client_id',
       populate: {
@@ -599,7 +605,6 @@ exports.fetchDilevredOrders = async (socket) => {
     })
     .populate({
       path: 'address_id',
-      select: 'address_line'
     }) ;
     const response = await Promise.all(orders.map(async (order) => {
       const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
@@ -609,8 +614,13 @@ exports.fetchDilevredOrders = async (socket) => {
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        building: order.address_id?.building || 'N/A',
+        floor: order.address_id?.floor || 'N/A',
+        door_number: order.address_id?.door_number || 'N/A',
+        digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
+          priceDA: item.priceDA,
           quantity: item.quantity,
           service_type: item.service_type,
           price: item.price,
@@ -641,7 +651,7 @@ exports.fetchDilevredOrders = async (socket) => {
 
 exports.fetchInProgressOrders = async (socket) => {
   try {
-    const orders = await Order.find({ status: 'in_progress' })
+    const orders = await Order.find({ status: 'in_progress' ,  spam: false  })
     .populate({
       path: 'client_id',
       populate: {
@@ -660,7 +670,6 @@ exports.fetchInProgressOrders = async (socket) => {
     })
     .populate({
       path: 'address_id',
-      select: 'address_line'
     }) ;
     const response = await Promise.all(orders.map(async (order) => {
       const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
@@ -670,9 +679,14 @@ exports.fetchInProgressOrders = async (socket) => {
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        building: order.address_id?.building || 'N/A',
+        floor: order.address_id?.floor || 'N/A',
+        door_number: order.address_id?.door_number || 'N/A',
+        digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
           quantity: item.quantity,
+          priceDA: item.priceDA,
           service_type: item.service_type,
           isFree: item.isFree,
           price: item.price,
@@ -721,7 +735,6 @@ exports.fetchSpamOrders = async (socket) => {
       })
       .populate({
         path: 'address_id',
-        select: 'address_line'
       });
 
     const response = await Promise.all(spamOrders.map(async (order) => {
@@ -732,12 +745,17 @@ exports.fetchSpamOrders = async (socket) => {
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        building: order.address_id?.building || 'N/A',
+        floor: order.address_id?.floor || 'N/A',
+        door_number: order.address_id?.door_number || 'N/A',
+        digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
           quantity: item.quantity,
           service_type: item.service_type,
           isFree: item.isFree,
           price: item.price,
+          priceDA: item.priceDA,
           selected_options: item.selected_options
         })),
         total_price: order.total_price,
@@ -817,6 +835,7 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
         location: order.address_id?.localisation || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
+          priceDA: item.priceDA,
           quantity: item.quantity,
           service_type: item.service_type,
           isFree: item.isFree,
@@ -1061,7 +1080,7 @@ const generatePDF = async (orders, totalOrders, totalRevenue, startDate, endDate
 
 exports.fetchCancelledgOrders = async (socket) => {
   try {
-    const orders = await Order.find({ status: 'cancelled' })
+    const orders = await Order.find({ status: 'cancelled' , spam: false })
     .populate({
       path: 'client_id',
       populate: {
@@ -1080,7 +1099,6 @@ exports.fetchCancelledgOrders = async (socket) => {
     })
     .populate({
       path: 'address_id',
-      select: 'address_line'
     }) ;
     const response = await Promise.all(orders.map(async (order) => {
       const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
@@ -1090,12 +1108,17 @@ exports.fetchCancelledgOrders = async (socket) => {
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        building: order.address_id?.building || 'N/A',
+        floor: order.address_id?.floor || 'N/A',
+        door_number: order.address_id?.door_number || 'N/A',
+        digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
           quantity: item.quantity,
           service_type: item.service_type,
           price: item.price,
           isFree: item.isFree,
+          priceDA: item.priceDA,
           selected_options: item.selected_options
         })),
         total_price: order.total_price,
@@ -1529,7 +1552,7 @@ function parseLocation(location) {
 
 exports.fetchTestOrders = async (socket) => {
   try {
-    const orders = await Order.find({ status: 'test' })
+    const orders = await Order.find({ status: 'test'  , spam: false })
     .populate({
       path: 'client_id',
       populate: {
@@ -1548,7 +1571,6 @@ exports.fetchTestOrders = async (socket) => {
     })
     .populate({
       path: 'address_id',
-      select: 'address_line'
     }) ;
     const response = await Promise.all(orders.map(async (order) => {
       const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
@@ -1558,10 +1580,15 @@ exports.fetchTestOrders = async (socket) => {
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        building: order.address_id?.building || 'N/A',
+        floor: order.address_id?.floor || 'N/A',
+        door_number: order.address_id?.door_number || 'N/A',
+        digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
           quantity: item.quantity,
           service_type: item.service_type,
+          priceDA: item.priceDA,
           price: item.price,
           isFree: item.isFree,
           selected_options: item.selected_options

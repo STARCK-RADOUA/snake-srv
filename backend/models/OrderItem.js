@@ -13,6 +13,7 @@ const orderItemSchema = new mongoose.Schema({
   service_type: { type: String, required: true },
   quantity: { type: Number, required: true },
   price: { type: Number, required: true },
+  priceDA: { type: Number, required: true },
   selected_options: [selectedOptionSchema],  // Liste des options supplémentaires choisies
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now },

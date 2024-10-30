@@ -20,6 +20,7 @@ const orderSchema = new mongoose.Schema({
   drivercomment: String,
   service_Test: { type: Boolean, default: false },
   stars: Number,
+  seen: { type: Boolean, default: false }  ,// New field to track if the message has been seen
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 }, {

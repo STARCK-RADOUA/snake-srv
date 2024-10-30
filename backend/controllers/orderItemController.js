@@ -75,6 +75,7 @@ exports.createOrderItem = async (req, res) => {
   
       // Step 3: Calculate the total price including selected options
       let totalPrice = product.price * quantity;
+      priceDA = product.price ; 
   
       selectedItems.forEach(option => {
         totalPrice += option.price * quantity;
@@ -87,6 +88,7 @@ exports.createOrderItem = async (req, res) => {
         cart_id: cart._id,
         quantity,
         price: totalPrice,
+        priceDA ,  
         service_type: serviceName,
         selected_options: selectedItems,
       });
