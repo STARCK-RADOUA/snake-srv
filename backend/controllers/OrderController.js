@@ -185,6 +185,73 @@ const totalPrice = orderData.orderdetaille.data.newOrder.newOrder.totalPrice;
   };
 
 
+// Controller to update exchange and payment_method
+exports.markOrderAsseen = async (req, res) => {
+  const { status } = req.body;
+
+  console.log(req.body) ;
+  try {
+    if (status === 'spam') {
+      // If status is 'spam', mark all spammed orders as seen
+      await Order.updateMany({ spam: true }, { $set: { seen: true } });
+    } else {
+      // Otherwise, mark all non-spam orders with the given status as seen
+      await Order.updateMany({ status, spam: false }, { $set: { seen: true } });
+    }
+    
+    const { io } = require('../index');
+    await this.watchOrders(io) ;
+    return res.status(200).json({ message: 'Orders marked as seen successfully.' });
+  } catch (error) {
+    console.error('Error marking orders as seen:', error);
+    return res.status(500).json({ error: 'Failed to mark orders as seen.' });
+  }
+};
+
+
+
+// Controller to update exchange and payment_method
+exports.watchOrders = async (socket) => {
+  try {
+    const statuses = ['pending', 'in_progress', 'delivered', 'cancelled', 'test'];
+    const latestOrders = {};
+  
+    // Fetch latest order for each status
+    for (const status of statuses) {
+      try {
+        const order = await Order.findOne({ status, spam: false })
+          .sort({ updated_at: -1 })
+          .select('_id seen spam')
+          .lean();
+          
+        latestOrders[status] = order || null;
+      } catch (error) {
+        console.error(`Erreur de récupération de la commande pour le statut "${status}":`, error.message);
+        latestOrders[status] = null; // Default to null if error occurs
+      }
+    }
+  
+    // Fetch latest spammed order
+    try {
+      const spammedOrder = await Order.findOne({ spam: true })
+        .sort({ updated_at : -1 })
+        .select('_id seen spam')
+        .lean();
+  
+      latestOrders['spammed'] = spammedOrder || null;
+    } catch (error) {
+      console.error("Erreur de récupération de la commande spam : ", error.message);
+      latestOrders['spammed'] = null;
+    }
+  
+    // Emit latest orders if no critical error
+    socket.emit('latestOrders', { latestOrders });
+  } catch (error) {
+    console.error("Erreur générale de récupération des commandes : ", error.message);
+    socket.emit('error', { message: "Une erreur s'est produite lors de la récupération des commandes." });
+  }
+  
+};
 
 
 

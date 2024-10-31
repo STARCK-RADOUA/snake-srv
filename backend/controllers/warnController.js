@@ -18,6 +18,9 @@ exports.getAllWarns = async (req, res) => {
 exports.updateSeenWarns = async (req, res) => {
   try {
     const result = await Warn.updateMany({}, { seen: true });
+    const { io } = require('../index');
+    await this.watchwarnMessages({socket : io});
+
     res.status(200).json({ message: 'All warnings updated to seen.', result });
   } catch (error) {
     console.error('Error updating warnings:', error);

@@ -524,9 +524,36 @@ exports.activateDeactivateClient = async ( io,clientId , isActive,deviceId) => {
 
     // Notify the admin that the operation was successful
     io.emit('operationSuccess', `Client ${isActive ? 'activated' : 'deactivated'} successfully.`);
+    await this.watchActivition(io) ;
   } catch (error) {
     console.error('Error activating/deactivating client:', error);
     io.emit('error', { message: 'Error updating client activation status' });
+  }
+};
+
+
+
+
+exports.watchActivition = async ( socket) => {
+
+  try {
+    // Check if there are inactive clients
+    const inactiveClients = await User.exists({ userType: 'Client', activated: false });
+    // Check if there are inactive drivers
+    const inactiveDrivers = await User.exists({ userType: 'Driver', activated: false });
+
+    // Construct the status object based on the query results
+    const status = {
+      clients: !!inactiveClients, // true if at least one client is inactive
+      drivers: !!inactiveDrivers  // true if at least one driver is inactive
+    };
+
+    // Emit the status back to the client
+    socket.emit("activationStatus", status);
+  } catch (error) {
+    console.error("Error checking activation status:", error);
+    // Optionally emit an error message to the client
+    socket.emit("error", "Failed to check activation status");
   }
 };
 
@@ -616,6 +643,7 @@ exports.activateDeactivateDriver = async  (io, driverId, isActive, deviceId) => 
 
     // Notify the admin that the operation was successful
     io.emit('operationSuccess', `Driver ${isActive ? 'activated' : 'deactivated'} successfully.`);
+    await this.watchActivition(io) ;
   } catch (error) {
     console.error('Error activating/deactivating driver:', error);
     io.to(deviceId).emit('error', { message: 'Error updating driver activation status' });

@@ -65,6 +65,7 @@ exports.getChatHistory = async (req, res) => {
 };
 
 exports.markSeenFA = async (req, res) => {
+  console.log("ddff")
   const { chatId } = req.body; // Expecting chatId in the request body
 
   try {
@@ -84,8 +85,14 @@ exports.markSeenFA = async (req, res) => {
 
     // Save the updated chat
     await chat.save();
+const { io } = require('../index');
 
+    await this.watchMessages({socket : io});
+    console.log("ddsddf")
+
+   
     return res.status(200).json({ message: 'All client messages marked as seen', messages: chat.messages });
+    
   } catch (error) {
     return res.status(500).json({ error: 'Error marking messages as seen' });
   }
