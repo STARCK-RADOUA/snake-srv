@@ -1479,7 +1479,7 @@ exports.assignPendingOrders = async () => {
         // Assign each pending order to a driver
         const assignedDriver = await exports.assignOrderToDriver(order._id);
         console.log(`Order ${order._id} assigned to driver ${assignedDriver._id}`);
-    
+      
  
   } catch (error) {
         console.error(`Failed to assign order ${order._id}:`, error.message);
@@ -1592,6 +1592,7 @@ exports.assignOrderToDriver = async (orderId) => {
       }
         order.driver_id = bestDriver._id;
         order.status = "in_progress";
+        order.seen= false;
         bestDriver.orders_count += 1;
         await bestDriver.save();
         await order.save();
@@ -1602,7 +1603,9 @@ const userclient = await User.findById(client.user_id);
         io.to(userclient.deviceId).emit('orderStatusUpdates', { order });
         await exports.fetchInProgressOrdersForDriver(io, user.deviceId);
 
-     
+
+        await exports.watchOrders(io) ;
+
 
         return bestDriver;
     } else {
