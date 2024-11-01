@@ -287,7 +287,7 @@ if (existingOrder.status === "delivered") {
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
             { _id: orderId },
-            { status: "delivered",active: false,drivercomment:comment },
+            { status: "delivered",active: false,drivercomment:comment, seen: false },
             { new: true } // Retourne la commande mise à jour
         );
 
@@ -339,7 +339,8 @@ await notificationController.sendNotificationForce(name2, userDriver.pushToken, 
 
         const { io } = require('../index');
         io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
-       
+        await orderController.watchOrders(io) ;
+
         return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
 
     } catch (error) {
@@ -411,6 +412,7 @@ console.log('------------------------------------');
     );
       // Assign the closest driver to the order
       existingOrder.driver_id = closestDriver._id;
+      existingOrder.seen = false ;
       await existingOrder.save();
       const newDriver = await User.findById(closestDriver.user_id );
 
@@ -427,6 +429,7 @@ console.log('------------------------------------');
       // Emit real-time update to the client
       const { io } = require('../index');
       io.to(userClient.deviceId).emit('orderStatusUpdates', { order: existingOrder });
+      await orderController.watchOrders(io) ;
 
       return res.json({ message: "success", order: { _id: existingOrder._id, status: existingOrder.status, active: existingOrder.active } });
 
@@ -526,6 +529,7 @@ exports.logoutUser = async (req, res) => {
     
 
 
+                await orderController.watchOrders(io) ;
 
 
 
@@ -553,7 +557,7 @@ console.log('------------------------------------');
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
             { _id: orderId },
-            { status: "cancelled",active: false ,report_reason: reportReason,report_comment: comment,spam: isChecked },
+            { status: "cancelled",active: false ,report_reason: reportReason,report_comment: comment,spam: isChecked, seen: false },
             { new: true } // Retourne la commande mise à jour
         );
 
@@ -602,7 +606,8 @@ console.log('------------------------------------');
         }
         const { io } = require('../index');
         io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
-       
+
+        await orderController.watchOrders(io) ;
         return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
 
     } catch (error) {
