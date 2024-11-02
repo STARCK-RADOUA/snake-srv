@@ -216,7 +216,9 @@ exports.editActivatedStatus = async (user_id, newActivatedStatus) => {
          
         );
 
+        const { io } = require('../index');
 
+        await this.watchActivition(io) ;
         return { message: "Statut 'activated' mis à jour avec succès" };
     } catch (error) {
         throw error;
@@ -255,6 +257,10 @@ if (user.userType !== 'Driver') {
       user.isLogin = true; // Set login status to true
       user.activated = false; // Set login status to true
       await user.save(); 
+      const { io } = require('../index');
+
+      await this.watchActivition(io) ;
+
       const username = user.lastName + ' ' + user.firstName;
       const targetScreen = ' Notifications';
       const title = '🚨🔐 Changement de dispositif détecté!🔑🚨';

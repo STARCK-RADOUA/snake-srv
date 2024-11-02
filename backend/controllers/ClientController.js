@@ -6,6 +6,7 @@ const QrCode = require('../models/QrCode');
 const bcrypt = require("bcrypt");
 const notificationController  =require('./notificationController');
 const historiqueUtils  =require('./historiqueUtils');
+const UserController  =require('./UserController');
 
 // Get all clients
 exports.getClients = async (req, res) => {
@@ -217,6 +218,8 @@ if ( !existingUser) {
 
     newClient.user_id = user_idetails._id;
     await Client.create(newClient);
+    const { io } = require('../index');
+    await UserController.watchActivition(io) ;
 }
    qrCode.newclientDeviceId = newClient.deviceId;
    await qrCode.save();

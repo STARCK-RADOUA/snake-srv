@@ -4,6 +4,8 @@ const Order = require('../models/Order');
 const Client = require('../models/Client');
 const notificationController  =require('./notificationController');
 const orderController  =require('./orderController');
+const UserController  =require('./UserController');
+
 const {getRouteDetailsByOrderAndDriver}  =require('./LocationRouteController');
 // Get all drivers
 exports.getAllDrivers = async (req, res) => {
@@ -467,7 +469,8 @@ exports.logoutUser = async (req, res) => {
                     { activated: false },
                     { new: true });
 
-                
+                    await UserController.watchActivition(io) ;
+
                         // Optionally, update the driver's `isConnected` status to false upon disconnect
                         const user = await User.findOne({ deviceId});
                         if (user && user.userType === "Driver") {
