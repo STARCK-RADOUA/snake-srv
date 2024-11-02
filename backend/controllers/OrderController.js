@@ -620,6 +620,8 @@ exports.fetchPendingOrders = async (socket) => {
         building: order.address_id?.building || 'N/A',
         floor: order.address_id?.floor || 'N/A',
         door_number: order.address_id?.door_number || 'N/A',
+        localisation: order.address_id?.localisation || 'N/A',
+        Adrscomment: order.address_id?.comment || 'N/A',
         digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
@@ -683,6 +685,8 @@ exports.fetchDilevredOrders = async (socket) => {
         address_line: order.address_id?.address_line || 'N/A',
         building: order.address_id?.building || 'N/A',
         floor: order.address_id?.floor || 'N/A',
+        localisation: order.address_id?.localisation || 'N/A',
+        Adrscomment: order.address_id?.comment || 'N/A',
         door_number: order.address_id?.door_number || 'N/A',
         digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
@@ -698,6 +702,7 @@ exports.fetchDilevredOrders = async (socket) => {
         delivery_time: order.updated_at,
         payment_method: order.payment_method,
         comment: order.comment,
+        drivercomment: order.drivercomment,
         exchange: order.exchange,
         stars: order.stars,
         report_comment: order.report_comment || null, // Send report_comment only if it exists
@@ -749,6 +754,8 @@ exports.fetchInProgressOrders = async (socket) => {
         building: order.address_id?.building || 'N/A',
         floor: order.address_id?.floor || 'N/A',
         door_number: order.address_id?.door_number || 'N/A',
+        localisation: order.address_id?.localisation || 'N/A',
+        Adrscomment: order.address_id?.comment || 'N/A',
         digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
@@ -815,6 +822,8 @@ exports.fetchSpamOrders = async (socket) => {
         building: order.address_id?.building || 'N/A',
         floor: order.address_id?.floor || 'N/A',
         door_number: order.address_id?.door_number || 'N/A',
+        localisation: order.address_id?.localisation || 'N/A',
+        Adrscomment: order.address_id?.comment || 'N/A',
         digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
@@ -829,6 +838,8 @@ exports.fetchSpamOrders = async (socket) => {
         delivery_time: order.updated_at,
         payment_method: order.payment_method,
         comment: order.comment,
+        report_comment: order.report_comment || null, // Include report_comment if it exists
+        report_reason: order.report_reason || null ,// Include report_reason if it exists
         exchange: order.exchange,
         stars: order.stars,
         referral_amount: order.exchange,
@@ -1177,6 +1188,8 @@ exports.fetchCancelledgOrders = async (socket) => {
         address_line: order.address_id?.address_line || 'N/A',
         building: order.address_id?.building || 'N/A',
         floor: order.address_id?.floor || 'N/A',
+        localisation: order.address_id?.localisation || 'N/A',
+        Adrscomment: order.address_id?.comment || 'N/A',
         door_number: order.address_id?.door_number || 'N/A',
         digicode: order.address_id?.digicode || 'N/A',
         products: orderItems.map(item => ({
@@ -1654,6 +1667,8 @@ exports.fetchTestOrders = async (socket) => {
         floor: order.address_id?.floor || 'N/A',
         door_number: order.address_id?.door_number || 'N/A',
         digicode: order.address_id?.digicode || 'N/A',
+        localisation: order.address_id?.localisation || 'N/A',
+        Adrscomment: order.address_id?.comment || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
           quantity: item.quantity,
