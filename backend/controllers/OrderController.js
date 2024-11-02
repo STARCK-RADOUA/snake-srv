@@ -897,7 +897,6 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
     })
     .populate({
       path: 'address_id',
-      select: 'address_line localisation'
     }) ;
     const response = await Promise.all(orders.map(async (order) => {
       const orderItems = await OrderItem.find({ Order_id: order._id }).populate('product_id');
