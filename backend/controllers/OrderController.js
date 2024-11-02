@@ -910,6 +910,12 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,
         driver_name: order.driver_id ? `${order.driver_id.user_id.firstName} ${order.driver_id.user_id.lastName}` : null,
         address_line: order.address_id?.address_line || 'N/A',
+        building: order.address_id?.building || 'N/A',
+        floor: order.address_id?.floor || 'N/A',
+        door_number: order.address_id?.door_number || 'N/A',
+        localisation: order.address_id?.localisation || 'N/A',
+        Adrscomment: order.address_id?.comment || 'N/A',
+        digicode: order.address_id?.digicode || 'N/A',
         location: order.address_id?.localisation || 'N/A',
         products: orderItems.map(item => ({
           product: item.product_id,
