@@ -117,7 +117,7 @@ exports.handleSendMessageCD = async ({ chatId, sender, content, io }) => {
   let orderId = order._id ;
   console.log("zrzerf" , orderId , order)
 
-  await this.watchOrderMessagesForDriver({ io, deviceId });
+  await this.watchOrderMessagesForDriver({ io, deviceId,orderId });
   await this.watchOrderMessagesForClient({ io, orderId,deviceIdclient });
 
 
@@ -262,7 +262,7 @@ exports.watchOrderMessages = async ({ socket }) => {
 };
 
 
-exports.watchOrderMessagesForDriver = async ({ io, deviceId }) => {
+exports.watchOrderMessagesForDriver = async ({ io, deviceId,orderId }) => {
   console.log('Driver hk:', deviceId);
 
   // Fetch the user based on device ID
@@ -317,7 +317,7 @@ exports.watchOrderMessagesForDriver = async ({ io, deviceId }) => {
 
         return {
           chatId: chat._id,        // Include chat ID
-          orderId: chat.order_id._id,
+          orderId: orderId,
           orderStatus,
           clientFullName,
           driverFullName,
