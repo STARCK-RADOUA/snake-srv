@@ -178,7 +178,7 @@ exports.locationUpdateForAdminRequest = async (socket, { deviceId1 }) => {
         latitude: driver.location.latitude,
         longitude: driver.location.longitude,
         isConnected: driver.location.isConnected,
-        isDisponible: driver.isDisponiblel
+        isDisponible: driver.isDisponible
       });
       console.log('Driver sedb to admn location:', driver.location);
     } else {
