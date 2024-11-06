@@ -721,6 +721,11 @@ exports.updateTheDriver = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Driver updated successfully', updatedDriver });
+    const { io } = require('../index');
+
+       const drivers = await User.find({ userType: 'Driver' });
+       io.emit('driversUpdated', { drivers });
+   
   } catch (error) {
     // Check for duplicate key error
     if (error.code === 11000) {

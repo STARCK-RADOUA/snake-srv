@@ -999,6 +999,7 @@ exports.fetchOrdersAndGeneratePDF = async (req, res) => {
             service_type: item.service_type,
             isFree: item.isFree,
             price: item.price,
+            priceDA: item.priceDA,
             selected_options: item.selected_options,
           })),
           total_price: order.total_price,
@@ -1130,17 +1131,18 @@ const generatePDF = async (orders, totalOrders, totalRevenue, startDate, endDate
               <th>Prix</th>
               <th>Type de Service</th>
             </tr>
-            ${order.products
-              .map(
-                (product) => `
-                <tr>
-                  <td>${product.product.name || 'N/A'}</td>
-                  <td>${product.quantity}</td>
-                  <td>${product.price} €</td>
-                  <td>${product.product.service_type || 'N/A'}</td>
-                </tr>`
-              )
-              .join('')}
+           ${order.products
+  .map(
+    (product) => `
+    <tr>
+      <td>${product.product.name || 'N/A'}</td>
+      <td>${product.quantity}</td>
+      <td>${product.isFree ? 'Gratuit' : `${product.priceDA * product.quantity} €`}</td>
+      <td>${product.product.service_type || 'N/A'}</td>
+    </tr>`
+  )
+  .join('')}
+
           </table>
           <div class="order-divider"></div>
         `)

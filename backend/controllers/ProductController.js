@@ -336,19 +336,19 @@ const generateProductReportPDF = async (productWithStats, startDate, endDate) =>
           <div class="section">
             <h2>Informations Produit</h2>
             <img src="${base64Image}" alt="${productWithStats.product.name}" class="product-image" />
-            <div class="info"><label>Nom du Produit : </label> ${productWithStats.product.name}</div>
+            <div class="info"><label>Nom du Produit : </label> ${productWithStats.product.name || 'N/A'} </div>
             <div class="info"><label>Description : </label> ${productWithStats.product.description || 'N/A'}</div>
-            <div class="info"><label>Prix : </label> ${productWithStats.product.price.toFixed(2)} €</div>
+            <div class="info"><label>Prix : </label> ${productWithStats.product.price.toFixed(2) || 'N/A'} €</div>
           </div>
           <div class="section">
             <h2>Informations de Vente</h2>
-            <div class="info"><label>de : </label> ${startDate}</div>
-            <div class="info"><label>a : </label> ${endDate}</div>
-            <div class="info"><label>Total des Commandes : </label> ${productWithStats.totalTimesBought}</div>
-            <div class="info"><label>Revenu Total : </label> ${productWithStats.totalRevenue.toFixed(2)} €</div>
+            <div class="info"><label>de : </label> ${startDate || 'N/A'}</div>
+            <div class="info"><label>a : </label> ${endDate || 'N/A'}</div>
+            <div class="info"><label>Total des Commandes : </label> ${productWithStats.totalTimesBought || 'N/A'}</div>
+            <div class="info"><label>Revenu Total : </label> ${productWithStats.totalRevenue.toFixed(2) || 'N/A'} €</div>
           </div>
           <div class="footer">
-            Rapport généré le : ${new Date().toLocaleDateString()}
+            Rapport généré le : ${new Date().toLocaleDateString() || 'N/A'}
           </div>
         </div>
       </body>
