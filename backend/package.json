@@ -27,6 +27,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.9.14",
     "puppeteer": "^23.4.1",
+    "server": "file:",
     "socket.io": "^4.7.5",
     "util": "^0.12.5",
     "ws": "^8.18.0"

@@ -271,7 +271,7 @@ console.log('Driver hk:', deviceId1);
           }
           const clientuser = await User.findById(userCD.user_id);
           const deviceId1 =   clientuser.deviceId;
-if (sender === "client") {
+if (clientuser.userType === "Client") {
 
   
   const username = ' ' ;
@@ -285,7 +285,7 @@ if (sender === "client") {
 
 
 
-} else if (sender ==="driver") {
+} else if (clientuser.userType ==="Driver") {
 
   const username = ' ' ;
   const targetScreen = ' Notifications';
