@@ -702,8 +702,8 @@ exports.updateTheDriver = async (req, res) => {
   try {
     let updatedData = { firstName, lastName, deviceId, phone, points_earned, userType, activated, isLogin };
 
-    // If password is provided, hash it before updating
-    if (password) {
+    // If password is provided and not just spaces, hash it before updating
+    if (password && password.trim() !== "") {
       const saltRounds = 10;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
       updatedData.password = hashedPassword;
@@ -723,17 +723,15 @@ exports.updateTheDriver = async (req, res) => {
     res.status(200).json({ message: 'Driver updated successfully', updatedDriver });
     const { io } = require('../index');
 
-       const drivers = await User.find({ userType: 'Driver' });
-       io.emit('driversUpdated', { drivers });
-   
+    const drivers = await User.find({ userType: 'Driver' });
+    io.emit('driversUpdated', { drivers });
+
   } catch (error) {
-    // Check for duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         message: `Duplicate field error: ${Object.keys(error.keyValue).join(', ')} already exists.`,
       });
     }
-    // Validation errors or others
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         message: Object.values(error.errors).map((err) => err.message).join(', '),
@@ -743,7 +741,6 @@ exports.updateTheDriver = async (req, res) => {
     res.status(500).json({ message: 'An error occurred while updating the driver' });
   }
 };
-
 
 
 // Function to create a new user and driver
