@@ -155,7 +155,7 @@ exports.deleteAdmin = async (req, res) => {
 };
 exports.locationUpdateForAdminRequest = async (socket, { deviceId1 }) => {
     const deviceId = deviceId1.deviceId;
-    console.log('locationUpdatedddddddddddddddddForAdminRequest', deviceId);
+    console.log('locationUForAdminRequest', deviceId);
     // Find the user associated with the deviceId
     const user = await User.findOne({ deviceId: deviceId });
     if (!user) {

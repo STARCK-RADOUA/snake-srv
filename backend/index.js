@@ -1474,7 +1474,7 @@ const updateDriverPing = async (deviceId) => {
 };
 
 // Fonction pour démarrer la vérification des statuts toutes les 30 secondes
-setInterval(checkDriverStatus, 40 * 1000); // Vérifie toutes les 30 secondes
+setInterval(checkDriverStatus, 60 * 1000); // Vérifie toutes les 30 secondes
 
 // Routes
 app.use('/api/addresses', addressRoutes);
