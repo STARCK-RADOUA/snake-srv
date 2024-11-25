@@ -775,7 +775,7 @@ exports.addDriver = async (req, res) => {
     // After creating the user, create a new driver entry with the user's ID
     const newDriver = new Driver({
       user_id: savedUser._id,
-      isDisponible: true, // Assuming driver is available when created
+      isDisponible: false, // Assuming driver is available when created
     });
 
     // Save the new driver

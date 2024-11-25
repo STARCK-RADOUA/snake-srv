@@ -274,6 +274,44 @@ exports.updateDriverAvailability = async (req, res) => {
   };
 
 
+exports.updateDriverPause = async (req, res) => {
+    const { driverId, isDisponible } = req.body; // Get driverId and new availability status from the request
+  
+    try {
+      const driver = await Driver.findById(driverId); // Find driver by ID
+  
+      if (!driver) {
+        return res.status(404).json({ message: 'Driver not found' });
+      } 
+      const user = await User.findById(driver.user_id); // Find driver by ID
+  
+      if (!user) {
+        return res.status(404).json({ message: 'Driver not found' });
+      }
+  
+      // Update the availability status
+      driver.isPause = isDisponible;
+      await driver.save(); // Save the updated driver
+   
+      if (driver) {
+        driver.location.isConnected = isDisponible;
+        await driver.save();
+
+      
+      }
+      const username = user.lastName + ' ' + user.firstName;
+      const targetScreen = ' Notifications';
+      const messageBody = `🚗 Driver pause updated to ${isDisponible ? '✅ Available' : '❌ Unavailable'}`;
+      const title = `🔔 Driver pause Update`;
+      
+      await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+      return res.status(200).json({ message: 'Driver ispause updated successfully', driver });
+    } catch (error) {
+      return res.status(500).json({ message: 'Server error', error: error.message });
+    }
+  };
+
+
   exports.commandeLivree = async (req, res) => {
     try {
         const { order_number,comment } = req.body;  // C'est en fait l'orderId, renommez-le pour être plus explicite
@@ -370,7 +408,7 @@ exports.commandeRedistribuer = async (req, res) => {
       }
 
       // Find all available drivers
-      const availableDrivers = await Driver.find({ isDisponible: true, _id: { $ne: existingOrder.driver_id } });
+      const availableDrivers = await Driver.find({ isDisponible: true,isPause: false, _id: { $ne: existingOrder.driver_id } });
 
       if (!availableDrivers.length) {
           return res.status(404).json({ message: "error", errors: ["No available drivers found"] });
@@ -622,7 +660,7 @@ console.log('------------------------------------');
   exports.getAvailableDrivers = async (req, res) => {
     try {
       // Find all drivers where isDisponible is true and populate the user details
-      const drivers = await Driver.find({ isDisponible: true })
+      const drivers = await Driver.find({ isDisponible: true,isPause: false })
         .populate({
           path: 'user_id',
           model: 'User',

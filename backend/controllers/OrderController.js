@@ -939,7 +939,7 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
 
 
     // Emit the orders to the Driver
-    io.to(deviceId).emit('orderInprogressUpdatedForDriver', { total: orders.length, orders: response, active: driver.isDisponible });
+    io.to(deviceId).emit('orderInprogressUpdatedForDriver', { total: orders.length, orders: response, active: driver.isDisponible,ispause: driver.isPause });
   } catch (err) {
     console.error('Error fetching in-progress orders:', err.message);
   }
@@ -1343,7 +1343,7 @@ exports.exportDriverOrdersToExcel = async (startDate, endDate, drivers, socket) 
 // Function to get available drivers with the current tranche
 async function getAvailableDrivers(tranche) {
     try {
-        const drivers = await Driver.find({ orders_count: { $lt: tranche },isDisponible: true });
+        const drivers = await Driver.find({ orders_count: { $lt: tranche },isDisponible: true,isPause: false });
         return drivers;
     } catch (error) {
         console.error('Error retrieving available drivers:', error.message);
@@ -1448,7 +1448,7 @@ async function adjustTranche() {
   const { actuTranche, MAX_TRANCHE } = admin;
 
   // Récupérer tous les livreurs disponibles
-  const drivers = await Driver.find({ isDisponible: true });
+  const drivers = await Driver.find({ isDisponible: true,isPause: false });
   const trancheCounts = drivers.map(driver => driver.orders_count);
 
   // Gérer les cas où il n'y a pas de livreurs

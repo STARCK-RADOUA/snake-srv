@@ -61,7 +61,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.159:4000',
+        origin: 'http://192.168.8.159:2024',
         methods: ["GET", "POST"],
     },
     pingTimeout: 60000, // Disconnect if no pong in 60 seconds
@@ -1505,7 +1505,7 @@ app.use('/api/notification', notificationRoute);
 
 
 // Start server
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 2024;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

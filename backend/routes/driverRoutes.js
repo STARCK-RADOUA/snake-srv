@@ -30,6 +30,7 @@ router.delete('/delete/:id', driverController.deleteDriverFromAdmin);
 router.post('/device', driverController.getDriverByDeviceId);
 
 router.post('/updateAvailability', driverController.updateDriverAvailability);
+router.post('/updatePause', driverController.updateDriverPause);
 
 router.post('/revenue-orders', driverController.getDriverRevenueAndOrders);
 
