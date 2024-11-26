@@ -11,6 +11,7 @@ router.post('/commandeLivree', driverController.commandeLivree);
 router.post('/commandeRedestrubier', driverController.commandeRedistribuer); 
 router.post('/commandeCanceled', driverController.commandeCanceled); 
 router.post('/logout', driverController.logoutUser); 
+router.post('/get-distance', driverController.getDistance);
 
 // Get a driver by ID
 router.get('/:id', driverController.getDriverById);

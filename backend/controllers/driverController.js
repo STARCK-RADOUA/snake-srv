@@ -5,6 +5,7 @@ const Client = require('../models/Client');
 const notificationController  =require('./notificationController');
 const orderController  =require('./orderController');
 const UserController  =require('./UserController');
+const axios = require('axios');
 
 const {getRouteDetailsByOrderAndDriver}  =require('./LocationRouteController');
 // Get all drivers
@@ -478,7 +479,44 @@ console.log('------------------------------------');
       return res.status(500).json({ message: "error", errors: ["Failed to redistribute order"] });
   }
 };
+// Fonction pour obtenir la distance
+const getDistanceS = async (startLat, startLng, endLat, endLng) => {
+  const osrmUrl = `http://192.168.8.159:5000/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=false`;
 
+  try {
+    const response = await axios.get(osrmUrl, { timeout: 10000 });
+    const data = response.data;
+
+    if (data.code === 'Ok' && data.routes.length > 0) {
+      const route = data.routes[0];
+      return { distance: (route.distance / 1000).toFixed(2) }; // Convertir en km
+    } else {
+      throw new Error('Error retrieving route data.');
+    }
+  } catch (error) {
+    console.error(error);
+    return { distance: 'que quelques' };
+  }
+};
+
+// Fonction pour gérer la requête
+exports.getDistance = async (req, res) => {
+  const { startLat, startLng, endLat, endLng } = req.body;
+
+  // Vérification des paramètres
+  if (!startLat || !startLng || !endLat || !endLng) {
+    return res.status(400).json({ error: 'Paramètres manquants' }); // Si un paramètre est manquant, renvoyer une erreur 400
+  }
+
+  try {
+    // Appeler la fonction de calcul de distance
+    const result = await getDistanceS(parseFloat(startLat), parseFloat(startLng), parseFloat(endLat), parseFloat(endLng));
+    res.json(result); // Réponse avec la distance
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erreur lors du calcul de la distance' }); // Erreur interne serveur
+  }
+};
 
 exports.logoutUser = async (req, res) => {
     try {
