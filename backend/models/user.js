@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: [true, 'Please provide password'] },
   points_earned: { type: Number, default: 0 },
   pushToken: { type: String }, // Rendu optionnel pour plus de flexibilité
-  userType: { type: String, required: true, enum: ['Admin', 'Client', 'Driver'] },
+  userType: { type: String, required: true, enum: ['Admin', 'Client', 'Driver' , 'deleted.Driver'] },
   activated: { type: Boolean, default: false },
   email: { type: String, required: false },
   isLogin: { type: Boolean, default: false },

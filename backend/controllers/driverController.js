@@ -190,17 +190,9 @@ exports.deleteDriverFromAdmin = async (req, res) => {
         return res.status(404).json({ message: 'Utilisateur introuvable.' });
       }
   
-      // Find the driver associated with the user
-      const driver = await Driver.findOne({ user_id: user._id });
-      if (!driver) {
-        return res.status(404).json({ message: 'Conducteur introuvable.' });
-      }
-  
-      // Delete the driver
-      await Driver.deleteOne({ _id: driver._id });
-  
-      // Delete the associated user
-      await User.deleteOne({ _id: user._id });
+      user.userType = "deleted.Driver" ;
+      user.activated = false ; 
+      user.save() ;
   
       res.status(200).json({ message: 'Conducteur et utilisateur supprimés avec succès.' });
       const { io } = require('../index');
