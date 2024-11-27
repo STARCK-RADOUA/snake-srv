@@ -235,11 +235,11 @@ exports.getAllProductRevenueAndCountBetweenDates  = async (req , res) => {
 
 
 
-exports.getProductRevenueAndCountBetweenDatesPDF  = async (req , res) => {
+exports.getProductRevenueAndCountBetweenDatesPDF = async (req, res) => {
   const { productId } = req.params;
-  const {  startDate, endDate } = req.query; // Or req.query, depending on how you're sending data
+  const { startDate, endDate } = req.query; // Or req.query, depending on how you're sending data
   try {
-    // Step 1: Aggregate data from OrderItem to calculate revenue and total times bought for a specific product within a date range
+    // Step 1: Aggregate data from OrderItem to calculate revenue, total times bought, and free product data
     const orderItems = await OrderItem.aggregate([
       {
         $lookup: {
@@ -266,26 +266,43 @@ exports.getProductRevenueAndCountBetweenDatesPDF  = async (req , res) => {
           _id: "$product_id",
           totalTimesBought: { $sum: "$quantity" }, // Sum of quantities for the product
           totalRevenue: { $sum: { $multiply: ["$price", "$quantity"] } }, // Sum of revenue (price * quantity)
+          
+          // Count how many times the product was taken for free (count distinct orders/items)
+          totalFreeTimes: { 
+            $sum: { 
+              $cond: [{ $eq: ["$isFree", true] }, 1, 0] // Count how many items were taken free
+            } 
+          },
+          
+          // Sum the quantity of the product that was taken for free
+          totalFreeQuantity: { 
+            $sum: { 
+              $cond: [{ $eq: ["$isFree", true] }, "$quantity", 0] // Sum the quantity of free items
+            } 
+          }
         }
       }
     ]);
     
     // Step 2: Fetch the specific product
     const product = await Product.findById(productId);
-    var myItem = {}
+    var myItem = {};
     orderItems.map(num => {
-    if (num._id == product._id.toString() ) {
-      myItem =  num; // Return the number (or something else if needed)
-    }
-  });
-    // Step 3: Combine the data, setting revenue and total times bought to 0 if no orders exist for this product
+      if (num._id == product._id.toString()) {
+        myItem = num; // Return the item if the product matches
+      }
+    });
+
+    // Step 3: Combine the data, setting values to 0 if no orders exist for this product
     const productWithStats = {
-      product , 
+      product,
       totalTimesBought: myItem ? myItem.totalTimesBought : 0,
-      totalRevenue: myItem ? myItem.totalRevenue : 0
+      totalRevenue: myItem ? myItem.totalRevenue : 0,
+      totalFreeTimes: myItem ? myItem.totalFreeTimes : 0, // Count of times the product was free
+      totalFreeQuantity: myItem ? myItem.totalFreeQuantity : 0 // Total quantity of free items
     };
   
-    const pdfBuffer = await generateProductReportPDF(productWithStats ,  startDate , endDate)
+    const pdfBuffer = await generateProductReportPDF(productWithStats, startDate, endDate);
    
     res.set({
       'Content-Type': 'application/pdf',
@@ -295,7 +312,7 @@ exports.getProductRevenueAndCountBetweenDatesPDF  = async (req , res) => {
 
     // Send the PDF buffer
     res.end(pdfBuffer); // Use res.end() to send the buffer
-    } catch (err) {
+  } catch (err) {
     console.error('Error fetching product stats:', err);
     return res.status(500).json({ error: 'Error fetching product stats' });
   }
@@ -346,6 +363,9 @@ const generateProductReportPDF = async (productWithStats, startDate, endDate) =>
             <div class="info"><label>a : </label> ${endDate || 'N/A'}</div>
             <div class="info"><label>Total des Commandes : </label> ${productWithStats.totalTimesBought || 'N/A'}</div>
             <div class="info"><label>Revenu Total : </label> ${productWithStats.totalRevenue.toFixed(2) || 'N/A'} €</div>
+            <div class="info"><label>Nombre d'articles pris gratuitement : </label> ${productWithStats.totalFreeTimes || 'N/A'}</div>
+            <div class="info"><label>Quantité totale d'articles gratuits : </label> ${productWithStats.totalFreeQuantity || 'N/A'}</div>
+            <div class="info"><label>Prix totale d'articles gratuits : </label> ${productWithStats.totalFreeQuantity * productWithStats.product.price || 'N/A'}</div>
           </div>
           <div class="footer">
             Rapport généré le : ${new Date().toLocaleDateString() || 'N/A'}

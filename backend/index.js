@@ -1296,6 +1296,7 @@ socket.on('getDriverStats', async () => {
           driverId: '$_id',
           userId: '$userInfo._id',
           firstName: '$userInfo.firstName',
+          phone : '$userInfo.phone' ,
           lastName: '$userInfo.lastName',
           deliveredOrders: 1,
           totalRevenue: 1
@@ -1505,7 +1506,7 @@ app.use('/api/notification', notificationRoute);
 
 
 // Start server
-const PORT = process.env.PORT || 2024;
+const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

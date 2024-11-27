@@ -1137,7 +1137,7 @@ const generatePDF = async (orders, totalOrders, totalRevenue, startDate, endDate
     <tr>
       <td>${product.product.name || 'N/A'}</td>
       <td>${product.quantity}</td>
-      <td>${product.isFree ? 'Gratuit' : `${product.priceDA * product.quantity} €`}</td>
+      <td>${product.isFree ? ` Gratuit : ${product.priceDA * product.quantity} €` : `${product.priceDA * product.quantity} €`}</td>
       <td>${product.product.service_type || 'N/A'}</td>
     </tr>`
   )
