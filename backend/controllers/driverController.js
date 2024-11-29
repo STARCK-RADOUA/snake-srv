@@ -319,10 +319,10 @@ if (existingOrder.status === "delivered") {
 }
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
-            { _id: orderId },
-            { status: "delivered",active: false,drivercomment:comment, seen: false },
-            { new: true } // Retourne la commande mise à jour
-        );
+          { _id: orderId },
+          {status: "delivered", active: false,livred_2min: true ,drivercomment:comment, seen: false},
+          { new: true } // Retourne la commande mise à jour
+      );
 
         if (!order) {
             return res.status(404).json({ message: "error", errors: ["Order not found"] });
@@ -373,7 +373,17 @@ await notificationController.sendNotificationForce(name2, userDriver.pushToken, 
         const { io } = require('../index');
         io.to(userClient.deviceId).emit('orderStatusUpdates', { order });
         await orderController.watchOrders(io) ;
+        await orderController.fetchInProgressOrdersForDriver(io, userDriver.deviceId);
 
+        setTimeout(async() => {
+          const order = await Order.findOneAndUpdate(
+            { _id: orderId },
+            { livred_2min: false },
+            { new: true } // Retourne la commande mise à jour
+        );
+        await orderController.fetchInProgressOrdersForDriver(io, userDriver.deviceId);
+
+                  }, 2 * 60 * 1000); // 50 secondes
         return res.json({ message: "success", order: { _id: order._id, status: order.status, active: order.active } });
 
     } catch (error) {

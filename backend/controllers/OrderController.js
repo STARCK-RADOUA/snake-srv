@@ -877,8 +877,14 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
     }
 
     // Fetch active and in-progress orders for the driver
-    const orders = await Order.find({ driver_id: driver._id, status: 'in_progress'  })
-    
+    const orders = await Order.find({
+      driver_id: driver._id,
+      $or: [
+        { status: 'in_progress' },  // Commandes en cours
+        { status: 'delivered', livred_2min: true }  // Commandes livrées avec livred_2min à true
+      ]
+    })
+        
     .populate({
       path: 'client_id',
       populate: {
@@ -904,6 +910,7 @@ exports.fetchInProgressOrdersForDriver = async (io, deviceId) => {
       console.log(order)
       return {
         order_number: order._id,
+        livred_2min: order.livred_2min,
         client_id : order.client_id._id ,
         driver_id : order.driver_id._id ,
         client_name: `${order.client_id?.user_id?.firstName || 'N/A'} ${order.client_id?.user_id?.lastName || 'N/A'}`,

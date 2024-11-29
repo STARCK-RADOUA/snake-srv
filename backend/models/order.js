@@ -10,6 +10,7 @@ const orderSchema = new mongoose.Schema({
   active: { type: Boolean, default: true },
   spam: { type: Boolean, default: false },
   notification_2min: { type: Boolean, default: false },
+  livred_2min: { type: Boolean, default: false },
   notification_pret: { type: Boolean, default: false },
   total_price: { type: Number, required: true },
   exchange: { type: Number, required: false },
