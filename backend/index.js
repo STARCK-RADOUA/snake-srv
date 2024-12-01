@@ -964,134 +964,22 @@ socket.on('joinExistingChat', async ({ chatId }) => {
 
 
 
-socket.on('getDeliveredOrdersSummary', async () => {
-  try {
-    // Fetch delivered orders from the database
-    const deliveredOrders = await Order.find({ status: 'delivered' });
-
-    // Log the delivered orders for debugging
-    console.log('Delivered Orders:', deliveredOrders);
-
-    // If there are no delivered orders, totalSum will be 0
-    if (!Array.isArray(deliveredOrders) || deliveredOrders.length === 0) {
-      console.log('No delivered orders found.');
-      socket.emit('deliveredOrdersSummary', {
-        totalSum: 0,
-        totalCount: 0
-      });
-      return;
-    }
-
-    // Calculate total sum of delivered orders
-    const totalSum = deliveredOrders.reduce((acc, order) => {
-      // Check if total_price exists and is a valid number
-      const price = typeof order.total_price === 'number' ? order.total_price : 0;
-      return acc + price;
-    }, 0);
-
-    const totalCount = deliveredOrders.length;
-
-    // Log the calculated totalSum and totalCount for debugging
-    console.log('Total Sum:', totalSum);
-    console.log('Total Count:', totalCount);
-
-    // Emit the result back to the client
-    socket.emit('deliveredOrdersSummary', {
-      totalSum,
-      totalCount
-    });
-
-  } catch (error) {
-    // Handle any errors during fetching or processing
-    console.error('Error fetching or processing delivered orders:', error);
-    socket.emit('error', 'Could not retrieve delivered orders');
-  }
-});
 
 
 
 
 
-socket.on('getAllOrdersSummary', async () => {
-  try {
-    // Fetch delivered orders from the database
-    const deliveredOrders = await Order.find();
-
-    // Log the delivered orders for debugging
-    console.log('Delivered Orders:', deliveredOrders);
-
-    // If there are no delivered orders, totalSum will be 0
-    if (!Array.isArray(deliveredOrders) || deliveredOrders.length === 0) {
-      console.log('No delivered orders found.');
-      socket.emit('AllOrdersSummary', {
-        totalSum: 0,
-        totalCount: 0
-      });
-      return;
-    }
-
-    // Calculate total sum of delivered orders
-    const totalSum = deliveredOrders.reduce((acc, order) => {
-      // Check if total_price exists and is a valid number
-      const price = typeof order.total_price === 'number' ? order.total_price : 0;
-      return acc + price;
-    }, 0);
-
-    const totalCount = deliveredOrders.length;
-
-    // Log the calculated totalSum and totalCount for debugging
-    console.log('Total Sum:', totalSum);
-    console.log('Total Count:', totalCount);
-
-    // Emit the result back to the client
-    socket.emit('AllOrdersSummary', {
-      totalSum,
-      totalCount
-    });
-
-  } catch (error) {
-    // Handle any errors during fetching or processing
-    console.error('Error fetching or processing delivered orders:', error);
-    socket.emit('error', 'Could not retrieve delivered orders');
-  }
-});
 
 
+socket.on('getAllHomeSceenData', async () => {
+  await clientController.gettotClients(socket) ;
+  await ProductController.getTotalProduit(socket) ;
+  await orderController.getOrderStatusCountss(socket) ;
+  await orderController.gettotalSpam(socket) ;
+  await orderController.getOrderSummmeryd(socket) ; 
+  await orderController.getOrderSummmeryRevenu(socket) ; 
 
 
-socket.on('getTotalClients', async () => {
-  try {
-    const totalClients = await User.countDocuments({ userType: 'Client' });
-    // Emit the result back to the client
-    socket.emit('totalClients', { totalClients });
-  } catch (error) {
-    console.error('Error fetching total clients:', error);
-    socket.emit('error', 'Could not retrieve total clients');
-  }
-});
-
-
-
-  // Listen for "getTotalSpamOrdersNumber" event
-  socket.on('getTotalSpamOrdersNumber', async () => {
-    try {
-      const spamCount = await Order.countDocuments({ spam: true });
-      socket.emit('spamCountResponse', spamCount); // Emit response back to client
-    } catch (error) {
-      console.error('Error fetching spam count:', error);
-    }
-  });
-
-
-socket.on('getTotalProducts', async () => {
-  try {
-    const totalProducts = await Product.countDocuments({ is_active: true }); // Count only active products
-    // Emit the result back to the client
-    socket.emit('totalProducts', { totalProducts });
-  } catch (error) {
-    console.error('Error fetching total products:', error);
-    socket.emit('error', 'Could not retrieve total products');
-  }
 });
 
 

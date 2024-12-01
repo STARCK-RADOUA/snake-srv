@@ -67,9 +67,81 @@ exports.getUserByClientId = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch client' });
     }
 };
+
+
+exports.gettotClients = async (socket) =>{
+    try {
+        const totalClients = await User.countDocuments({ userType: 'Client' });
+        // Emit the result back to the client
+        socket.emit('totalClients', { totalClients });
+      } catch (error) {
+        console.error('Error fetching total clients:', error);
+        socket.emit('error', 'Could not retrieve total clients');
+      }
+  }
+  
+
+
+
+
+// Unblock a client
+exports.blockUnbloClient = async (req, res) => {
+    console.log("ghfhgfgh")
+    try {
+      const { clientId } = req.body;
+      console.log(clientId) 
+      const { isBlocked } = req.body;
+      console.log(isBlocked)
+      const user = await User.findById(clientId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      console.log(user)
+
+      // Find the client and update the block status
+      const updatedClient = await Client.findOneAndUpdate({ user_id: user._id }, { blocked: isBlocked }, { new: true });
+  
+      if (!updatedClient) {
+        return res.status(404).json({ message: 'Client not found' });
+      }
+  
+      res.status(200).json(updatedClient); // Send the updated client object as response
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  } ; 
+
+
+
+  exports.ClienBlockStat = async (req, res) => {
+    console.log("hhhd")
+    const { clientId } = req.query;
+    console.log(clientId)
+
+  
+    try {
+        const user = await User.findById(clientId);
+        if (!user) {
+          return res.status(404).json({ message: 'User not found' });
+        }
+        console.log(user)  
+
+        const client = await Client.findOne({ user_id: user._id });  // Find by email (or any other property)
+
+        console.log(client)
+
+      
+      // Return the blocked status
+      res.json({ blocked: client.blocked });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  }
 exports.logoutUser = async (req, res) => {
     try {
-        const { deviceId } = req.body;
+        const { deviceId } = req.query;
 
         // Trouver l'utilisateur par son deviceId et mettre à jour le champ isLogin à false
         const user = await User.findOneAndUpdate(

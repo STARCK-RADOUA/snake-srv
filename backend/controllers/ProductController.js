@@ -231,6 +231,17 @@ exports.getAllProductRevenueAndCountBetweenDates  = async (req , res) => {
 };
 
 
+exports.getTotalProduit = async (socket) =>{
+  try {
+    const totalProducts = await Product.countDocuments({ is_active: true }); // Count only active products
+    // Emit the result back to the client
+    socket.emit('totalProducts', { totalProducts });
+  } catch (error) {
+    console.error('Error fetching total products:', error);
+    socket.emit('error', 'Could not retrieve total products');
+  }
+}
+
 
 
 

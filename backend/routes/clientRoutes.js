@@ -10,11 +10,14 @@ const {
 } = require('../controllers/clientLoginController.js')
 // Route pour obtenir tous les clients
 router.get('/', clientController.getClients);
+router.get('/statuss', clientController.ClienBlockStat);
+
 
 // Route pour obtenir un client par ID
 router.get('/:id', clientController.getClientById);
 
 // Route pour créer un nouveau client
+router.put('/block-unblock', clientController.blockUnbloClient);
 
 // Route pour mettre à jour un client existant
 router.put('/:id', clientController.updateClient);

@@ -467,6 +467,44 @@ exports.getOrderHistory = async (req, res) => {
   }
 };
 
+exports.getOrderStatusCountss = async (socket) => {
+  try {
+    // Define all possible statuses
+    const allStatuses = ['pending', 'in_progress', 'delivered', 'cancelled', 'test'];
+
+    // Aggregate to get the count of each status present in the collection
+    const statusCounts = await Order.aggregate([
+      { 
+        $match: { spam: false } // Exclude spam orders
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Create a map of the results
+    const statusCountMap = statusCounts.reduce((acc, item) => {
+      acc[item._id] = item.count;
+      return acc;
+    }, {});
+
+    // Transform the result to include all statuses, even with 0 count
+    const formattedCounts = allStatuses.map(status => ({
+      [status]: { count: statusCountMap[status] || 0 } // Use 0 if the status is not present
+    }));
+
+    // Emit the result to the client
+    socket.emit('orderStatusCounts', formattedCounts); // Emitting the result over Socket.IO
+
+  } catch (error) {
+    // Emit the error message over Socket.IO
+    socket.emit('error', { message: 'Server Error', error });
+  }
+};
+
 
 exports.getOrderStatusCounts = async (req, res) => {
   try {
@@ -720,6 +758,104 @@ exports.fetchDilevredOrders = async (socket) => {
   }
 };
 
+
+exports.getOrderSummmeryd = async (socket) =>{
+  try {
+    // Fetch delivered orders from the database
+    const deliveredOrders = await Order.find();
+
+    // Log the delivered orders for debugging
+    console.log('Delivered Orders:', deliveredOrders);
+
+    // If there are no delivered orders, totalSum will be 0
+    if (!Array.isArray(deliveredOrders) || deliveredOrders.length === 0) {
+      console.log('No delivered orders found.');
+      socket.emit('AllOrdersSummary', {
+        totalSum: 0,
+        totalCount: 0
+      });
+      return;
+    }
+
+    // Calculate total sum of delivered orders
+    const totalSum = deliveredOrders.reduce((acc, order) => {
+      // Check if total_price exists and is a valid number
+      const price = typeof order.total_price === 'number' ? order.total_price : 0;
+      return acc + price;
+    }, 0);
+
+    const totalCount = deliveredOrders.length;
+
+    // Log the calculated totalSum and totalCount for debugging
+    console.log('Total Sum:', totalSum);
+    console.log('Total Count:', totalCount);
+
+    // Emit the result back to the client
+    socket.emit('AllOrdersSummary', {
+      totalSum,
+      totalCount
+    });
+
+  } catch (error) {
+    // Handle any errors during fetching or processing
+    console.error('Error fetching or processing delivered orders:', error);
+    socket.emit('error', 'Could not retrieve delivered orders');
+  }
+}
+
+exports.getOrderSummmeryRevenu = async (socket) =>{
+  try {
+    // Fetch delivered orders from the database
+    const deliveredOrders = await Order.find({ status: 'delivered' });
+
+    // Log the delivered orders for debugging
+    console.log('Delivered Orders:', deliveredOrders);
+
+    // If there are no delivered orders, totalSum will be 0
+    if (!Array.isArray(deliveredOrders) || deliveredOrders.length === 0) {
+      console.log('No delivered orders found.');
+      socket.emit('deliveredOrdersSummary', {
+        totalSum: 0,
+        totalCount: 0
+      });
+      return;
+    }
+
+    // Calculate total sum of delivered orders
+    const totalSum = deliveredOrders.reduce((acc, order) => {
+      // Check if total_price exists and is a valid number
+      const price = typeof order.total_price === 'number' ? order.total_price : 0;
+      return acc + price;
+    }, 0);
+
+    const totalCount = deliveredOrders.length;
+
+    // Log the calculated totalSum and totalCount for debugging
+    console.log('Total Sum:', totalSum);
+    console.log('Total Count:', totalCount);
+
+    // Emit the result back to the client
+    socket.emit('deliveredOrdersSummary', {
+      totalSum,
+      totalCount
+    });
+
+  } catch (error) {
+    // Handle any errors during fetching or processing
+    console.error('Error fetching or processing delivered orders:', error);
+    socket.emit('error', 'Could not retrieve delivered orders');
+  }
+}
+
+
+exports.gettotalSpam = async (socket) => {
+  try {
+    const spamCount = await Order.countDocuments({ spam: true });
+    socket.emit('spamCountResponse', spamCount); // Emit response back to client
+  } catch (error) {
+    console.error('Error fetching spam count:', error);
+  }
+}
 
 exports.fetchInProgressOrders = async (socket) => {
   try {
