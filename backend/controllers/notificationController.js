@@ -93,6 +93,53 @@ exports.sendNotificationAdmin = async (username, targetScreen, messageBody, titl
 
 
 // Fonction générique pour envoyer des notifications
+exports.saveNotificationAdmin = async (username, targetScreen, messageBody, title) => {
+  try {
+    // Récupération de tous les administrateurs avec un PushToken
+    const admins = await User.find({ userType: "Admin" }).select('pushToken');
+
+    if (!admins || admins.length === 0) {
+      console.error('No admins found with PushTokens');
+      return;
+    }
+
+    console.log(admins);
+
+    // Boucle sur chaque administrateur trouvé
+    for (const admin of admins) {
+      if (!admin.pushToken) {
+        console.error(`Admin with ID ${admin._id} has no PushToken`);
+        continue;
+      }
+
+      const message = {
+        to: admin.pushToken,
+        sound: 'default',
+        title: title,
+        body: `${username} ${messageBody}`,
+        data: { targetScreen: targetScreen },
+      };
+
+      // Enregistrement de la notification dans la base de données
+      const notification = new Notification({
+        user_id: admin._id,
+        title: title,
+        message: message.body
+      });
+      await notification.save();
+
+      // Envoi de la notification
+     
+    }
+
+    return 'Notifications saved à tous les administrateurs';
+  } catch (error) {
+    console.error('Erreur lors de la récupération des administrateurs ou de l\'envoi des notifications:', error.message);
+  }
+};
+
+
+// Fonction générique pour envoyer des notifications
 exports.sendNotificationForce = async (username, pushToken, messageBody, title,userType) => {
   try {
     // Récupérer les utilisateurs en fonction de leur type (Client ou Driver)

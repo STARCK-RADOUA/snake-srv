@@ -122,8 +122,8 @@ const loginUser = (req, res) => {
                             const messageBody = `👤votre Client vient de se connecter Manuelment.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
                             
                         
-         notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
-          historiqueUtils.enregistrerAction({
+         notificationController.saveNotificationAdmin(username,targetScreen,messageBody ,title);
+                          historiqueUtils.enregistrerAction({
             actionType: 'Connexion',
             description:  currentUser.lastName + ' ' + currentUser.firstName+'👤 vient de se connecter.\n\n🔑',
             utilisateurId: currentUser._id, // Remplacez par un ID valide

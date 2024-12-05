@@ -3,6 +3,7 @@ const notificationController  =require('./notificationController');
 const historiqueUtils  =require('./historiqueUtils');
 const User = require('../models/User');
 const Warn = require('../models/Warn');
+const Client = require('../models/Client');
 
 const autoLogin = async (socket, { deviceId ,location },io) => {
     try {
@@ -12,7 +13,7 @@ const autoLogin = async (socket, { deviceId ,location },io) => {
         console.log('------------------------------------');
         // Find the user in the database using the device ID
         const user = await User.findOne({ deviceId, userType: 'Client'});
-
+const client =await Client.findOne({ user_id:user._id});
         if (!user) {
             await Warn.create({
                 phone: '000000000',
@@ -48,13 +49,17 @@ const autoLogin = async (socket, { deviceId ,location },io) => {
             // Si le compte de l'utilisateur est désactivé
             socket.emit('loginFailure', { message: 'User account is logout' });
             return;
+        } if (client.blocked === true) {
+            // Si le compte de l'utilisateur est désactivé
+            socket.emit('loginFailure', { message: 'User account is banned' });
+            return;
         }
         const username = user.lastName + ' ' + user.firstName;
         const targetScreen = ' Notifications';
         const title = '🔔 Nouvelle Connexion';
         const messageBody = `👤 vient de se connecter.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
         
-        await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
+        await notificationController.saveNotificationAdmin(username,targetScreen,messageBody ,title);
         await historiqueUtils.enregistrerAction({
             actionType: 'Connexion',
             description:  user.lastName + ' ' + user.firstName+'👤 vient de se connecter.\n\n🔑',
@@ -126,15 +131,14 @@ const autoLoginDriver = async (socket, { deviceId,location }) => {
                 socket.emit('loginFailure', { message: 'User account is logout' });
                 return;
             }
+         
             const username = driverUser.lastName + ' ' + driverUser.firstName;
             const targetScreen = ' Notifications';
             const title = '🔔 Nouvelle Connexion de Livreur🚚  ';
             const messageBody = `🚚 Livreur vient de se connecter.\n\n🔑 Veuillez vérifier les détails de la connexion.`;
             const userType = 'Driver';
 
-            await notificationController.sendNotificationAdmin(username,targetScreen,messageBody ,title);
-         
-    
+            await notificationController.saveNotificationAdmin(username,targetScreen,messageBody ,title);
             await historiqueUtils.enregistrerAction({
                 actionType: 'Connexion',
                 description:  driverUser.lastName + ' ' + driverUser.firstName+'👤 vient de se connecter.\n\n🔑',

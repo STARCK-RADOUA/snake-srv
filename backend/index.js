@@ -49,6 +49,7 @@ const historiqueRoutes = require('./routes/historiqueRoutes');
 
 const {
   emitInitialStatus,
+  applyTranches,
   toggleSystemStatus,
   toggleClientsStatus,
   toggleDriversStatus,
@@ -313,6 +314,9 @@ socket.on('reconnect', () => {
    
       socket.on('statusS', (data) => {
         emitInitialStatus(socket);
+      }); 
+       socket.on('updateTranches', (data) => {
+        applyTranches(socket,data);
       });
     
       // Handle clients toggle
@@ -571,48 +575,69 @@ socket.on('reconnect', () => {
     socket.on('searchQuery', async (params) => {
       try {
         const { query, startDate, endDate } = params;
-        const regex = new RegExp(query, 'i'); // Créer une expression régulière insensible à la casse pour la recherche
+        const regex = new RegExp(query, 'i'); // Expression régulière insensible à la casse
     
-        // Récupérer toutes les collections de la base de données
-        const db = mongoose.connection.db; // Accéder correctement à la base de données MongoDB
-        const collections = await db.listCollections().toArray();
+        // Accéder à la base de données
+        const db = mongoose.connection.db;
+        const collections = await db.listCollections().toArray(); // Lister toutes les collections
         let results = [];
     
-        // Effectuer la recherche dans chaque collection
+        // Fonction pour chercher dans tous les champs d'un document, y compris les sous-documents et tableaux
+        const searchInDocument = (doc) => {
+          for (let key in doc) {
+            const value = doc[key];
+    
+            // Si la valeur est une chaîne, on applique la regex
+            if (typeof value === 'string' && regex.test(value)) {
+              return true; // Retourne true si on trouve une correspondance
+            }
+    
+            // Si la valeur est un tableau, on cherche à l'intérieur
+            if (Array.isArray(value)) {
+              for (let item of value) {
+                if (typeof item === 'string' && regex.test(item)) {
+                  return true;
+                }
+                if (typeof item === 'object' && searchInDocument(item)) {
+                  return true;
+                }
+              }
+            }
+    
+            // Si la valeur est un objet, on cherche récursivement dans cet objet
+            if (typeof value === 'object' && searchInDocument(value)) {
+              return true;
+            }
+          }
+          return false; // Aucune correspondance trouvée dans ce document
+        };
+    
+        // Recherche dans chaque collection
         for (const collection of collections) {
           const col = db.collection(collection.name);
-    
-          // Construire la requête de base
+          
+          // Construction du filtre de dates si spécifié
           let queryFilter = {};
-    console.log(startDate);
-    console.log(endDate);
-          // Ajouter le filtre de date si les dates sont spécifiées
-          if ((startDate && endDate) && (startDate !== endDate)) {
+          if (startDate && endDate && startDate !== endDate) {
             queryFilter.created_at = {
               $gte: new Date(startDate),
               $lte: new Date(endDate),
             };
           }
     
-          // Récupérer les documents correspondant au filtre
+          // Récupérer les documents de la collection
           const documents = await col.find(queryFilter).toArray();
     
-          // Filtrer les documents par le terme de recherche
-          const matchedDocuments = documents.filter((doc) => {
-            return Object.values(doc).some((value) => {
-              if (typeof value === 'string' && regex.test(value)) {
-                return true;
-              }
-              return false;
-            });
-          });
+          // Filtrer les documents en fonction de la recherche
+          const matchedDocuments = documents.filter((doc) => searchInDocument(doc));
     
+          // Ajouter les résultats trouvés
           if (matchedDocuments.length > 0) {
             results = results.concat(
               matchedDocuments.map((doc) => ({
                 collection: collection.name,
                 _id: doc._id,
-                details: doc, // Retourner tout le document avec toutes ses propriétés
+                details: doc, // Retourne tous les détails du document
               }))
             );
           }
@@ -620,11 +645,13 @@ socket.on('reconnect', () => {
     
         // Envoyer les résultats au client
         socket.emit('searchResults', results);
+    
       } catch (error) {
         console.error('Error during search:', error);
-        socket.emit('searchResults', []); // Envoyer une liste vide en cas d'erreur
+        socket.emit('searchResults', []); // En cas d'erreur, envoyer une liste vide
       }
     });
+    
     
     
     socket.on('adminRestoreLogin', async (data) => {
@@ -1394,7 +1421,7 @@ app.use('/api/notification', notificationRoute);
 
 
 // Start server
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 2024;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

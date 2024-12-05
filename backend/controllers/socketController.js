@@ -15,11 +15,57 @@ const emitInitialStatus = async (socket) => {
       systemActive,
       clientsActive: !!clientsActive,
       driversActive: !!driversActive,
+      actuTranche:  admin ? admin.actuTranche : "none",
+      MAX_TRANCHE:  admin ? admin.MAX_TRANCHE : "none",
     });
   } catch (error) {
     console.error('Error emitting initial status:', error);
   }
 };
+const applyTranches = async (socket, data) => {
+  try {
+    // Déstructuration des nouvelles valeurs
+    const { maxTranche, actuTranche } = data;
+
+    // Trouver l'admin dans la base de données
+    const admin = await Admin.findOne();
+    const clientsActive = await User.findOne({ userType: 'Client', activated: true });
+    const driversActive = await User.findOne({ userType: 'Driver', activated: true });
+
+    const systemActive = admin ? admin.isSystem : false;
+
+    if (admin) {
+      // Mise à jour des valeurs dans la base de données
+      admin.MAX_TRANCHE = maxTranche;
+      admin.actuTranche = actuTranche;
+      
+      // Sauvegarde de l'admin mis à jour dans la base de données
+      await admin.save();
+      
+      // Envoi des nouvelles valeurs via Socket.IO
+      socket.emit('statusSite', {
+        systemActive,
+        clientsActive: !!clientsActive,
+        driversActive: !!driversActive,
+        MAX_TRANCHE: admin.MAX_TRANCHE,
+        actuTranche: admin.actuTranche,
+      });
+
+      console.log('Tranches mises à jour avec succès.');
+    } else {
+      console.error('Admin non trouvé.');
+      socket.emit('statusSite', {
+        error: 'Admin non trouvé'
+      });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des tranches:', error);
+    socket.emit('statusSite', {
+      error: 'Erreur de mise à jour'
+    });
+  }
+};
+
 
 // Toggle the system's active status
 const toggleSystemStatus = async (data, io) => {
@@ -41,6 +87,8 @@ const toggleSystemStatus = async (data, io) => {
       systemActive: data,
       clientsActive: !!clientsActive,
       driversActive: !!driversActive,
+      MAX_TRANCHE: admin.MAX_TRANCHE,
+      actuTranche: admin.actuTranche,
     });
 
 
@@ -92,6 +140,8 @@ const toggleClientsStatus = async (data, io) => {
       systemActive: admin ? admin.isSystem : false,
       clientsActive: !!clientsActive,
       driversActive: !!driversActive,
+      MAX_TRANCHE: admin.MAX_TRANCHE,
+      actuTranche: admin.actuTranche,
     });
   } catch (error) {
     console.error('Error toggling clients status:', error);
@@ -135,6 +185,9 @@ const toggleDriversStatus = async (data, io) => {
         systemActive: admin ? admin.isSystem : false,
         clientsActive: !!clientsActive,
         driversActive: !!driversActive,
+        MAX_TRANCHE: admin.MAX_TRANCHE,
+        actuTranche: admin.actuTranche,
+      
       });
   
     } catch (error) {
@@ -147,6 +200,7 @@ const toggleDriversStatus = async (data, io) => {
 
 module.exports = {
   emitInitialStatus,
+  applyTranches,
   toggleSystemStatus,
   toggleClientsStatus,
   toggleSystemStatusForDriver,
