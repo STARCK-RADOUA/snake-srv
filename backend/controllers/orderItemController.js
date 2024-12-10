@@ -2,6 +2,8 @@ const OrderItem = require('../models/OrderItem');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Cart = require('../models/Cart');
+const mongoose = require('mongoose');
+
 
 // Get all order items
 exports.getAllOrderItems = async (req, res) => {
@@ -130,6 +132,34 @@ exports.deleteOrderItem = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete order item' });
     }
+};
+exports.deplucateItem = async (req, res) => {
+  try {
+    const originalItem = await OrderItem.findById(req.params.id);
+
+    if (!originalItem) {
+      return res.status(404).json({ message: 'Order item not found' });
+    }
+
+    // Duplicate the item with a new ID
+    const duplicatedItem = new OrderItem({
+      ...originalItem.toObject(),
+      _id: new mongoose.Types.ObjectId(),
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    // Save the duplicated item first
+    await duplicatedItem.save();
+
+    // Populate the 'product_id' field after saving the item
+    const populatedItem = await OrderItem.findById(duplicatedItem._id).populate('product_id');
+
+    res.status(201).json({ message: 'Item duplicated successfully', item: populatedItem });
+  } catch (error) {
+    console.error('Error duplicating item:', error);
+    res.status(500).json({ message: 'Failed to duplicate item', error: error.message });
+  }
 };
 
 

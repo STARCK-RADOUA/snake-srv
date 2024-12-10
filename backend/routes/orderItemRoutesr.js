@@ -16,6 +16,7 @@ router.put('/:id', orderItemController.updateOrderItem);
 
 // Delete an order item
 router.delete('/:id', orderItemController.deleteOrderItem);
+router.post('/duplicate/:id',orderItemController.deplucateItem)  ;
 
 router.post('/update-order-items', orderItemController.updateOrderItems);
 
