@@ -301,8 +301,7 @@ socket.on('reconnect', () => {
         }
       });
       socket.on('toggleSystemDriver', () => {
-        console.log('Toggling system status for driver:');
-        console.log('Toggling system status for driver:');
+      
         console.log('Toggling system status for driver:');
         toggleSystemStatusForDriver(io);
       }); 
@@ -1390,7 +1389,7 @@ const updateDriverPing = async (deviceId) => {
 };
 
 // Fonction pour démarrer la vérification des statuts toutes les 30 secondes
-setInterval(checkDriverStatus, 60 * 1000); // Vérifie toutes les 30 secondes
+setInterval(checkDriverStatus, 5 * 60 * 1000); // Vérifie toutes les 30 secondes
 
 // Routes
 app.use('/api/addresses', addressRoutes);

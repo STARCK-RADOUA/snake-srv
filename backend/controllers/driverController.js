@@ -473,6 +473,7 @@ console.log('------------------------------------');
       const { io } = require('../index');
       io.to(userClient.deviceId).emit('orderStatusUpdates', { order: existingOrder });
       await orderController.watchOrders(io) ;
+      await orderController.fetchInProgressOrdersForDriver(io,newDriver.deviceId) ;
 
       return res.json({ message: "success", order: { _id: existingOrder._id, status: existingOrder.status, active: existingOrder.active } });
 
