@@ -62,7 +62,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
 
-        origin: 'http://192.168.8.159:2024',
+        origin: 'https://amstagram.online:2024',
         methods: ["GET", "POST"],
     },
     pingTimeout: 60000, // Disconnect if no pong in 60 seconds

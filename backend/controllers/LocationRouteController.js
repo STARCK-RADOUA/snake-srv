@@ -41,7 +41,7 @@ async function getOptimizedRoutes(orderId) {
 
 // Fonction pour calculer la distance et la durée
 async function calculateRoute(startLat, startLng, endLat, endLng) {
-    const osrmUrl = `http://localhost:5000/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=false`;
+    const osrmUrl = `http://172.17.0.3:5000/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=false`;
 
     try {
         console.log(`Requesting route from ${startLat},${startLng} to ${endLat},${endLng}`);
