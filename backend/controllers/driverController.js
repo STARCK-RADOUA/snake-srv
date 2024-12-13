@@ -320,7 +320,7 @@ if (existingOrder.status === "delivered") {
         // Trouver la commande par son _id et mettre à jour son statut à "delivered"
         const order = await Order.findOneAndUpdate(
           { _id: orderId },
-          {status: "delivered", active: false,livred_2min: true ,drivercomment:comment, seen: false},
+          {status: "delivered", active: false,livred_2min: true ,drivercomment:comment, seen: false , livredAt: new Date()},
           { new: true } // Retourne la commande mise à jour
       );
 

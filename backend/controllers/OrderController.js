@@ -743,10 +743,11 @@ exports.fetchDilevredOrders = async (socket) => {
         drivercomment: order.drivercomment,
         exchange: order.exchange,
         stars: order.stars,
-        report_comment: order.report_comment || null, // Send report_comment only if it exists
+        report_comment: order.report_comment || null, 
         referral_amount: order.exchange,
         created_at: order.created_at,
         updated_at: order.updated_at,
+        livredAt: order.livredAt
       };
     }));
 ;

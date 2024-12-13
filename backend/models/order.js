@@ -22,6 +22,7 @@ const orderSchema = new mongoose.Schema({
   service_Test: { type: Boolean, default: false },
   stars: Number,
   seen: { type: Boolean, default: false }  ,
+  livredAt: { type: Date, default: null }, 
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 }, {
