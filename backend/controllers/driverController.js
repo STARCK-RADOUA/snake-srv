@@ -484,7 +484,7 @@ console.log('------------------------------------');
 };
 // Fonction pour obtenir la distance
 const getDistanceS = async (startLat, startLng, endLat, endLng) => {
-  const osrmUrl = `http://192.168.8.159:5000/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=false`;
+  const osrmUrl = `http://amstagram.online:5000/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=false`;
 
   try {
     const response = await axios.get(osrmUrl, { timeout: 10000 });
