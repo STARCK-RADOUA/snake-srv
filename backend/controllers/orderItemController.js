@@ -75,8 +75,10 @@ exports.createOrderItem = async (req, res) => {
         return res.status(404).json({ error: 'Product not found' });
       }
   
+      const isWholesale = quantity >= product.quantityJamla;
+      const basePrice = isWholesale ? product.priceJamla : product.price;
       // Step 3: Calculate the total price including selected options
-      let totalPrice = product.price * quantity;
+      let totalPrice = basePrice * quantity;
       priceDA = product.price ; 
   
       selectedItems.forEach(option => {
