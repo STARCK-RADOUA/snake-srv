@@ -141,7 +141,10 @@ exports.blockUnbloClient = async (req, res) => {
   }
 exports.logoutUser = async (req, res) => {
     try {
-        const { deviceId } = req.query;
+        const { deviceId } = req.body; // Récupérer le deviceId depuis le corps de la requête
+
+        console.log(deviceId); // Vérifiez que le deviceId est bien reçu
+        console.log(req.body); // Vérifiez tout le corps de la requête
 
         // Trouver l'utilisateur par son deviceId et mettre à jour le champ isLogin à false
         const user = await User.findOneAndUpdate(
@@ -153,8 +156,6 @@ exports.logoutUser = async (req, res) => {
         if (!user) {
             return res.status(401).json({ message: "error", errors: ["User not found"] });
         }
-
-  
         if (user.userType==="Client") {
             await historiqueUtils.enregistrerAction({
                 actionType: 'Déconnexion',
