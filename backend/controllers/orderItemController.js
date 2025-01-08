@@ -81,9 +81,6 @@ exports.createOrderItem = async (req, res) => {
       let totalPrice = basePrice * quantity;
       priceDA = product.price ; 
   
-      selectedItems.forEach(option => {
-        totalPrice += option.price * quantity;
-      });
   
       // Step 4: Create a new order item
       const newOrderItem = new OrderItem({
